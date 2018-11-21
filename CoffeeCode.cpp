@@ -1,4 +1,5 @@
 ﻿#include "CoffeeCode.h"
+#include "polynomial.h"
 
 #include <iostream>
 #include <cstdint>
@@ -8,57 +9,49 @@
 using std::cout;
 using std::endl;
 
-// compile time integer exponent
-constexpr size_t ipow(const size_t base, const int exp, const size_t result = 1) {
-	return exp < 1 ? result : ipow(base*base, exp / 2, (exp % 2) ? result * base : result);
+namespace {
+	// compile time integer exponent
+	constexpr size_t ipow(const size_t base, const int exp, const size_t result = 1) {
+		return exp < 1 ? result : ipow(base*base, exp / 2, (exp % 2) ? result * base : result);
+	}
+	// compile time size of base k tuple
+	template<const size_t base, const size_t tuple_length>
+	struct BaseKSubsets {
+		static constexpr auto count = ipow(base, tuple_length);
+	};
+	// compile time bitmask with k 1s
+	template<const size_t number_of_1s>
+	struct Bitmask1s {
+		static constexpr auto mask = (1ull << number_of_1s) - 1;
+	};
 }
-// compile time size of base k tuple
-template<const size_t base, const size_t tuple_length>
-struct BaseKSubsets {
-	static constexpr auto count = ipow(base, tuple_length);
-};
-// compile time bitmask with k 1s
-template<const size_t number_of_1s>
-struct Bitmask1s {
-	static constexpr auto mask = (1ull << number_of_1s) - 1;
-};
 
-// monomial
-struct Monomial {
-	using CoefficientT = uint16_t;
-	using ExponentT = uint8_t;
-	static constexpr auto MaxCoefficient = std::numeric_limits<CoefficientT>::max();
-};
 
-// polynomial
-template<const size_t max_exponent>
-struct Polynomial {
-	Monomial::CoefficientT coefficients[max_exponent];
+#ifndef K_SYS
+#error "need to specify -DK_SYS=number of system qubits"
+#endif
 
-	Polynomial() = default; // zero-initializes coefficients
+#ifndef K_ENV
+#error "need to specify -DK_ENV=number of environment qubits"
+#endif
 
-	void Add(const Monomial::ExponentT exponent) {
-		assert(exponent < max_exponent);
-		coefficients[exponent] ++;
-	}
-	void Add(const Polynomial& other) {
-		for (size_t i = 0; i < max_exponent; i++) {
-			assert(coefficients[i] + other.coefficients[i] < Monomial::MaxCoefficient);
-			coefficients[i] += other.coefficients[i];
-		}
-	}
-};
+#define RET_OK 0
+#define RET_WRONG_INPUT 1
 
 
 int main()
 {
-	constexpr auto k_sys = 18, k_env = 1, k_tot = k_sys + k_env;
-	CoffeeCode::AdjacencyMatrix<k_sys, k_env> M{ "0111111111110000000100000000000000000010000000000000000001000000000000\
-0000001000000000000000000100000000000000000010000000000000000001000000\
-0000000000001000000000000000000100000000000000000010000000000000000001\
-0000000000011111110000000000010000000000000000001000000000000000000100\
-0000000000000000100000000000000000010000000000000000001000000000000000\
-00010000000" };
+	constexpr auto k_sys = K_SYS, k_env = K_ENV, k_tot = k_sys + k_env;
+
+	// read matrix from cin
+	std::string input = "";
+	getline(std::cin, input);
+	if (input.length() != (k_tot * k_tot)) {
+		std::cerr << "wrong input size for k_sys=" << k_sys << " and k_env=" << k_env << endl;
+		return RET_WRONG_INPUT;
+	}
+
+	CoffeeCode::AdjacencyMatrix<k_sys, k_env> M{ input };
 
 	// Calculate lambda and lambda_pre
 	constexpr auto max_exponent = k_tot;
@@ -137,5 +130,5 @@ int main()
 	}
 	cout << "Nothing}}" << endl;
 
-	return 0;
+	return RET_OK;
 }

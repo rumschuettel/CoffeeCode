@@ -48,9 +48,6 @@ namespace CoffeeCode {
 		// enough bits to store vector?
 		static_assert(length <= 8 * sizeof(StoreT), "StoreT too short");
 
-		// template arguments for future use
-		constexpr static size_t length{ length };
-
 		StoreT vec;
 
 		// default constructors
@@ -116,7 +113,8 @@ namespace CoffeeCode {
 		Matrix(const std::string bitstring) {
 			// trim whitespace
 			std::string cleaned{ bitstring };
-			cleaned.erase(std::remove_if(cleaned.begin(), cleaned.end(), std::isspace), cleaned.end());
+			const auto predicate = [](unsigned char const c) { return std::isspace(c); };
+			cleaned.erase(std::remove_if(cleaned.begin(), cleaned.end(), predicate), cleaned.end());
 			assert(cleaned.length() == row_count * column_count);
 
 			// load into rows
@@ -130,7 +128,7 @@ namespace CoffeeCode {
 			ColumnVectorT out;
 			size_t i = 0;
 			for (const auto row : rows)
-				out += ColumnVectorT::StoreT{ row * rhs } << i++;
+				out += typename ColumnVectorT::StoreT{ row * rhs } << i++;
 			return out;
 		}
 
@@ -147,8 +145,6 @@ namespace CoffeeCode {
 	// adjacency matrix class
 	template<size_t size_A, size_t size_B>
 	struct AdjacencyMatrix : public Matrix<size_A + size_B, size_A + size_B> {
-		constexpr static size_t size_A{ size_A }, size_B{ size_B };
-
 		using Matrix<size_A + size_B, size_A + size_B>::Matrix;
 		using ABBlockT = Matrix<size_A, size_B>;
 

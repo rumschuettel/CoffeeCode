@@ -2,6 +2,7 @@
 #include "polynomial.h"
 
 #include <iostream>
+#include <string>
 #include <cstdint>
 #include <vector>
 #include <assert.h>
@@ -35,17 +36,22 @@ namespace {
 #error "need to specify -DK_ENV=number of environment qubits"
 #endif
 
-#define RET_OK 0
-#define RET_WRONG_INPUT 1
+constexpr auto RET_OK = 0;
+constexpr auto RET_WRONG_INPUT = 1;
 
+#include "permutations.h"
 
 int main()
 {
+	CoffeeCode::test();
+	return 0;
+
+
 	constexpr auto k_sys = K_SYS, k_env = K_ENV, k_tot = k_sys + k_env;
 
 	// read matrix from cin
 	std::string input = "";
-	getline(std::cin, input);
+	std::getline(std::cin, input);
 	if (input.length() != (k_tot * k_tot)) {
 		std::cerr << "wrong input size for k_sys=" << k_sys << " and k_env=" << k_env << endl;
 		return RET_WRONG_INPUT;
@@ -63,7 +69,6 @@ int main()
 	using SubsetT = VectorT::StoreT;
 
 	// could reach numerical limits, hence break condition at end
-
 	for (SubsetT subsetX = 0; ; subsetX++) {
 		for (SubsetT subsetY = 0; ; subsetY++) {
 			// we explicitly allow downcasting, so no {} as initializer; in fact the compiler complains if we do.

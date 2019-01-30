@@ -3,37 +3,16 @@
 
 #pragma once
 
+#include "types.h"
+
 #include "libpopcnt.h"
+
+#include <cctype>
 #include <iostream>
 #include <algorithm>
-#include <cctype>
 #include <assert.h>
-#include <type_traits>
 
 namespace CoffeeCode {
-	// automatic selection of smallest-possible integer
-	template<bool raise = true>
-	struct InvalidIntegerType {
-		static_assert(raise, "not enough bits");
-	};
-
-	template<size_t length>
-	using StdStoreT = typename std::conditional <
-		length <= 8,
-		uint8_t,
-		typename std::conditional <
-		length <= 16,
-		uint16_t,
-		typename std::conditional <
-		length <= 32,
-		uint32_t,
-		typename std::conditional <
-		length <= 64,
-		uint64_t,
-		InvalidIntegerType<true>
-		>::type>::type>::type>::type;
-
-	using StdBitT = StdStoreT<1>;
 		
 	// fast popcount implementation
 	constexpr auto __popcount = popcnt64;
@@ -66,7 +45,7 @@ namespace CoffeeCode {
 
 		// get number of 1s
 		inline size_t popcount() const {
-			return __popcount(vec);
+			return static_cast<size_t>(__popcount(vec));
 		}
 
 		// addition

@@ -13,18 +13,18 @@ namespace CoffeeCode {
 	};
 
 	// for storing length bits
-	template<size_t length>
+	template<size_t Width>
 	using StdStoreT = typename std::conditional <
-		length <= 8,
+		Width <= 8,
 		uint8_t,
 		typename std::conditional <
-		length <= 16,
+		Width <= 16,
 		uint16_t,
 		typename std::conditional <
-		length <= 32,
+		Width <= 32,
 		uint32_t,
 		typename std::conditional <
-		length <= 64,
+		Width <= 64,
 		uint64_t,
 		InvalidIntegerType<true>
 		>::type>::type>::type>::type;
@@ -32,19 +32,19 @@ namespace CoffeeCode {
 	using StdBitT = StdStoreT<1>;
 
 
-	// for storing length numbers in bit-blocks
+
+	// compile-time log2
 	constexpr size_t log2(const size_t n)
 	{
 		if (n == 0) throw "log2(0) undefined";
 		return ((n < 2) ? 1 : 1 + log2(n / 2));
 	}
 
-	template<size_t base, size_t length>
-	using StdStoreExT = StdStoreT< log2(base-1) * length >;
+	// tuple type
+	template<size_t Width, size_t Length>
+	using StdStoreExT = std::array< StdStoreT<Width>, Length >;
 
-
-	// for symmetry calculations we store pairs of bits in bytes
-	template<size_t Length>
-	using Bit2StoreT = std::array< StdStoreT<2>, Length >;
+	template<size_t Base, size_t Length>
+	using StdTupleStoreT = StdStoreExT< log2(Base - 1), Length >;
 	// TODO: make this explicitly SIMD
 }

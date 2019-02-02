@@ -19,13 +19,13 @@ namespace CoffeeCode {
 
 
 	// binary vector class
-	template <size_t length>
+	template <size_t Width>
 	struct Vector {
-		using StoreT = StdStoreT<length>;
+		using StoreT = StdStoreT<Width>;
 		using BitT = StdBitT;
 
 		// enough bits to store vector?
-		static_assert(length <= 8 * sizeof(StoreT), "StoreT too short");
+		static_assert(Width <= 8 * sizeof(StoreT), "StoreT too short");
 
 		StoreT vec;
 
@@ -35,8 +35,8 @@ namespace CoffeeCode {
 		Vector(const Vector& c) = default;
 		Vector(const std::string& bitstring) : vec{ 0 }
 		{
-			assert(bitstring.length() == length);
-			for (size_t i = 0; i < length; i++) {
+			assert(bitstring.length() == Width);
+			for (size_t i = 0; i < Width; i++) {
 				assert(bitstring[i] == '0' || bitstring[i] == '1');
 				BitT bit = bitstring[i] == '0' ? 0 : 1;
 				vec |= StoreT{ bit } << i;
@@ -71,10 +71,10 @@ namespace CoffeeCode {
 
 		// to string
 		friend std::ostream& operator<< (std::ostream& stream, const Vector& vector) {
-			for (size_t i = 0; i < length-1; i++)
+			for (size_t i = 0; i < Width-1; i++)
 				// cast to normal int, otherwise it'll print chars
 				stream << static_cast<uint32_t>(vector[i]) << " ";
-			stream << static_cast<uint32_t>(vector[length - 1]);
+			stream << static_cast<uint32_t>(vector[Width - 1]);
 			return stream;
 		}
 	};

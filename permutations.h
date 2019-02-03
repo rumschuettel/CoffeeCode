@@ -53,6 +53,9 @@ namespace CoffeeCode {
 		struct same_length_generators : std::bool_constant< ((T::Permutation::Length == Ts::Permutation::Length) && ...) > {};
 		using same_length_generators_true = same_length_generators<Generators...>;
 
+		// type of StrongGeneratingSet
+		using StrongGeneratingSetT = StrongGeneratingSet<Generators...>;
+
 		// number of generators
 		constexpr static const size_t N_generators = sizeof...(Generators);
 		static_assert(N_generators > 0);
@@ -66,9 +69,6 @@ namespace CoffeeCode {
 		template<size_t Base>
 		using TupleT = StdStoreExT< log2(Base-1), Length >;
 
-		template<typename TupleT>
-		using TupleListT = std::vector<TupleT>;
-
 		// orbit iterator
 		// this is a minimal implementation which satisfies the conditions
 		// required for a range-based for. A proper input iterator
@@ -79,33 +79,107 @@ namespace CoffeeCode {
 		public:
 			using IteratorT = OrbitIterator<Base>;
 			using TupleT = TupleT<Base>;
-			using TupleListT = TupleListT<TupleT>;
 
 		private:
-			TupleT current;
+			using TupleNonBaseIndexT = size_t;
+
+			// fast compile-time stack
+			size_t currentDepth;
+			std::array<
+				std::pair<TupleNonBaseIndexT, TupleT>,
+				Base * Length
+			> currentPath;
 
 		public:				
 			OrbitIterator() :
-				current{ 0 }
+				currentDepth{ 0 },
+				currentPath{ std::make_pair(0, TupleT{0}) }
 			{
-				TupleListT todo;
+				// we increment once initially;
+				// this is so that the final state is the all zeros tuple
+				// note that the all-zeros one will not be listed
+				++(*this);
 			}
 
-			// pre-increment
-			IteratorT& operator++()
+			enum StepStatus { CallAgain, Done };
+
+			// this implements a depth-first search
+			StepStatus Step()
 			{
-				for (auto& e : current) e++;
+				// mutable reference
+				// e.g. [2, {0, 2, 1, 0, 0, 0}] or [2, {0, 2, 2, 0, 0, 0}]
+				auto& [firstNonBaseIndex, currentTuple] = currentPath[currentDepth];
+
+				// CASE 1. if index pointer points past last element then move up
+				if (firstNonBaseIndex >= Length) {
+					// we've traversed the whole tree
+					if (currentDepth == 0) {
+						return Done;
+					}
+
+					// otherwise go up
+					else {
+						currentDepth--;
+
+						// get parent element and modify index
+						auto& [firstNonBaseIndexParent, currentTupleParent] = currentPath[currentDepth];
+						firstNonBaseIndexParent++;
+
+						// try incrementing from there
+						return CallAgain;
+					}
+				}
+
+
+				// CASE 2. if element that index pointer points to cannot be incremented further,
+				// move pointer right;
+				// e.g. when {0, 2, 2, 0, 0, 0} in the second example
+				if (currentTuple[firstNonBaseIndex] == Base-1) {
+					firstNonBaseIndex++;
+					return CallAgain;
+				}
+
+				// CASE 3. increment digit at non-base index
+				// e.g. to {0, 2, 2, 0, 0, 0} in the first example
+				TupleT newTuple = currentTuple;
+				newTuple[firstNonBaseIndex]++;
+
+				/*** this is where we deviate from full DFS search ***/
+				// CASE 3a. element is not canonically ordered: move right immediately without exploring further down
+				if (!StrongGeneratingSetT::IsCanonical<Base>(newTuple)) {
+					firstNonBaseIndex++;
+					return CallAgain;
+				}
+				/*** end ***/
+				// CASE 3b. element is canonically ordered: we will look at its children
+
+				// put on stack
+				assert(currentDepth < currentPath.size() - 1);
+				currentDepth++;
+				currentPath[currentDepth] = { firstNonBaseIndex, newTuple };
+
+				return Done;
+			}
+
+
+		public:
+			OrbitIterator& operator++()
+			{
+				do {
+				} while (Step() == CallAgain);
+
 				return *this;
 			}
+
 			// inequality
 			bool operator!=(const TupleT& end) const
 			{
-				return current != end;
+				return currentPath[currentDepth].second != end;
 			}
 			// dereference
 			const TupleT& operator*() const
 			{
-				return current;
+				return currentPath[currentDepth].second;
 			}
 		};
 
@@ -117,11 +191,7 @@ namespace CoffeeCode {
 			using TupleT = typename IteratorT::TupleT;
 
 			IteratorT begin() const { return IteratorT(); }
-			TupleT end() const {
-				TupleT out;
-				std::fill(out.begin(), out.end(), TupleT::value_type(Base));
-				return out;
-			}
+			const TupleT end() const { return TupleT{ 0 }; }
 		};
 
 		// range-based for loop iterator for tuples over Base
@@ -161,20 +231,13 @@ namespace CoffeeCode {
 			T new_todo;
 
 			for (const auto& parent : todo) {
-				std::cout << "parent: ";
-				for (int i : parent)
-					std::cout << i << " ";
-				std::cout << "\n";
 
 				// iterate over orbit of tuple under Permutation
 				auto child = parent;
 				do {
-					for (int i : child)
-						std::cout << i << " ";
-
 					// check numerical order
 					const auto order = NumericalOrder<Pivot>(parent, child);
-					std::cout << "  " << (int)order << "\n";
+
 					// return false if new tuple
 					// lexicographically larger up to the pivot point
 					if (order == LARGER)
@@ -205,9 +268,9 @@ namespace CoffeeCode {
 
 	public:
 		template<size_t Base>
-		inline static bool IsCanonical(const TupleT<Base> tuple)
+		inline static bool IsCanonical(const TupleT<Base>& tuple)
 		{
-			TupleListT<TupleT<Base>> todo{ tuple };
+			std::vector<TupleT<Base>> todo{ tuple };
 
 			return IsCanonicalImpl<Generators...>(todo);
 		}
@@ -234,11 +297,7 @@ namespace CoffeeCode {
 
 		std::cout << std::boolalpha << sgs::IsCanonical<100>(vec) << "\n";
 
-		for (const auto e : sgs::TupleCosets<2>().end())
-			std::cout << (int)e << " ";
-		std::cout << "\n";
-		return;
-		for (const auto& tuple : sgs::TupleCosets<2>()) {
+		for (const auto& tuple : sgs::TupleCosets<3>()) {
 			for (const auto e : tuple)
 				std::cout << (int)e << " ";
 			std::cout << "\n";

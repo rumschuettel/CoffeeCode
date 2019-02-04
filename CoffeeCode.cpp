@@ -1,31 +1,9 @@
 ﻿#include "CoffeeCode.h"
-#include "polynomial.h"
 
-#include <iostream>
 #include <string>
-#include <cstdint>
-#include <vector>
-#include <assert.h>
 
 using std::cout;
 using std::endl;
-
-namespace {
-	// compile time integer exponent
-	constexpr size_t ipow(const size_t base, const int exp, const size_t result = 1) {
-		return exp < 1 ? result : ipow(base*base, exp / 2, (exp % 2) ? result * base : result);
-	}
-	// compile time size of base k tuple
-	template<const size_t base, const size_t tuple_length>
-	struct BaseKSubsets {
-		static constexpr auto count = ipow(base, tuple_length);
-	};
-	// compile time bitmask with k 1s
-	template<const size_t number_of_1s>
-	struct Bitmask1s {
-		static constexpr auto mask = (1ull << number_of_1s) - 1;
-	};
-}
 
 
 #ifndef K_SYS
@@ -39,11 +17,43 @@ namespace {
 constexpr auto RET_OK = 0;
 constexpr auto RET_WRONG_INPUT = 1;
 
-#include "permutations.h"
+
+
+void test() {
+	using CoffeeCode::SGSTransversal;
+	using CoffeeCode::SGSGenerator;
+	using CoffeeCode::Group;
+	using CoffeeCode::Permutation;
+
+	using sgs = SGSTransversal<
+		SGSGenerator<2, Group<
+		Permutation<0, 4, 5, 6, 1, 2, 3>
+		>>,
+		SGSGenerator<3, Group<
+		Permutation<0, 1, 3, 2, 4, 5, 6>
+		>>,
+		SGSGenerator<6, Group<
+		Permutation<0, 1, 2, 3, 4, 6, 5>
+		>>
+		>;
+
+	using TupleT = sgs::TupleT<100>;
+	TupleT vec{ 0, 0, 0, 1, 0, 0, 0 };
+	print(vec);
+
+	std::cout << std::boolalpha << sgs::IsCanonical<100>(vec) << "\n";
+
+	size_t count = 0;
+	for (const auto& tuple : sgs::TupleCosets<8>()) {
+		if ((count++ % 10000) > 0)
+			continue;
+		print(tuple);
+	}
+}
 
 int main()
 {
-	CoffeeCode::test();
+	test();
 	return 0;
 
 

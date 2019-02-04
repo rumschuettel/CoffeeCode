@@ -1,5 +1,7 @@
 #pragma once
 
+#include <assert.h>
+
 // monomial
 struct Monomial {
 	using CoefficientT = uint32_t;

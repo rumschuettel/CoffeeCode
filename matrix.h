@@ -3,6 +3,7 @@
 #include "vector.h"
 
 #include <assert.h>
+#include <utility>
 
 namespace CoffeeCode {
 	// binary matrix class
@@ -11,20 +12,21 @@ namespace CoffeeCode {
 		using RowVectorT = Vector<column_count>;
 		using ColumnVectorT = Vector<row_count>;
 
-		RowVectorT rows[row_count];
+		const std::array<RowVectorT, row_count> rows;
 
-		Matrix() = default;
-		Matrix(const std::string bitstring) {
-			// trim whitespace
-			std::string cleaned{ bitstring };
-			const auto predicate = [](unsigned char const c) { return std::isspace(c); };
-			cleaned.erase(std::remove_if(cleaned.begin(), cleaned.end(), predicate), cleaned.end());
-			assert(cleaned.length() == row_count * column_count);
+		constexpr static size_t row_count = row_count;
+		constexpr static size_t column_count = column_count;
 
-			// load into rows
-			for (size_t i = 0; i < row_count; i++)
-				rows[i] = RowVectorT(cleaned.substr(column_count*i, column_count));
-		}
+		// uninitialized matrix
+		Matrix() = delete;
+
+		// for compile-time construction we want explicit numbers
+		template<typename... T>
+		constexpr Matrix(const T... rows) : rows{ static_cast<typename RowVectorT::StoreT>(rows)... }
+		{}
+		using MatrixInitializerRowT = std::array<RowVectorT, row_count>;
+		constexpr Matrix(const MatrixInitializerRowT& rows) : rows{ rows }
+		{}
 
 		// dot product
 		// pass by value
@@ -49,16 +51,51 @@ namespace CoffeeCode {
 	// adjacency matrix class
 	template<size_t size_A, size_t size_B>
 	struct AdjacencyMatrix : public Matrix<size_A + size_B, size_A + size_B> {
-		using Matrix<size_A + size_B, size_A + size_B>::Matrix;
+		using BaseT = Matrix<size_A + size_B, size_A + size_B>;
+		using BaseT::Matrix;
+		using AdjacencyMatrixT = AdjacencyMatrix<size_A, size_B>;
 		using ABBlockT = Matrix<size_A, size_B>;
 
-		// return AB block
-		ABBlockT AB() const {
-			ABBlockT blockAB;
-			for (size_t i = 0; i < size_A; i++)
-				blockAB.rows[i] = static_cast<typename ABBlockT::RowVectorT>((*this).rows[i].vec >> size_A);
+		using BaseT::row_count;
+		using BaseT::column_count;
+		using typename BaseT::RowVectorT;
 
-			return blockAB;
+		// initialize from string; clean out whitespace
+		static AdjacencyMatrixT FromString(const std::string& bitstring) {
+			// trim whitespace
+			std::string cleaned{ bitstring };
+			const auto predicate = [](unsigned char const c) { return std::isspace(c); };
+			cleaned.erase(std::remove_if(cleaned.begin(), cleaned.end(), predicate), cleaned.end());
+			assert(cleaned.length() == row_count * column_count);
+
+			// load into rows
+			std::array<RowVectorT, row_count> rows;
+			for (size_t i = 0; i < row_count; i++) {
+				typename RowVectorT::StoreT row{ 0 };
+				for (size_t j = 0; j < column_count; j++)
+					row |= static_cast<typename RowVectorT::StoreT>((bitstring[column_count*i + j] == '0' ? 0 : 1) << j);
+				rows[i] = row;
+			}
+
+			// return new matrix
+			return AdjacencyMatrixT{ rows };
+		}
+
+		// return AB block
+		constexpr ABBlockT AB() const
+		{
+			return ABImpl(std::make_index_sequence<size_A>{});
+		}
+
+	private:
+		template<size_t... Idx>
+		constexpr ABBlockT ABImpl(const std::index_sequence<Idx...>) const
+		{
+			std::array<typename ABBlockT::RowVectorT, size_A> rows;
+			((
+				rows[Idx] = static_cast<typename ABBlockT::RowVectorT>((*this).rows[Idx].vec >> size_A)
+			), ...);
+			return ABBlockT{ rows };
 		}
 	};
 }

@@ -30,11 +30,12 @@ namespace CoffeeCode {
 		constexpr static const size_t N_generators = sizeof...(Generators);
 		static_assert(N_generators >= 1);
 
-		// generator length
+		// first generator
 		using FirstGenerator = nth_element<0, Generators...>;
-		constexpr static const size_t Length = FirstGenerator::GeneratingGroup::Length;
 
 	public:
+		constexpr static const size_t Length = FirstGenerator::GeneratingGroup::Length;
+
 		// tuple type that the SGS acts on
 		template<size_t Base>
 		using TupleT = StdStoreExT< log2(Base - 1), Length >;

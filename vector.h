@@ -3,7 +3,6 @@
 #include "types.h"
 #include "libpopcnt.h"
 
-
 #include <cctype>
 #include <iostream>
 #include <algorithm>
@@ -26,18 +25,9 @@ namespace CoffeeCode {
 		StoreT vec;
 
 		// default constructors
-		Vector() : vec{ 0 } {};
-		Vector(const StoreT vec) : vec{ vec } {};
-		Vector(const Vector& c) = default;
-		Vector(const std::string& bitstring) : vec{ 0 }
-		{
-			assert(bitstring.length() == Width);
-			for (size_t i = 0; i < Width; i++) {
-				assert(bitstring[i] == '0' || bitstring[i] == '1');
-				BitT bit = bitstring[i] == '0' ? 0 : 1;
-				vec |= StoreT{ bit } << i;
-			}
-		}
+		constexpr Vector() : vec{ 0 } {};
+		constexpr Vector(const StoreT vec) : vec{ vec } {};
+		constexpr Vector(const Vector& c) = default;
 
 		// get number of 1s
 		inline size_t popcount() const {

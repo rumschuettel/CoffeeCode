@@ -61,6 +61,8 @@ namespace CoffeeCode::NautyLink {
 			COLOR_COUNT = 5
 		};
 		using ColoringT = std::array<Color, K_TOT>;
+		template<typename T>
+		using PartialColoringT = std::array<T, K_SYS>;
 
 	public:
 		NautyLink(const MatrixT& M) :
@@ -98,12 +100,24 @@ namespace CoffeeCode::NautyLink {
 			static DEFAULTOPTIONS_GRAPH(options);
 			__grouporder = 1;
 			options.userlevelproc = UserLevelProc;
-			options.defaultptn = true;
-			options.writeautoms = true;
+			options.defaultptn = false;
+			options.writeautoms = false;
 
 			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, NULL);
 
 			return __grouporder;
+		}
+
+		template<typename T>
+		void SetColoring(const PartialColoringT<T>& partial)
+		{
+			// set default coloring such that environment qubits have ID 2
+			ColoringT coloring;
+			for (size_t i = 0; i < K_SYS; i++)
+				coloring[i] = static_cast<Color>(partial[i]);
+			for (size_t i = K_SYS; i < K_TOT; i++)
+				coloring[i] = ENVIRONMENT_COLOR;
+			SetColoring(coloring);
 		}
 
 		void SetColoring(const ColoringT& coloring)

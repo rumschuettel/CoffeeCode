@@ -80,16 +80,18 @@ int SymmetricSolver() {
 	LambdaT lambda_a;
 
 	auto nauty = CoffeeCode::NautyLink::NautyLink(instance::M);
-	std::cout << nauty.GroupOrder();
-
-	return RET_OK;
+	const auto fullGroupOrder = nauty.GroupOrder();
 
 	auto start = std::chrono::steady_clock::now();
 
 	size_t counter = 0;
 	for (const auto& tuple : instance::sgs::TupleCosets<4>()) {
-		if (counter++ % 1000 == 0)
-			print(tuple);
+		if (counter++ % 1 == 0) {
+			nauty.SetColoring(tuple);
+			const auto orbitSize = fullGroupOrder / nauty.GroupOrder();
+			//std::cout << orbitSize << "    ";
+			//print(tuple);
+		}
 		
 		continue;
 		// get low and high bit from tuples

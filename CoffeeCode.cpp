@@ -1,7 +1,8 @@
-﻿int FullSolver();
+﻿#ifdef SYMMETRIC_SOLVER
 int SymmetricSolver();
-
-#define SYMMETRIC_SOLVER
+#else
+int FullSolver();
+#endif
 
 int main()
 {

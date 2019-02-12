@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <utility>
+#include <tuple>
 
 namespace CoffeeCode {
 	// binary matrix class
@@ -11,8 +12,9 @@ namespace CoffeeCode {
 	struct Matrix {
 		using RowVectorT = Vector<column_count>;
 		using ColumnVectorT = Vector<row_count>;
+		using BitT = typename RowVectorT::BitT;
 
-		const std::array<RowVectorT, row_count> rows;
+		std::array<RowVectorT, row_count> rows;
 
 		constexpr static size_t row_count = row_count;
 		constexpr static size_t column_count = column_count;
@@ -21,12 +23,21 @@ namespace CoffeeCode {
 		Matrix() = delete;
 
 		// for compile-time construction we want explicit numbers
-		template<typename... T>
-		constexpr Matrix(const T... rows) : rows{ static_cast<typename RowVectorT::StoreT>(rows)... }
-		{}
-		using MatrixInitializerRowT = std::array<RowVectorT, row_count>;
-		constexpr Matrix(const MatrixInitializerRowT& rows) : rows{ rows }
-		{}
+	private:
+		template<size_t... Idx>
+		constexpr Matrix(const std::array<std::array<BitT, column_count>, row_count>& entries, const std::index_sequence<Idx...>)
+			: rows{ RowVectorT(entries[Idx])... }
+		{
+		}
+	public:
+		constexpr Matrix(const std::array<std::array<BitT, column_count>, row_count>& entries)
+			: Matrix(entries, std::make_index_sequence<row_count>{})
+		{
+		}
+		constexpr Matrix(const std::array<RowVectorT, row_count>& rows)
+			: rows{ rows }
+		{
+		}
 
 		// dot product
 		// pass by value
@@ -49,15 +60,18 @@ namespace CoffeeCode {
 
 
 	// adjacency matrix class
-	template<size_t size_A, size_t size_B>
-	struct AdjacencyMatrix : public Matrix<size_A + size_B, size_A + size_B> {
-		using BaseT = Matrix<size_A + size_B, size_A + size_B>;
+	template<size_t k_sys, size_t k_env>
+	struct AdjacencyMatrix : public Matrix<k_sys + k_env, k_sys + k_env> {
+		using BaseT = Matrix<k_sys + k_env, k_sys + k_env>;
+		using BitT = typename BaseT::BitT;
 		using BaseT::Matrix;
-		using AdjacencyMatrixT = AdjacencyMatrix<size_A, size_B>;
-		using ABBlockT = Matrix<size_A, size_B>;
+		using AdjacencyMatrixT = AdjacencyMatrix<k_sys, k_env>;
+		using ABBlockT = Matrix<k_sys, k_env>;
 
 		using BaseT::row_count;
 		using BaseT::column_count;
+		constexpr static auto k_sys = k_sys;
+		constexpr static auto k_env = k_env;
 		using typename BaseT::RowVectorT;
 
 		// initialize from string; clean out whitespace
@@ -69,33 +83,33 @@ namespace CoffeeCode {
 			assert(cleaned.length() == row_count * column_count);
 
 			// load into rows
-			std::array<RowVectorT, row_count> rows;
+			std::array<std::array<BitT, column_count>, row_count> entries;
 			for (size_t i = 0; i < row_count; i++) {
-				typename RowVectorT::StoreT row{ 0 };
 				for (size_t j = 0; j < column_count; j++)
-					row |= static_cast<typename RowVectorT::StoreT>((bitstring[column_count*i + j] == '0' ? 0 : 1) << j);
-				rows[i] = row;
+					entries[i][j] = bitstring[column_count*i + j] == '0' ? 0 : 1;
 			}
 
 			// return new matrix
-			return AdjacencyMatrixT{ rows };
+			return AdjacencyMatrixT(entries);
 		}
 
 		// return AB block
 		constexpr ABBlockT AB() const
 		{
-			return ABImpl(std::make_index_sequence<size_A>{});
+			return ABImpl(std::make_index_sequence<k_sys>{});
 		}
 
 	private:
-		template<size_t... Idx>
-		constexpr ABBlockT ABImpl(const std::index_sequence<Idx...>) const
+		template<size_t... IdxRow>
+		constexpr ABBlockT ABImpl(const std::index_sequence<IdxRow...>) const
 		{
-			std::array<typename ABBlockT::RowVectorT, size_A> rows;
-			((
-				rows[Idx] = static_cast<typename ABBlockT::RowVectorT>((*this).rows[Idx].vec >> size_A)
-			), ...);
-			return ABBlockT{ rows };
+			static_assert(sizeof...(IdxRow) == k_sys);
+
+			// extract subblock from (k_sys, 0) to but not including (k_sys+k_env, k_sys)
+			// this works since IdxRow runs from 0...k_sys-1, and IdxCol runs from 0...k_env
+			const auto rows = this->rows;
+			std::array<ABBlockT::RowVectorT, k_sys> new_rows{ ABBlockT::RowVectorT(rows[IdxRow].vec >> k_sys) ...};
+			return ABBlockT(new_rows);
 		}
 	};
 }

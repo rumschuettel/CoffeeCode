@@ -47,23 +47,12 @@ int FullSolver()
 	// could overflow the type, hence we put the break condition at end
 	for (SubsetT subsetX = 0; ; subsetX++) {
 		for (SubsetT subsetY = 0; ; subsetY++) {
-			// we explicitly allow downcasting, so no {} as initializer; in fact the compiler complains if we do.
-			// note that the types match, though, as subsetX is of type VectorT::StoreT, and the bit operations
-			// keep it within the allowed range.
-			const auto XwoY = VectorT(subsetX & ~subsetY);
-			const auto YwoX = VectorT(subsetY & ~subsetX);
-			const auto XnY = VectorT(subsetX & subsetY);
-
-			const Monomial::ExponentT u1 = static_cast<Monomial::ExponentT>(XwoY.popcount());
-			const Monomial::ExponentT u2 = static_cast<Monomial::ExponentT>(YwoX.popcount());
-			const Monomial::ExponentT u3 = static_cast<Monomial::ExponentT>(XnY.popcount());
-
-			const SubsetT Uidx = (M * (XwoY + YwoX) + (YwoX + XnY)).vec;
+			const auto [ u1, u2, u3, Uidx ] = ChannelAction(subsetX, subsetY, M);
 			const SubsetT UAidx = Uidx & Bitmask1s<k_sys>::mask;
 
 			// add monomials
 			assert(u1 + u2 + u3 < max_exponent);
-			const Monomial::ExponentT p_exponent = u1 + u2 + u3;
+			const Monomial<>::ExponentT p_exponent = u1 + u2 + u3;
 			lambda[Uidx].Add(p_exponent);
 			lambda_pre[UAidx].Add(p_exponent);
 

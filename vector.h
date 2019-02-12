@@ -6,6 +6,7 @@
 #include <cctype>
 #include <iostream>
 #include <algorithm>
+#include <tuple>
 
 namespace CoffeeCode {
 
@@ -29,6 +30,18 @@ namespace CoffeeCode {
 		constexpr Vector(const StoreT vec) : vec{ vec } {};
 		constexpr Vector(const Vector& c) = default;
 
+	private:
+		template<size_t... Idx>
+		constexpr Vector(const std::array<BitT, Width>& entries, std::index_sequence<Idx...>)
+			: vec( ((static_cast<StoreT>(entries[Idx]) << Idx) ^ ... ^ 0) )
+		{
+		}
+	public:
+		constexpr Vector(const std::array<BitT, Width>& entries)
+			: Vector(entries, std::make_index_sequence<Width>{})
+		{
+		}
+
 		// get number of 1s
 		inline size_t popcount() const {
 			return static_cast<size_t>(__popcount(vec));
@@ -51,7 +64,7 @@ namespace CoffeeCode {
 		}
 
 		// bit access
-		inline BitT operator[](size_t index) const {
+		constexpr inline BitT operator[](size_t index) const {
 			return !!(vec & (BitT{ 1 } << index));
 		}
 

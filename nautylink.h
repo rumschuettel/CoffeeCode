@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/container_hash/hash.hpp>
 
 namespace CoffeeCode::NautyLink {
 	#if MAXN != (K_SYS+K_ENV)
@@ -44,6 +45,7 @@ namespace CoffeeCode::NautyLink {
 	template<typename MatrixT>
 	class NautyLink {
 		graph G[K_TOT*K_TOT_SETWORDS];
+		decltype(G) G_canon;
 		int lab[K_TOT];
 		int ptn[K_TOT];
 		int orbits[K_TOT];
@@ -51,18 +53,25 @@ namespace CoffeeCode::NautyLink {
 
 		enum Color {
 			// 4 colors at most since our Us have at most 4 different states per vertex
-			C0 = 0,
-			C1 = 1,
-			C2 = 2,
-			C3 = 3,
+			C0 = 0b00,
+			C1 = 0b01,
+			C2 = 0b10,
+			C3 = 0b11,
 
-			ENVIRONMENT_COLOR = 4,
+			ENVIRONMENT_COLOR = 0b100,
 
-			COLOR_COUNT = 5
+			// we xor the environment color on top
+			E0 = C0 | ENVIRONMENT_COLOR,
+			E1 = C1 | ENVIRONMENT_COLOR,
+			E2 = C2 | ENVIRONMENT_COLOR,
+			E3 = C3 | ENVIRONMENT_COLOR,
+
+			COLOR_COUNT = 8
 		};
 		using ColoringT = std::array<Color, K_TOT>;
-		template<typename T>
-		using PartialColoringT = std::array<T, K_SYS>;
+		// colorings where environment is not yet specified
+		using PartialColoringT = StdTupleStoreT<4, K_SYS>;
+		using ColoringRawT = typename MatrixT::RowVectorT::StoreT;
 
 	public:
 		NautyLink(const MatrixT& M) :
@@ -101,26 +110,92 @@ namespace CoffeeCode::NautyLink {
 			__grouporder = 1;
 			options.userlevelproc = UserLevelProc;
 			options.defaultptn = false;
-			options.writeautoms = false;
 
 			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, NULL);
 
 			return __grouporder;
 		}
 
-		template<typename T>
-		void SetColoring(const PartialColoringT<T>& partial)
+		struct CanonicalImageT {
+			CanonicalImageT(const decltype(G_canon)& in, const ColoringT& coloring)
+				: vertexColorCounts{ 0 }
+			{
+				std::copy(std::begin(in), std::end(in), std::begin(G));
+				Color c{ C0 };
+				for (const auto c : coloring)
+					vertexColorCounts[c]++;
+			}
+			// stores canonical image
+			decltype(G) G;
+			// stores number of colors in coloring
+			StdTupleStoreT<K_TOT, COLOR_COUNT> vertexColorCounts;
+
+			// hash for this type
+			struct Hash {
+				std::size_t operator()(CanonicalImageT const& image) const noexcept
+				{
+					std::size_t h = boost::hash_range(std::begin(image.G), std::end(image.G));
+					std::size_t h2 = boost::hash_range(std::begin(image.vertexColorCounts), std::end(image.vertexColorCounts));
+					boost::hash_combine(h, h2);
+					return h;
+				}
+			};
+			// comparison for this type
+			bool operator==(const CanonicalImageT& rhs) const
+			{
+				return (vertexColorCounts == rhs.vertexColorCounts) && std::equal(std::begin(G), std::end(G), std::begin(rhs.G));
+			}
+		};
+
+
+		// reorders to get canonical image of the partial coloring given
+		// also returns the group order
+		auto CanonicalColoring(const ColoringRawT raw_coloring)
 		{
-			// set default coloring such that environment qubits have ID 2
+			const auto coloring = SetColoring(raw_coloring);
+
+			// default options
+			static DEFAULTOPTIONS_GRAPH(options);
+			__grouporder = 1;
+			options.userlevelproc = UserLevelProc;
+			options.defaultptn = false;
+			options.getcanon = true;
+
+			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, G_canon);
+
+			// rely on return value optimization
+			CanonicalImageT out(G_canon, coloring);
+			return std::make_tuple(out, __grouporder);
+		}
+
+		auto SetColoring(const ColoringRawT partial)
+		{
+			ColoringT coloring;
+			for (size_t i = 0; i < K_TOT; i++) {
+				// careful: coloring[0] is the first vertex, but partial & 0b10000... is as well
+				const size_t bit_idx = K_TOT - i - 1;
+				coloring[i] = static_cast<Color>((partial & (0b01 << bit_idx)) >> bit_idx);
+			}
+			// mark environment colors
+			for (size_t i = K_SYS; i < K_TOT; i++)
+				coloring[i] = static_cast<Color>(coloring[i] | ENVIRONMENT_COLOR);
+			return SetColoring(coloring);
+		}
+
+		// set coloring given as an array for all system vertices, by converting to internal color type
+		auto SetColoring(const PartialColoringT partial)
+		{
+            // set default coloring such that environment qubits have an extra flagged color
 			ColoringT coloring;
 			for (size_t i = 0; i < K_SYS; i++)
 				coloring[i] = static_cast<Color>(partial[i]);
 			for (size_t i = K_SYS; i < K_TOT; i++)
 				coloring[i] = ENVIRONMENT_COLOR;
-			SetColoring(coloring);
+			return SetColoring(coloring);
 		}
 
-		void SetColoring(const ColoringT& coloring)
+		// set coloring given as a full array
+		auto SetColoring(const ColoringT& coloring)
 		{
 			using LabEntryT = int;
 
@@ -141,17 +216,21 @@ namespace CoffeeCode::NautyLink {
 			for (size_t i = 0; i < lab_bucket.size(); i++) {
 				std::copy_n(lab_bucket[i].begin(), bucket_idx[i], lab + lab_idx);
 				lab_idx += bucket_idx[i];
-
-				// accumulate bucket indices
-				bucket_idx[i] = lab_idx;
 			}
-
 
 			// mark boundaries on ptn vector
 			for (size_t i = 0; i < coloring.size(); i++)
 				ptn[i] = 1;
-			for (size_t i = 0; i < COLOR_COUNT; i++)
-				ptn[bucket_idx[i]-1] = 0;
+			size_t bucket_idx_acc{ 0 };
+			for (size_t i = 0; i < COLOR_COUNT; i++) {
+				if (bucket_idx[i] == 0) continue;
+
+				bucket_idx_acc += bucket_idx[i];
+				ptn[bucket_idx_acc - 1] = 0;
+			}
+
+			// return for future use
+			return coloring;
 		}
 	};
 }

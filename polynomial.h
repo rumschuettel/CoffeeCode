@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+// TODO: implement sparse polynomial with larger coefficients
 
 // monomial
 template<typename _CoefficientT = uint32_t, typename _ExponentT = uint8_t>
@@ -18,9 +19,9 @@ struct Polynomial {
 
 	Polynomial() = default; // zero-initializes coefficients
 
-	void Add(const Monomial<>::ExponentT exponent) {
+	void Add(const Monomial<>::ExponentT exponent, const Monomial<>::CoefficientT coefficient = 1) {
 		assert(exponent < max_exponent);
-		coefficients[exponent] ++;
+		coefficients[exponent] += coefficient;
 	}
 	void Add(const Polynomial& other) {
 		for (size_t i = 0; i < max_exponent; i++) {

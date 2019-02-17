@@ -171,11 +171,10 @@ namespace CoffeeCode::NautyLink {
 		auto SetColoring(const ColoringRawT partial)
 		{
 			ColoringT coloring;
-			for (size_t i = 0; i < K_TOT; i++) {
-				// careful: coloring[0] is the first vertex, but partial & 0b10000... is as well
-				const size_t bit_idx = K_TOT - i - 1;
-				coloring[i] = static_cast<Color>((partial & (0b01 << bit_idx)) >> bit_idx);
-			}
+			// careful: coloring[0] is the first vertex, which corresponds to the rightmost bit of the partial
+			for (size_t i = 0; i < K_TOT; i++) 
+				coloring[i] = static_cast<Color>((partial & (0b01 << i)) >> i);
+
 			// mark environment colors
 			for (size_t i = K_SYS; i < K_TOT; i++)
 				coloring[i] = static_cast<Color>(coloring[i] | ENVIRONMENT_COLOR);

@@ -3,8 +3,6 @@
 #include <unordered_map>
 #include <chrono>
 #include <bitset>
-#include <map>
-#include <set>
 
 namespace CoffeeCode {
 	// extract compile time parameters
@@ -88,8 +86,6 @@ int SymmetricSolver() {
 	>;
 	LambdaT lambda;
 
-	std::map<size_t, std::set<size_t>> debug;
-
 	size_t counter = 0;
 	for (const auto& tuple : instance::sgs::TupleCosets<4>()) {
 		counter++;
@@ -99,18 +95,16 @@ int SymmetricSolver() {
 		const auto orbitSize4 = fullGroupOrder / nauty.GroupOrder();
 
 		// get low and high bit from tuples
+		// note that SubsetT is such that the i'th index equals a bit shit i to the left
 		SubsetT subsetX{ 0 }, subsetY{ 0 };
 		for (size_t i = 0; i < instance::k_sys; i++) {
 			subsetX |= static_cast<SubsetT>(tuple[i] & 0b01) << i;
-			subsetY |= static_cast<SubsetT>(tuple[i] & 0b10) << (i - 1); // -1 because stored one bit up anyhow
+			subsetY |= (static_cast<SubsetT>(tuple[i] & 0b10) >> 1) << i; // -1 because stored one bit up anyhow
 		}
-		// pad environment vertices on right
-		subsetX <<= instance::k_env;
-		subsetY <<= instance::k_env;
 
 		// apply channel and get canonical image
 		const auto term = ChannelAction(subsetX, subsetY, instance::M);
-		const auto[UidxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(term.Uidx);
+		const auto[UIdxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(term.Uidx);
 		// multiplicity of resulting base 2 tuple
  		const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
 
@@ -118,45 +112,32 @@ int SymmetricSolver() {
 		const ExponentT p_exponent = term.u1 + term.u2 + term.u3;
 		assert(p_exponent < max_exponent);
 		const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
-		auto& [poly, mult, original_Uidx] = lambda[UidxCanonical];
+		auto& [poly, mult, original_UIdx] = lambda[UIdxCanonical];
 		poly.Add(p_exponent, coeff);
 		mult = orbitSize2; // mult is, by construction, always identical for identical UidxCanonical
-		original_Uidx = term.Uidx; // we store one representative, it doesn't matter which one
-
-		print(tuple);
-		auto hashF = decltype(nauty)::CanonicalImageT::Hash{};
-		std::cout << std::bitset<4>(term.Uidx) << " " << (hashF(UidxCanonical)%1000) << "\n";
-
-		debug[hashF(UidxCanonical)].insert(term.Uidx);
+		original_UIdx = term.Uidx; // we store one representative, it doesn't matter which one
 	}
 
-	for (auto idx : debug) {
-		std::cout << (idx.first % 1000) << "\n";
-		for (auto el : idx.second)
-			std::cout << std::bitset<4>(el) << "\n";
-		std::cout << "\n";
-	}
 
 	// PARTIAL TRACE
 	using SubsetBT = decltype(instance::MAB)::RowVectorT::StoreT;
 	using SubsetAT = decltype(instance::MAB)::ColumnVectorT::StoreT;
-	using LambdaAT = std::unordered_map<
-		SubsetT,
-		std::tuple<Polynomial<max_exponent>, size_t>
-	>;
-	LambdaAT lambda_a;
+	LambdaT lambda_a;
 
 	for (const auto& l : lambda) {
-		const auto& [poly, mult, original_Uidx] = l.second;
+		const auto& [poly, mult, original_UIdx] = l.second;
 		// extract system bits
-		const auto subsetA = static_cast<SubsetAT>((original_Uidx >> instance::k_env) & Bitmask1s<instance::k_sys>::mask);
+		const auto subsetA = static_cast<SubsetAT>((original_UIdx) & Bitmask1s<instance::k_sys>::mask);
 
 		// this inner loop is as in CCFull with the break condition at the end to avoid overflows
 		for (SubsetBT subsetB = 0; ; subsetB++) {
-			const auto Ulookup = (instance::MAB * subsetB + subsetA).vec;
+			// subset, padded
+			const auto UaIdx = static_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
 
-			// TODO: canonicalize Ulookup
-			auto& [poly_a, mult_a] = lambda_a[Ulookup];
+			// TODO: canonicalize Ulookup is a hack for now since we don't have the previously-canonicalized tuple at hand
+			// we don't need to do this once we have said tuple
+			const auto[UaIdxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(UaIdx);
+			auto& [poly_a, mult_a, _] = lambda_a[UaIdxCanonical];
 			poly_a.Add(poly);
 			mult_a = mult;
 
@@ -164,10 +145,30 @@ int SymmetricSolver() {
 		}
 	}
 
-
+	// EXPORT AS JSON
+	// some statistics
+	std::cout << "{\ntuples: " << counter << ",\ntime: ";
 	auto end = std::chrono::steady_clock::now();
-	std::cout << "\ncounted " << counter << " tuples.\n";
-	std::cout << std::chrono::duration <double, std::milli> (end-start).count() << " ms\n\n";
+	std::cout << std::chrono::duration <double, std::milli> (end-start).count() << ",\n";
+
+	// lambda
+	auto print_lambda = [&](auto lambda) -> void {
+		size_t i = lambda.size();
+		for (const auto& l : lambda) {
+			const auto&[poly, mult, _] = l.second;
+			std::cout << "[" << mult << ", [" << poly << "]]";
+			if (--i) std::cout << ",";
+			std::cout << " // " << std::bitset<4>(_);
+			std::cout << "\n";
+		}
+	};
+	std::cout << "lambda: [\n";
+	print_lambda(lambda);
+	std::wcout << "],\n";
+	// lambda_a
+	std::cout << "lambda_a: [\n";
+	print_lambda(lambda_a);
+	std::cout << "]\n}";
 
 	return RET_OK;
 }

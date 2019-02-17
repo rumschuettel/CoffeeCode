@@ -48,7 +48,7 @@ int FullSolver()
 	for (SubsetT subsetX = 0; ; subsetX++) {
 		for (SubsetT subsetY = 0; ; subsetY++) {
 			const auto [ u1, u2, u3, Uidx ] = ChannelAction(subsetX, subsetY, M);
-			// TODO this might be a bug. Don't we need to have UAidx = Uidx >> k_env & ...?
+			// extract system vertices; they're stored rightmost
 			const SubsetT UAidx = Uidx & Bitmask1s<k_sys>::mask;
 
 			// add monomials

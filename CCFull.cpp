@@ -6,14 +6,6 @@ using std::cout;
 using std::endl;
 
 
-#ifndef K_SYS
-#error "need to specify -DK_SYS=number of system qubits"
-#endif
-
-#ifndef K_ENV
-#error "need to specify -DK_ENV=number of environment qubits"
-#endif
-
 namespace {
 	enum ReturnValue {
 		RET_OK = 0,

@@ -4,6 +4,16 @@
 #include "matrix.h"
 #include "polynomial.h"
 
+
+#ifndef K_SYS
+#error "need to specify -DK_SYS=number of system qubits"
+#endif
+
+#ifndef K_ENV
+#error "need to specify -DK_ENV=number of environment qubits"
+#endif
+
+
 template<typename IndexT>
 struct MonomialAndIndex {
 	Monomial<>::ExponentT u1, u2, u3;

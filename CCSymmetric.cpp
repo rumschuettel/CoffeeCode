@@ -9,8 +9,8 @@ namespace CoffeeCode {
 	template<typename T>
 	struct SymmetricInstance {
 		// parameters given
-		constexpr static size_t k_sys = T::k_sys;
-		constexpr static size_t k_env = T::k_env;
+		constexpr static size_t k_sys = K_SYS;
+		constexpr static size_t k_env = K_ENV;
 		constexpr static size_t k_tot = k_sys + k_env;
 		using sgs = typename T::sgs;
 		static_assert(T::sgs::Length == k_sys);
@@ -42,17 +42,7 @@ namespace {
 	template<size_t S>
 	using AdjacencyMatrixT = std::array<std::array<CoffeeCode::StdBitT, S>, S>;
 
-	// this is a compile-time problem instance
-	struct graphstate_instance {
-		using sgs = SGSTransversal<
-			SGSGenerator<1, Group<
-			Permutation<2, 1, 0>
-			>>
-			>;
-		constexpr static size_t k_sys = 3, k_env = 1;
-		constexpr static AdjacencyMatrixT<4> adjacency_matrix{ {{0, 1, 0, 0}, {1, 0, 1, 1}, {0, 1, 0, 0}, {0, 1, 0, 0}} };
-	};
-
+	#include "cc-instance.h"
 
 	using instance = CoffeeCode::SymmetricInstance<graphstate_instance>;
 }

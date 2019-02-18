@@ -8,16 +8,17 @@
 
 namespace CoffeeCode {
 	// binary matrix class
-	template<size_t row_count, size_t column_count>
+	template<size_t _row_count, size_t _column_count>
 	struct Matrix {
+		constexpr static size_t row_count = _row_count;
+		constexpr static size_t column_count = _column_count;
+
 		using RowVectorT = Vector<column_count>;
 		using ColumnVectorT = Vector<row_count>;
 		using BitT = typename RowVectorT::BitT;
 
 		std::array<RowVectorT, row_count> rows;
 
-		constexpr static size_t row_count = row_count;
-		constexpr static size_t column_count = column_count;
 
 		// uninitialized matrix
 		Matrix() = delete;
@@ -60,8 +61,11 @@ namespace CoffeeCode {
 
 
 	// adjacency matrix class
-	template<size_t k_sys, size_t k_env>
-	struct AdjacencyMatrix : public Matrix<k_sys + k_env, k_sys + k_env> {
+	template<size_t _k_sys, size_t _k_env>
+	struct AdjacencyMatrix : public Matrix<_k_sys + _k_env, _k_sys + _k_env> {
+		constexpr static auto k_sys = _k_sys;
+		constexpr static auto k_env = _k_env;
+
 		using BaseT = Matrix<k_sys + k_env, k_sys + k_env>;
 		using BitT = typename BaseT::BitT;
 		using BaseT::Matrix;
@@ -70,8 +74,6 @@ namespace CoffeeCode {
 
 		using BaseT::row_count;
 		using BaseT::column_count;
-		constexpr static auto k_sys = k_sys;
-		constexpr static auto k_env = k_env;
 		using typename BaseT::RowVectorT;
 
 		// initialize from string; clean out whitespace
@@ -108,7 +110,7 @@ namespace CoffeeCode {
 			// extract subblock from (k_sys, 0) to but not including (k_sys+k_env, k_sys)
 			// this works since IdxRow runs from 0...k_sys-1, and IdxCol runs from 0...k_env
 			const auto rows = this->rows;
-			std::array<ABBlockT::RowVectorT, k_sys> new_rows{ ABBlockT::RowVectorT(rows[IdxRow].vec >> k_sys) ...};
+			std::array<typename ABBlockT::RowVectorT, k_sys> new_rows{ typename ABBlockT::RowVectorT(rows[IdxRow].vec >> k_sys) ...};
 			return ABBlockT(new_rows);
 		}
 	};

@@ -35,7 +35,6 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT XwoY, const
 template<typename MatrixT>
 inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, const typename MatrixT::RowVectorT::StoreT subsetY, const MatrixT& M)
 {
-	using VectorT = typename MatrixT::RowVectorT;
 	// cast down explicitly
 	const auto XwoY = subsetX & ~subsetY;
 	const auto YwoX = subsetY & ~subsetX;

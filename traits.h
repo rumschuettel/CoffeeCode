@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 namespace {
 	// check that elements have same attribute
 	template <auto T, auto... Ts>

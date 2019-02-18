@@ -144,8 +144,8 @@ namespace CoffeeCode {
 			{}
 
 			using IteratorT = OrbitIterator<T>;
-			IteratorT begin() const { return IteratorT(tuple); }
-			const auto end() const { return IteratorT::Done(); }
+			auto begin() const { return IteratorT(tuple); }
+			const auto end() const { return typename IteratorT::Done{}; }
 		};
 
 		template<typename T>

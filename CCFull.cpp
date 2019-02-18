@@ -47,7 +47,7 @@ int FullSolver()
 	// could overflow the type, hence we put the break condition at end
 	for (SubsetT subsetX = 0; ; subsetX++) {
 		for (SubsetT subsetY = 0; ; subsetY++) {
-			const auto [ u1, u2, u3, Uidx ] = ChannelAction(subsetX, subsetY, M);
+			const auto& [ u1, u2, u3, Uidx ] = ChannelAction(subsetX, subsetY, M);
 			// extract system vertices; they're stored rightmost
 			const SubsetT UAidx = Uidx & Bitmask1s<k_sys>::mask;
 

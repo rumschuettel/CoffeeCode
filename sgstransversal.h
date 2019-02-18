@@ -6,10 +6,10 @@
 
 namespace CoffeeCode {
 	// compile time sgs generator
-	template <size_t Pivot, typename _Group>
+	template <size_t _Pivot, typename _Group>
 	struct SGSGenerator
 	{
-		constexpr static const size_t Pivot = Pivot;
+		constexpr static const size_t Pivot = _Pivot;
 		using GeneratingGroup = _Group;
 		static_assert(1 <= Pivot && Pivot <= GeneratingGroup::Length);
 	};
@@ -38,7 +38,7 @@ namespace CoffeeCode {
 
 		// tuple type that the SGS acts on
 		template<size_t Base>
-		using TupleT = StdStoreExT< log2(Base - 1), Length >;
+		using _TupleT = StdStoreExT<log2(Base - 1), Length>;
 
 		// orbit iterator
 		// this is a minimal implementation which satisfies the conditions
@@ -49,7 +49,7 @@ namespace CoffeeCode {
 		{
 		public:
 			using IteratorT = CosetIterator<Base>;
-			using TupleT = TupleT<Base>;
+			using TupleT = _TupleT<Base>;
 
 		private:
 			using TupleNonBaseIndexT = size_t;
@@ -161,7 +161,7 @@ namespace CoffeeCode {
 		struct OrbitIteratorProxy {
 			using IteratorT = CosetIterator<Base>;
 			IteratorT begin() const { return IteratorT(); }
-			const auto end() const { return IteratorT::Done(); }
+			const auto end() const { return typename IteratorT::Done{}; }
 		};
 
 		// range-based for loop iterator for tuples over Base
@@ -232,7 +232,7 @@ namespace CoffeeCode {
 
 	public:
 		template<size_t Base>
-		inline static bool IsCanonical(const TupleT<Base>& tuple)
+		inline static bool IsCanonical(const _TupleT<Base>& tuple)
 		{
 			return IsCanonicalImpl<Generators...>(tuple, { tuple });
 		}

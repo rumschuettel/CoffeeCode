@@ -97,13 +97,13 @@ namespace CoffeeCode::NautyLink {
 						ADDONEEDGE(G, i, j, K_TOT_SETWORDS);
 
 			// set default coloring such that environment qubits have ID 2
-			ColoringT coloring{ 0 };
+			ColoringT coloring{ C0 };
 			for (size_t i = K_SYS; i < K_TOT; i++)
 				coloring[i] = ENVIRONMENT_COLOR;
 			SetColoring(coloring);
 		}
 
-		auto GroupOrder()
+		auto inline GroupOrder()
 		{
 			// default options
 			static DEFAULTOPTIONS_GRAPH(options);
@@ -120,13 +120,12 @@ namespace CoffeeCode::NautyLink {
 			CanonicalImageT(const decltype(G_canon)& in, const ColoringT& coloring)
 				: vertexColorCounts{ 0 }
 			{
-				std::copy(std::begin(in), std::end(in), std::begin(G));
-				Color c{ C0 };
+				std::copy(std::begin(in), std::end(in), std::begin(G_canon));
 				for (const auto c : coloring)
 					vertexColorCounts[c]++;
 			}
 			// stores canonical image
-			decltype(G) G;
+			decltype(G) G_canon;
 			// stores number of colors in coloring
 			StdTupleStoreT<K_TOT, COLOR_COUNT> vertexColorCounts;
 
@@ -134,7 +133,7 @@ namespace CoffeeCode::NautyLink {
 			struct Hash {
 				std::size_t operator()(CanonicalImageT const& image) const noexcept
 				{
-					std::size_t h = boost::hash_range(std::begin(image.G), std::end(image.G));
+					std::size_t h = boost::hash_range(std::begin(image.G_canon), std::end(image.G_canon));
 					std::size_t h2 = boost::hash_range(std::begin(image.vertexColorCounts), std::end(image.vertexColorCounts));
 					boost::hash_combine(h, h2);
 					return h;
@@ -143,14 +142,14 @@ namespace CoffeeCode::NautyLink {
 			// comparison for this type
 			bool operator==(const CanonicalImageT& rhs) const
 			{
-				return (vertexColorCounts == rhs.vertexColorCounts) && std::equal(std::begin(G), std::end(G), std::begin(rhs.G));
+				return (vertexColorCounts == rhs.vertexColorCounts) && std::equal(std::begin(G_canon), std::end(G_canon), std::begin(rhs.G_canon));
 			}
 		};
 
 
 		// reorders to get canonical image of the partial coloring given
 		// also returns the group order
-		auto CanonicalColoring(const ColoringRawT raw_coloring)
+		auto inline CanonicalColoring(const ColoringRawT raw_coloring)
 		{
 			const auto coloring = SetColoring(raw_coloring);
 
@@ -168,7 +167,7 @@ namespace CoffeeCode::NautyLink {
 			return std::make_tuple(out, __grouporder);
 		}
 
-		auto SetColoring(const ColoringRawT partial)
+		auto inline SetColoring(const ColoringRawT partial)
 		{
 			ColoringT coloring;
 			// careful: coloring[0] is the first vertex, which corresponds to the rightmost bit of the partial
@@ -182,7 +181,7 @@ namespace CoffeeCode::NautyLink {
 		}
 
 		// set coloring given as an array for all system vertices, by converting to internal color type
-		auto SetColoring(const PartialColoringT partial)
+		auto inline SetColoring(const PartialColoringT partial)
 		{
             // set default coloring such that environment qubits have an extra flagged color
 			ColoringT coloring;
@@ -194,7 +193,7 @@ namespace CoffeeCode::NautyLink {
 		}
 
 		// set coloring given as a full array
-		auto SetColoring(const ColoringT& coloring)
+		auto inline SetColoring(const ColoringT& coloring)
 		{
 			using LabEntryT = int;
 

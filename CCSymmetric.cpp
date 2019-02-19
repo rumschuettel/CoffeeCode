@@ -55,8 +55,8 @@ int SymmetricSolver() {
 	using VectorT = typename instance::RowVectorT;
 	using SubsetT = typename VectorT::StoreT;
 
-	using ExponentT = typename Monomial<>::ExponentT;
-	using CoefficientT = typename Monomial<>::CoefficientT;
+	using ExponentT = typename CoffeeCode::Monomial::ExponentT;
+	using CoefficientT = typename CoffeeCode::Monomial::CoefficientT;
 
 	constexpr auto max_exponent = instance::k_tot;
 
@@ -71,7 +71,11 @@ int SymmetricSolver() {
 	// TODO: replace with https://github.com/greg7mdp/sparsepp
 	using LambdaT = std::unordered_map<
 		decltype(nauty)::CanonicalImageT,
-		std::tuple<Polynomial<max_exponent>, size_t, SubsetT>,
+		std::tuple<
+			CoffeeCode::Polynomial<max_exponent>,
+			CoffeeCode::NautyLink::OrbitSizeT,
+			SubsetT
+		>,
 		decltype(nauty)::CanonicalImageT::Hash
 	>;
 	LambdaT lambda;
@@ -82,14 +86,18 @@ int SymmetricSolver() {
 
 		// calculate multiplicity of base 4 tuple
 		nauty.SetColoring(tuple);
-		const auto orbitSize4 = fullGroupOrder / nauty.GroupOrder();
+		const auto stabGroupOrder4 = nauty.GroupOrder();
+		const auto orbitSize4 = fullGroupOrder / stabGroupOrder4;
 
 		// get low and high bit from tuples
 		// note that SubsetT is such that the i'th index equals a bit shit i to the left
 		SubsetT subsetX{ 0 }, subsetY{ 0 };
 		for (size_t i = 0; i < instance::k_sys; i++) {
-			subsetX |= static_cast<SubsetT>(tuple[i] & 0b01) << i;
-			subsetY |= (static_cast<SubsetT>(tuple[i] & 0b10) >> 1) << i; // -1 because stored one bit up anyhow
+			const auto low_bit = tuple[i] & 0b01;
+			const auto high_bit = (tuple[i] & 0b10) >> 1;
+
+			CoffeeCode::OrBit(subsetX, !!low_bit, i);
+			CoffeeCode::OrBit(subsetY, !!high_bit, i);
 		}
 
 		// apply channel and get canonical image
@@ -117,7 +125,7 @@ int SymmetricSolver() {
 	for (const auto& l : lambda) {
 		const auto& [poly, mult, original_UIdx] = l.second;
 		// extract system bits
-		const auto subsetA = static_cast<SubsetAT>((original_UIdx) & Bitmask1s<instance::k_sys>::mask);
+		const auto subsetA = static_cast<SubsetAT>(original_UIdx & CoffeeCode::Bitmask<SubsetAT, instance::k_sys>::mask0111);
 
 		// this inner loop is as in CCFull with the break condition at the end to avoid overflows
 		for (SubsetBT subsetB = 0; ; subsetB++) {
@@ -131,7 +139,7 @@ int SymmetricSolver() {
 			poly_a.Add(poly);
 			mult_a = mult;
 
-			if (subsetB == BaseKSubsets<2, instance::k_env>::count - 1) break;
+			if (subsetB == CoffeeCode::BaseKSubsets<2, instance::k_env>::count - 1) break;
 		}
 	}
 

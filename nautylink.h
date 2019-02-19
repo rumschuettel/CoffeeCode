@@ -1,7 +1,11 @@
 #pragma once
 
+#include "ctmath.h"
+#include "types.h"
+
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 namespace CoffeeCode::NautyLink {
 	#if MAXN != (K_SYS+K_ENV)
@@ -19,18 +23,33 @@ namespace CoffeeCode::NautyLink {
 	// on windows, open nauty.h and set HAVE_UNISTD_H to 0
 	#include <nauty.h>
 
-	namespace {
-		// implementation details due to nauty interface
+	// implementation details for nauty interface
+	namespace ImplDetails {
+		// orbit sizes can be huge
+		// for K_SYS, maximum orbit size is K_SYS!
+		// meaning that maximum size of orbit has 2^n = K_SYS! bits.
+		// It thus suffices to have an integer of size n > log_2(K_SYS!) bits.
+		constexpr static size_t MAX_GROUP_ORBIT = CoffeeCode::ilog2factorial<K_SYS>();
+
+		using namespace boost::multiprecision;
+
+		using OrbitSizeT = number<cpp_int_backend<
+			MAX_GROUP_ORBIT,
+			MAX_GROUP_ORBIT,
+			unsigned_magnitude,
+			unchecked
+		>>;
 
 		// group order
 		// this is calling legacy C code so we allow a global variable
-		// TODO: exchange for a multiprecision integer since this number can be huge
-		size_t __grouporder;
-		void UserLevelProc(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)
+		OrbitSizeT __grouporder;
+		void UserLevelProc_GroupOrder(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)
 		{
-			__grouporder *= index;
+			__grouporder *= static_cast<unsigned int>(index);
 		}
 	}
+
+	using OrbitSizeT = ImplDetails::OrbitSizeT;
 
 
 	// make sure we picked right word size for nauty sets
@@ -107,13 +126,13 @@ namespace CoffeeCode::NautyLink {
 		{
 			// default options
 			static DEFAULTOPTIONS_GRAPH(options);
-			__grouporder = 1;
-			options.userlevelproc = UserLevelProc;
+			ImplDetails::__grouporder = 1;
+			options.userlevelproc = ImplDetails::UserLevelProc_GroupOrder;
 			options.defaultptn = false;
 
 			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, NULL);
 
-			return __grouporder;
+			return ImplDetails::__grouporder;
 		}
 
 		struct CanonicalImageT {
@@ -155,8 +174,8 @@ namespace CoffeeCode::NautyLink {
 
 			// default options
 			static DEFAULTOPTIONS_GRAPH(options);
-			__grouporder = 1;
-			options.userlevelproc = UserLevelProc;
+			ImplDetails::__grouporder = 1;
+			options.userlevelproc = ImplDetails::UserLevelProc_GroupOrder;
 			options.defaultptn = false;
 			options.getcanon = true;
 
@@ -164,7 +183,7 @@ namespace CoffeeCode::NautyLink {
 
 			// rely on return value optimization
 			CanonicalImageT out(G_canon, coloring);
-			return std::make_tuple(out, __grouporder);
+			return std::make_tuple(out, ImplDetails::__grouporder);
 		}
 
 		auto inline SetColoring(const ColoringRawT partial)

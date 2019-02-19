@@ -13,7 +13,7 @@ endif()
 set(CMAKE_CXX_COMPILER "/home/jkrb2/opt/anaconda5/envs/gcc8/bin/x86_64-conda_cos6-linux-gnu-g++" CACHE FILE "cxx compiler")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
-add_compile_options(-march=native -mtune=generic)
+add_compile_options(-march=native -mtune=generic -fmax-errors=5)
  
 ##### Build Targets
 ###################
@@ -56,7 +56,7 @@ target_compile_options(CoffeeCode
 
 if (SYMMETRIC_SOLVER)
     target_include_directories(CoffeeCode
-        PRIVATE
+        SYSTEM PRIVATE
             ${PATH_NAUTY}
             ${PATH_BOOST}
     )

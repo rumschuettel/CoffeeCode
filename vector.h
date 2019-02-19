@@ -33,13 +33,18 @@ namespace CoffeeCode {
 	private:
 		template<size_t... Idx>
 		constexpr Vector(const std::array<BitT, Width>& entries, std::index_sequence<Idx...>)
-			: vec( ((static_cast<StoreT>(entries[Idx]) << Idx) ^ ... ^ 0) )
+			: vec{static_cast<StoreT>( ((entries[Idx] << Idx) ^ ... ^ 0) )}
 		{
 		}
 	public:
 		constexpr Vector(const std::array<BitT, Width>& entries)
 			: Vector(entries, std::make_index_sequence<Width>{})
 		{
+		}
+
+		// implicit conversion to StoreT
+		inline explicit operator StoreT() const {
+			return vec;
 		}
 
 		// get number of 1s
@@ -60,7 +65,7 @@ namespace CoffeeCode {
 		// dot product
 		// pass by value
 		inline BitT operator*(const Vector rhs) const {
-			return __popcount(vec & rhs.vec) & BitT { 1 };
+			return static_cast<BitT>(__popcount(vec & rhs.vec)) & BitT{1};
 		}
 
 		// bit access

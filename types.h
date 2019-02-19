@@ -1,10 +1,19 @@
 #pragma once
 
+#include "ctmath.h"
+
 //#include "src/vectorclass/vectorclass.h"
+
+#include <boost/multiprecision/cpp_int.hpp>
+
+
 #include <type_traits>
 #include <array>
 
+
 namespace CoffeeCode {
+	// TODO: better integer type that can save at least Width number of bits
+
 
 	// automatic selection of smallest-possible integer
 	template<bool raise = true>
@@ -12,7 +21,7 @@ namespace CoffeeCode {
 		static_assert(raise, "not enough bits");
 	};
 
-	// for storing length bits
+	// for storing Width number of bits
 	template<size_t Width>
 	using StdStoreT = typename std::conditional <
 		Width <= 8,
@@ -32,12 +41,10 @@ namespace CoffeeCode {
 	using StdBitT = StdStoreT<1>;
 
 
-
-	// compile-time log2
-	constexpr size_t log2(const size_t n)
+	template<typename StoreT>
+	inline void OrBit(StoreT& s, const bool bit, const size_t i)
 	{
-		if (n == 0) throw "log2(0) undefined";
-		return ((n < 2) ? 1 : 1 + log2(n / 2));
+		s |= static_cast<StoreT>(static_cast<StoreT>(bit) << i);
 	}
 
 	// tuple type

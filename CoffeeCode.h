@@ -16,7 +16,7 @@
 
 template<typename IndexT>
 struct MonomialAndIndex {
-	Monomial<>::ExponentT u1, u2, u3;
+	CoffeeCode::Monomial::ExponentT u1, u2, u3;
 	IndexT Uidx;
 };
 
@@ -24,7 +24,7 @@ template<typename MatrixT>
 inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT XwoY, const typename MatrixT::RowVectorT::StoreT YwoX, const typename MatrixT::RowVectorT::StoreT XnY, const MatrixT& M)
 {
 	using VectorT = typename MatrixT::RowVectorT;
-	using ExponentT = Monomial<>::ExponentT;
+	using ExponentT = CoffeeCode::Monomial::ExponentT;
 
 	const auto XwoYvec = VectorT(XwoY);
 	const auto YwoXvec = VectorT(YwoX);
@@ -45,10 +45,13 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT XwoY, const
 template<typename MatrixT>
 inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, const typename MatrixT::RowVectorT::StoreT subsetY, const MatrixT& M)
 {
-	// cast down explicitly
-	const auto XwoY = subsetX & ~subsetY;
-	const auto YwoX = subsetY & ~subsetX;
-	const auto XnY = subsetX & subsetY;
+	using StoreT = typename MatrixT::RowVectorT::StoreT;
+
+	// this does integer promotion if StoreT is smaller than int,
+	// so we implicitly cast back
+	const auto XwoY = static_cast<StoreT>(subsetX & ~subsetY);
+	const auto YwoX = static_cast<StoreT>(subsetY & ~subsetX);
+	const auto XnY = static_cast<StoreT>(subsetX & subsetY);
 
 	return ChannelAction(XwoY, YwoX, XnY, M);
 }

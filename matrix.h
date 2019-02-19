@@ -46,7 +46,7 @@ namespace CoffeeCode {
 			ColumnVectorT out;
 			size_t i = 0;
 			for (const auto row : rows)
-				out += typename ColumnVectorT::StoreT{ row * rhs } << i++;
+				out += static_cast<typename ColumnVectorT::StoreT>( (row * rhs) << i++);
 			return out;
 		}
 
@@ -107,10 +107,14 @@ namespace CoffeeCode {
 		{
 			static_assert(sizeof...(IdxRow) == k_sys);
 
+			using ABRowVectorT = typename ABBlockT::RowVectorT;
+
 			// extract subblock from (k_sys, 0) to but not including (k_sys+k_env, k_sys)
 			// this works since IdxRow runs from 0...k_sys-1, and IdxCol runs from 0...k_env
 			const auto rows = this->rows;
-			std::array<typename ABBlockT::RowVectorT, k_sys> new_rows{ typename ABBlockT::RowVectorT(rows[IdxRow].vec >> k_sys) ...};
+			std::array<ABRowVectorT, k_sys> new_rows{
+				ABRowVectorT(static_cast<typename ABRowVectorT::StoreT>(rows[IdxRow].vec >> k_sys)) ...
+			};
 			return ABBlockT(new_rows);
 		}
 	};

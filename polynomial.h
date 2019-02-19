@@ -43,9 +43,10 @@ namespace CoffeeCode {
 
 		// to string
 		friend std::ostream& operator<< (std::ostream& stream, const Polynomial<max_exponent>& poly) {
+			// exploit integer promotion for too-small types
 			for (size_t i = 0; i < max_exponent - 1; i++)
-				stream << poly.coefficients[i] << ", ";
-			stream << poly.coefficients[max_exponent - 1];
+				stream << +poly.coefficients[i] << ", ";
+			stream << +poly.coefficients[max_exponent - 1];
 			return stream;
 		}
 	};

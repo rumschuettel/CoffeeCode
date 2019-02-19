@@ -156,7 +156,6 @@ int SymmetricSolver() {
 			const auto&[poly, mult, _] = l.second;
 			std::cout << "[" << mult << ", [" << poly << "]]";
 			if (--i) std::cout << ",";
-			std::cout << " // " << std::bitset<4>(_);
 			std::cout << "\n";
 		}
 	};

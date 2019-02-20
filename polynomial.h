@@ -9,13 +9,13 @@
 
 namespace CoffeeCode {
 	// monomial type
-	// maximum exponent type is 3 * the size of the graph, so uint16_t should be plenty of room
+	// maximum exponent is 3 * the size of the graph, so uint16_t should be plenty of room
 	// maximum coefficient: the number of sets giving the same Uidx
 	//     can be upper-bounded by the number of sets overall, which is 4^{K_SYS + K_ENV}.
 	//     2 * K_TOT bits is thus a safe bet.
 	struct Monomial {
-		static constexpr size_t CoefficientWidth = 2* (K_SYS + K_ENV);
-		static constexpr size_t ExponentWidth = 3 * (K_SYS + K_ENV);
+		static constexpr size_t CoefficientWidth = 2 * (K_SYS + K_ENV);
+		static constexpr size_t ExponentWidth = log2(3 * (K_SYS + K_ENV));
 
 		using CoefficientT = StdStoreT<CoefficientWidth>;
 		using ExponentT = StdStoreT<ExponentWidth>;

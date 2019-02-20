@@ -13,7 +13,11 @@ namespace CoffeeCode {
 		constexpr static size_t k_env = K_ENV;
 		constexpr static size_t k_tot = k_sys + k_env;
 		using sgs = typename T::sgs;
+
+		// validate parameters
 		static_assert(T::sgs::Length == k_sys);
+		static_assert(T::adjacency_matrix.size() == k_tot);
+		static_assert(T::adjacency_matrix[0].size() == k_tot);
 
 		// adjacency matrix
 		using MatrixT = CoffeeCode::AdjacencyMatrix<k_sys, k_env>;

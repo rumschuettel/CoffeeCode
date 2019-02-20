@@ -2,10 +2,13 @@ cmake_minimum_required (VERSION 3.13)
 
 project (CoffeeCode)
 
-set(K_SYS 3 CACHE STRING "System vertices")
-set(K_ENV 1 CACHE STRING "Environment vertices")
-option (SYMMETRIC_SOLVER "Compile symmetric solver" ON)
+message(STATUS "Info: K_SYS and K_ENV have to be passed via command line to make, e.g. 'K_SYS=3 K_ENV=1 make'.")
+message(STATUS "      If not done, make will fail to build with a bunch of errors.")
+
+option(SYMMETRIC_SOLVER "Compile symmetric solver" ON)
+
 if (SYMMETRIC_SOLVER)
+    set(PATH_CUSTOM_CC_INSTANCE "/home/jkrb2/programming/CoffeeCode/build/release/cc-instance-custom.h" CACHE PATH "File for custom symmetric CC instance")
     set(PATH_NAUTY "/home/jkrb2/programming/libs/nauty27rc1/" CACHE PATH "Nauty 2.7 RC1 path")
     set(PATH_BOOST "/home/jkrb2/programming/libs/boost/boost_1_69_0/" CACHE PATH "Boost 1.69 path")
 endif()
@@ -35,7 +38,7 @@ if (SYMMETRIC_SOLVER)
     )
     target_compile_definitions(Nauty
         PRIVATE
-            "MAXN=(${K_SYS} + ${K_ENV})"
+            "MAXN=(\$\(K_SYS\)+\$\(K_ENV\))"
     )
 endif()
 
@@ -43,7 +46,9 @@ endif()
 ##### CoffeeCode
 ################
 add_executable(CoffeeCode "CoffeeCode.cpp")
-target_compile_definitions(CoffeeCode PRIVATE K_SYS=${K_SYS} K_ENV=${K_ENV})
+# $$K_SYS and $$K_ENV are processed from make from the environment,
+# and they HAVE to be set!
+target_compile_definitions(CoffeeCode PRIVATE K_SYS=\$\(K_SYS\) K_ENV=\$\(K_ENV\))
 target_compile_options(CoffeeCode
     PRIVATE
         -Wall
@@ -59,6 +64,8 @@ if (SYMMETRIC_SOLVER)
         SYSTEM PRIVATE
             ${PATH_NAUTY}
             ${PATH_BOOST}
+        PRIVATE
+            ${PROJECT_BINARY_DIR}
     )
     target_compile_definitions(CoffeeCode
         PRIVATE
@@ -72,9 +79,8 @@ if (SYMMETRIC_SOLVER)
     target_link_libraries(CoffeeCode Nauty)
 
     configure_file(
-        "${PROJECT_SOURCE_DIR}/cc-instance.h"
+        "${PROJECT_SOURCE_DIR}/cc-instance.h.in"
         "${PROJECT_BINARY_DIR}/cc-instance.h"
-        COPYONLY
     )
 else()
     target_sources(CoffeeCode PRIVATE "CCFull.cpp")

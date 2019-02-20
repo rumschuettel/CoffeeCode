@@ -1,4 +1,10 @@
+#if __has_include("@PATH_CUSTOM_CC_INSTANCE@")
+	#include "@PATH_CUSTOM_CC_INSTANCE@"
+#else
 // this is a compile-time problem instance as exported from Mathematica
+// either modify this directly, or set up file exported from Mathematica at
+// @PATH_CUSTOM_CC_INSTANCE@
+// which will be included automatically instead.
 struct graphstate_instance {
 	using sgs = SGSTransversal<
 		SGSGenerator<1, Group<
@@ -7,3 +13,4 @@ struct graphstate_instance {
 		>;
 	constexpr static AdjacencyMatrixT<4> adjacency_matrix{ {{0, 1, 0, 0}, {1, 0, 1, 1}, {0, 1, 0, 0}, {0, 1, 0, 0}} };
 };
+#endif

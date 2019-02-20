@@ -149,7 +149,7 @@ int SymmetricSolver() {
 
 	// EXPORT AS JSON
 	// some statistics
-	std::cout << "{\ntuples: " << counter << ",\ntime: ";
+	std::cout << "{\n\"tuples\": " << counter << ",\n\"time\": ";
 	auto end = std::chrono::steady_clock::now();
 	std::cout << std::chrono::duration <double, std::milli> (end-start).count() << ",\n";
 
@@ -163,13 +163,13 @@ int SymmetricSolver() {
 			std::cout << "\n";
 		}
 	};
-	std::cout << "lambda: [\n";
+	std::cout << "\"lambda\": [\n";
 	print_lambda(lambda);
 	std::wcout << "],\n";
 	// lambda_a
-	std::cout << "lambda_a: [\n";
+	std::cout << "\"lambda_a\": [\n";
 	print_lambda(lambda_a);
-	std::cout << "]\n}";
+	std::cout << "]\n}\n";
 
 	return RET_OK;
 }

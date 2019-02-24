@@ -33,6 +33,7 @@ namespace CoffeeCode {
 		using CoefficientT = Monomial::CoefficientT;
 		using ExponentT = Monomial::ExponentT;
 		static constexpr auto MaxExponent = Monomial::MaxExponent;
+		static constexpr auto MaxCoefficient = Monomial::MaxCoefficient;
 
 		CoefficientT coefficients[MaxExponent];
 
@@ -42,11 +43,12 @@ namespace CoffeeCode {
 			assert(exponent < MaxExponent);
 			coefficients[exponent] += coefficient;
 		}
-		void Add(const Polynomial& other) {
-			for (size_t i = 0; i < MaxExponent; i++) {
-				assert(coefficients[i] + other.coefficients[i] < MaxCoefficient);
-				coefficients[i] += other.coefficients[i];
-			}
+
+		// addition of polynomials
+		inline Polynomial& operator+=(const Polynomial& rhs) {
+			for (size_t i = 0; i < MaxExponent; i++)
+				coefficients[i] += rhs.coefficients[i];
+			return *this;
 		}
 
 		// to string

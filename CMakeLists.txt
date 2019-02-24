@@ -55,10 +55,8 @@ target_compile_options(CoffeeCode
         -Wextra
         -pedantic
         -pedantic-errors
-        "$<$<CONFIG:DEBUG>:
-            -Wconversion
-            -Wsign-conversion
-        >"
+        $<$<CONFIG:DEBUG>:-Wconversion>
+        $<$<CONFIG:DEBUG>:-Wsign-conversion>
 )
 
 if (SYMMETRIC_SOLVER)

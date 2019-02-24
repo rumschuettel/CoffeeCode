@@ -1,6 +1,7 @@
 #include "CoffeeCode.h"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <chrono>
 #include <bitset>
 
@@ -63,6 +64,8 @@ int SymmetricSolver() {
 	using CoefficientT = typename CoffeeCode::Monomial::CoefficientT;
 
 	auto nauty = CoffeeCode::NautyLink::NautyLink(instance::M);
+	using CanonicalImageT = decltype(nauty)::CanonicalImageT;
+
 	const auto fullGroupOrder = nauty.GroupOrder();
 
 	auto start = std::chrono::steady_clock::now();
@@ -72,15 +75,14 @@ int SymmetricSolver() {
 	// lambdas as hash maps
 	// TODO: replace with https://github.com/greg7mdp/sparsepp
 	using LambdaT = std::unordered_map<
-		decltype(nauty)::CanonicalImageT,
+		CanonicalImageT,
 		std::tuple<
 			CoffeeCode::Polynomial,
-			CoffeeCode::NautyLink::OrbitSizeT,
-			SubsetT
+			CoffeeCode::NautyLink::OrbitSizeT
 		>,
-		decltype(nauty)::CanonicalImageT::Hash
+		CanonicalImageT::Hash
 	>;
-	LambdaT lambda;
+	LambdaT lambda, lambda_pre;
 
 	size_t counter = 0;
 	for (const auto& tuple : instance::sgs::TupleCosets<4>()) {
@@ -102,22 +104,41 @@ int SymmetricSolver() {
 			CoffeeCode::OrBit(subsetY, !!high_bit, i);
 		}
 
-		// apply channel and get canonical image
+		// apply channel
 		const auto term = ChannelAction(subsetX, subsetY, instance::M);
-		const auto[UIdxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(term.Uidx);
-		// multiplicity of resulting base 2 tuple
- 		const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
-
-		// add monomials
-		// prevent integer conversion warning; we know the sum of the ui are smaller than
-		// max_exponent.
+		
+		// monomial exponents
 		const ExponentT p_exponent = term.uSum();
 
-		const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
-		auto& [poly, mult, original_UIdx] = lambda[UIdxCanonical];
-		poly.Add(p_exponent, coeff);
-		mult = orbitSize2; // mult is, by construction, always identical for identical UidxCanonical
-		original_UIdx = term.Uidx; // we store one representative, it doesn't matter which one
+		//// A: Add to lambda
+		{
+			// multiplicity of resulting base 2 tuple
+			const auto[UIdxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(term.Uidx);
+			const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
+			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
+
+			// accumulate polynomial with potentially pre-existing terms
+			// note that mult is equal for U123 that map to the same UIdxCanonical
+			auto& [poly, mult] = lambda[UIdxCanonical];
+			poly.Add(p_exponent, coeff);
+			mult = orbitSize2;
+		}
+
+		//// B: Add to lambda_pre
+		{
+			// we project out the environment for term.Uidx
+			const auto[UIdxCanonical_pre, stabGroupOrder2_pre] = nauty.CanonicalColoring(
+				term.Uidx & CoffeeCode::Bitmask<decltype(term.Uidx), instance::k_sys>::mask0111
+			);
+			const auto orbitSize2_pre = fullGroupOrder / stabGroupOrder2_pre;
+			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2_pre);
+
+			// accumulate polynomial with same terms as above
+			// multiplicity is 1
+			auto& [poly, mult] = lambda_pre[UIdxCanonical_pre];
+			poly.Add(p_exponent, coeff);
+			mult = orbitSize2_pre;
+		}
 	}
 
 
@@ -126,26 +147,34 @@ int SymmetricSolver() {
 	using SubsetAT = decltype(instance::MAB)::ColumnVectorT::StoreT;
 	LambdaT lambda_a;
 
-	for (const auto& l : lambda) {
-		const auto& [poly, mult, original_UIdx] = l.second;
-		// extract system bits
-		const auto subsetA = static_cast<SubsetAT>(original_UIdx & CoffeeCode::Bitmask<SubsetAT, instance::k_sys>::mask0111);
+	for (const auto& tuple : instance::sgs::TupleCosets<2>()) {
+		// TupleT to SubsetT and HashT because that one can be different
+		SubsetAT subsetA{ 0 };
+		for (size_t i = 0; i < instance::k_sys; i++) 
+			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
+		const auto [Akey, _] = nauty.CanonicalColoring(subsetA);
 
 		// this inner loop is as in CCFull with the break condition at the end to avoid overflows
 		for (SubsetBT subsetB = 0; ; subsetB++) {
-			// subset, padded
-			const auto UaIdx = static_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
+			// new key, subset in A but cast to full subset on entire graph
+			const auto BtoA = static_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
 
-			// TODO: canonicalize Ulookup is a hack for now since we don't have the previously-canonicalized tuple at hand
-			// we don't need to do this once we have said tuple
-			const auto[UaIdxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(UaIdx);
-			auto& [poly_a, mult_a, _] = lambda_a[UaIdxCanonical];
-			poly_a.Add(poly);
-			mult_a = mult;
+			// find canonical image for key
+			const auto [key, keyStabOrder] = nauty.CanonicalColoring(BtoA);
+			const auto keyMult = fullGroupOrder / keyStabOrder;
 
+			//// C: Add to lambda_a
+			const auto& [poly_pre, mult_pre] = lambda_pre[key];
+			auto& [poly_a, mult_a] = lambda_a[Akey];
+
+			assert(keyMult == mult_pre);  // must hold by definition
+			poly_a += poly_pre;
+			mult_a = keyMult;
+			
 			if (subsetB == CoffeeCode::BaseKSubsets<2, instance::k_env>::count - 1) break;
 		}
 	}
+
 
 	// EXPORT AS JSON
 	// some statistics
@@ -156,8 +185,8 @@ int SymmetricSolver() {
 	// lambda
 	auto print_lambda = [&](auto lambda) -> void {
 		size_t i = lambda.size();
-		for (const auto& l : lambda) {
-			const auto&[poly, mult, _] = l.second;
+		for (const auto& [key, value] : lambda) {
+			const auto& [poly, mult] = value;
 			std::cout << "[" << mult << ", [" << poly << "]]";
 			if (--i) std::cout << ",";
 			std::cout << "\n";

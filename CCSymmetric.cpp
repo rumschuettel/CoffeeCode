@@ -50,6 +50,20 @@ namespace {
 	#include "cc-instance.h"
 
 	using instance = CoffeeCode::SymmetricInstance<graphstate_instance>;
+
+		
+	// print helpers
+	template<typename LambdaT>
+	void PrintLambda(const LambdaT& lambda)
+	{
+		size_t i = lambda.size();
+		for (const auto& [key, value] : lambda) {
+			const auto& [poly, mult] = value;
+			std::cout << "[" << mult << ", [" << poly << "]]";
+			if (--i) std::cout << ",";
+			std::cout << "\n";
+		}
+	}
 }
 
 
@@ -183,21 +197,12 @@ int SymmetricSolver() {
 	std::cout << std::chrono::duration <double, std::milli> (end-start).count() << ",\n";
 
 	// lambda
-	auto print_lambda = [&](auto lambda) -> void {
-		size_t i = lambda.size();
-		for (const auto& [key, value] : lambda) {
-			const auto& [poly, mult] = value;
-			std::cout << "[" << mult << ", [" << poly << "]]";
-			if (--i) std::cout << ",";
-			std::cout << "\n";
-		}
-	};
 	std::cout << "\"lambda\": [\n";
-	print_lambda(lambda);
-	std::wcout << "],\n";
+	PrintLambda(lambda);
+	std::cout << "],\n";
 	// lambda_a
 	std::cout << "\"lambda_a\": [\n";
-	print_lambda(lambda_a);
+	PrintLambda(lambda_a);
 	std::cout << "]\n}\n";
 
 	return RET_OK;

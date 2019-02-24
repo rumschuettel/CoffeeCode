@@ -23,6 +23,7 @@ struct MonomialAndIndex {
 
 	ExponentT uSum() const
 	{
+		// the ui by definition sum up to something that fits within an ExponentT
 		return static_cast<ExponentT>(u1 + u2 + u3);
 	}
 };
@@ -46,7 +47,7 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT XwoY, const
 
 	return MonomialAndIndex<typename VectorT::StoreT>{
 		u1, u2, u3,
-			Uidx
+		Uidx
 	};
 }
 template<typename MatrixT>
@@ -62,3 +63,4 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, co
 
 	return ChannelAction(XwoY, YwoX, XnY, M);
 }
+

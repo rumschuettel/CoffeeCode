@@ -58,12 +58,15 @@ target_compile_options(CoffeeCode
         $<$<CONFIG:DEBUG>:-Wconversion>
         $<$<CONFIG:DEBUG>:-Wsign-conversion>
 )
+target_include_directories(CoffeeCode
+    SYSTEM PRIVATE
+        ${PATH_BOOST}
+)
 
 if (SYMMETRIC_SOLVER)
     target_include_directories(CoffeeCode
         SYSTEM PRIVATE
             ${PATH_NAUTY}
-            ${PATH_BOOST}
         PRIVATE
             ${PROJECT_BINARY_DIR}
     )

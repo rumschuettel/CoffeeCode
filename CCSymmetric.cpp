@@ -51,7 +51,26 @@ namespace {
 
 	using instance = CoffeeCode::SymmetricInstance<graphstate_instance>;
 
+
+	// map reduce for lambdas
+	// should match this format for use with CoffeeCode::PrintLambda
+	template<typename LambdaT>
+	auto ReduceLambda(const LambdaT& lambda)
+	{
+		// ugly, yeah...
+		using PolynomialT = typename LambdaT::value_type::second_type::first_type;
+		ReducedLambdaT<PolynomialT> out;
+
+		// aggregate
+		for (const auto& [key, value] : lambda) {
+			const auto& [poly, mult] = value;
+			assert(mult < PolynomialT::MaxCoefficient);
+			out[poly] += static_cast<typename PolynomialT::CoefficientT>(mult);
+		}
 		
+		return out;
+	}
+	
 	// print helpers
 	template<typename LambdaT>
 	void PrintLambda(const LambdaT& lambda)
@@ -59,7 +78,7 @@ namespace {
 		size_t i = lambda.size();
 		for (const auto& [key, value] : lambda) {
 			const auto& [poly, mult] = value;
-			std::cout << "[" << mult << ", [" << poly << "]]";
+			std::cout << "[" << +mult << ", [" << poly << "]]";
 			if (--i) std::cout << ",";
 			std::cout << "\n";
 		}
@@ -90,7 +109,7 @@ int SymmetricSolver() {
 	// TODO: replace with https://github.com/greg7mdp/sparsepp
 	using LambdaT = std::unordered_map<
 		CanonicalImageT,
-		std::tuple<
+		std::pair<
 			CoffeeCode::Polynomial,
 			CoffeeCode::NautyLink::OrbitSizeT
 		>,
@@ -198,11 +217,19 @@ int SymmetricSolver() {
 
 	// lambda
 	std::cout << "\"lambda\": [\n";
+#ifdef REDUCE_LAMBDA
+	PrintLambda(ReduceLambda(lambda));
+#else
 	PrintLambda(lambda);
+#endif
 	std::cout << "],\n";
 	// lambda_a
 	std::cout << "\"lambda_a\": [\n";
+#ifdef REDUCE_LAMBDA
+	PrintLambda(ReduceLambda(lambda_a));
+#else
 	PrintLambda(lambda_a);
+#endif
 	std::cout << "]\n}\n";
 
 	return RET_OK;

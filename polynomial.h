@@ -2,10 +2,10 @@
 
 #include "ctmath.h"
 
-
+#include <boost/container_hash/hash.hpp>
 
 #include <assert.h>
-	// TODO: implement sparse polynomial with larger coefficients
+// TODO: implement sparse polynomial with larger coefficients
 
 namespace CoffeeCode {
 	static constexpr size_t K_TOT = K_SYS + K_ENV;
@@ -58,6 +58,28 @@ namespace CoffeeCode {
 				stream << +poly.coefficients[i] << ", ";
 			stream << +poly.coefficients[MaxExponent - 1];
 			return stream;
+		}
+
+		// hash
+		struct Hash
+		{
+			inline std::size_t operator()(Polynomial const &poly) const noexcept
+			{
+				return boost::hash_range(
+					std::begin(poly.coefficients),
+					std::end(poly.coefficients)
+				);
+			}
+		};
+
+		// comparison for this type
+		bool operator==(const Polynomial& rhs) const
+		{
+			return std::equal(
+				std::begin(coefficients),
+				std::end(coefficients),
+				std::begin(rhs.coefficients)
+			);
 		}
 	};
 }

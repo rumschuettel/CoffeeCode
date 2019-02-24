@@ -6,6 +6,7 @@ message(STATUS "Info: K_SYS and K_ENV have to be passed via command line to make
 message(STATUS "      If not done, make will fail to build with a bunch of errors.")
 
 option(SYMMETRIC_SOLVER "Compile symmetric solver" ON)
+option(REDUCE_LAMBDA "Merge lambda and lambda_a before printing" ON)
 
 if (SYMMETRIC_SOLVER)
     set(PATH_CUSTOM_CC_INSTANCE "${PROJECT_BINARY_DIR}/cc-instance-custom.h" CACHE PATH "File for custom symmetric CC instance")
@@ -48,7 +49,15 @@ endif()
 add_executable(CoffeeCode "CoffeeCode.cpp")
 # $$K_SYS and $$K_ENV are processed from make from the environment,
 # and they HAVE to be set!
-target_compile_definitions(CoffeeCode PRIVATE K_SYS=\$\(K_SYS\) K_ENV=\$\(K_ENV\))
+target_compile_definitions(CoffeeCode
+    PRIVATE
+        K_SYS=\$\(K_SYS\)
+        K_ENV=\$\(K_ENV\)
+)
+if (REDUCE_LAMBDA)
+    target_compile_definitions(CoffeeCode PRIVATE REDUCE_LAMBDA)
+endif()
+
 target_compile_options(CoffeeCode
     PRIVATE
         -Wall

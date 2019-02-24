@@ -151,7 +151,7 @@ namespace CoffeeCode::NautyLink {
 
 			// hash for this type
 			struct Hash {
-				std::size_t operator()(CanonicalImageT const& image) const noexcept
+				inline std::size_t operator()(CanonicalImageT const& image) const noexcept
 				{
 					std::size_t h = boost::hash_range(std::begin(image.G_canon), std::end(image.G_canon));
 					std::size_t h2 = boost::hash_range(std::begin(image.vertexColorCounts), std::end(image.vertexColorCounts));

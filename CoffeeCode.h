@@ -64,3 +64,21 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, co
 	return ChannelAction(XwoY, YwoX, XnY, M);
 }
 
+
+// print helper for accumulated lambdas
+template<typename PolynomialT>
+using ReducedLambdaT = std::unordered_map<
+	PolynomialT,
+	typename PolynomialT::CoefficientT,
+	typename PolynomialT::Hash
+>;
+template<typename PolynomialT>
+void PrintLambda(const ReducedLambdaT<PolynomialT>& lambda)
+{
+	size_t i = lambda.size();
+	for (const auto& [poly, mult] : lambda) {
+		std::cout << "[" << +mult << ", [" << poly << "]]";
+		if (--i) std::cout << ",";
+		std::cout << "\n";
+	}
+}

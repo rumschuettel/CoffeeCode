@@ -17,10 +17,23 @@ namespace {
 
 	constexpr auto k_sys = K_SYS, k_env = K_ENV, k_tot = k_sys + k_env;
 
+	// map reduce for lambdas
+	// should match this format for use with CoffeeCode::PrintLambda
+	template<typename PolynomialT>
+	auto ReduceLambda(const std::vector<PolynomialT>& lambda)
+	{
+		ReducedLambdaT<PolynomialT> out;
+
+		// aggregate
+		for (const auto& poly : lambda)
+			out[poly] ++;
 		
-	// print helpers
-	template<typename LambdaT>
-	void PrintLambda(const LambdaT& lambda)
+		return out;
+	}
+		
+	// print helper for CCFull-specific output format
+	template<typename PolynomialT>
+	void PrintLambda(const std::vector<PolynomialT>& lambda)
 	{
 		size_t i = lambda.size();
 		for (const auto& poly : lambda) {
@@ -103,11 +116,19 @@ int FullSolver()
 
 	// lambda
 	std::cout << "\"lambda\": [\n";
+#ifdef REDUCE_LAMBDA
+	PrintLambda(ReduceLambda(lambda));
+#else
 	PrintLambda(lambda);
+#endif
 	std::cout << "],\n";
 	// lambda_a
 	std::cout << "\"lambda_a\": [\n";
+#ifdef REDUCE_LAMBDA
+	PrintLambda(ReduceLambda(lambda_a));
+#else
 	PrintLambda(lambda_a);
+#endif
 	std::cout << "]\n}\n";
 
 	return RET_OK;

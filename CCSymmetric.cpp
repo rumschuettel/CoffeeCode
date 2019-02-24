@@ -62,8 +62,6 @@ int SymmetricSolver() {
 	using ExponentT = typename CoffeeCode::Monomial::ExponentT;
 	using CoefficientT = typename CoffeeCode::Monomial::CoefficientT;
 
-	constexpr auto max_exponent = instance::k_tot;
-
 	auto nauty = CoffeeCode::NautyLink::NautyLink(instance::M);
 	const auto fullGroupOrder = nauty.GroupOrder();
 
@@ -76,7 +74,7 @@ int SymmetricSolver() {
 	using LambdaT = std::unordered_map<
 		decltype(nauty)::CanonicalImageT,
 		std::tuple<
-			CoffeeCode::Polynomial<max_exponent>,
+			CoffeeCode::Polynomial,
 			CoffeeCode::NautyLink::OrbitSizeT,
 			SubsetT
 		>,
@@ -111,8 +109,10 @@ int SymmetricSolver() {
  		const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
 
 		// add monomials
-		const ExponentT p_exponent = term.u1 + term.u2 + term.u3;
-		assert(p_exponent < max_exponent);
+		// prevent integer conversion warning; we know the sum of the ui are smaller than
+		// max_exponent.
+		const ExponentT p_exponent = term.uSum();
+
 		const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
 		auto& [poly, mult, original_UIdx] = lambda[UIdxCanonical];
 		poly.Add(p_exponent, coeff);

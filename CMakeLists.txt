@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.13)
 
 project (CoffeeCode)
 
-message(STATUS "Info: K_SYS and K_ENV have to be passed via command line to make, e.g. 'K_SYS=3 K_ENV=1 make'.")
+message(STATUS "Info: K_SYS and K_ENV have to be passed via command line to make, e.g. 'make K_SYS=3 K_ENV=1'.")
 message(STATUS "      If not done, make will fail to build with a bunch of errors.")
 
 option(SYMMETRIC_SOLVER "Compile symmetric solver" ON)
@@ -55,8 +55,10 @@ target_compile_options(CoffeeCode
         -Wextra
         -pedantic
         -pedantic-errors
-        -Wconversion
-        -Wsign-conversion
+        "$<$<CONFIG:DEBUG>:
+            -Wconversion
+            -Wsign-conversion
+        >"
 )
 
 if (SYMMETRIC_SOLVER)

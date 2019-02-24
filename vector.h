@@ -70,7 +70,7 @@ namespace CoffeeCode {
 
 		// bit access
 		constexpr inline BitT operator[](size_t index) const {
-			return !!(vec & (BitT{ 1 } << index));
+			return !!(vec & (StoreT{ 0b01 } << index));
 		}
 
 		// to string

@@ -16,8 +16,15 @@
 
 template<typename IndexT>
 struct MonomialAndIndex {
-	CoffeeCode::Monomial::ExponentT u1, u2, u3;
+	using ExponentT = CoffeeCode::Monomial::ExponentT;
+
+	ExponentT u1, u2, u3;
 	IndexT Uidx;
+
+	ExponentT uSum() const
+	{
+		return static_cast<ExponentT>(u1 + u2 + u3);
+	}
 };
 
 template<typename MatrixT>

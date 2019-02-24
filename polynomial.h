@@ -16,15 +16,15 @@ namespace CoffeeCode {
 	//     marked vertices within a set.
 	// maximum coefficient: the number of sets giving the same Uidx
 	//     can be upper-bounded by 2^K_TOT, as we have a linear affine map mod 2
-	//     K_TOT bits is thus a safe bet.
+	//     K_TOT bits is thus a safe bet; since we actually might need to store 2^K_TOT, we add 1
 	struct Monomial {
-		static constexpr size_t CoefficientWidth = K_TOT;
-		static constexpr size_t ExponentWidth = log2(3*K_TOT);
+		static constexpr size_t CoefficientWidth = K_TOT + 1;
+		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
 
 		using CoefficientT = StdStoreT<CoefficientWidth>;
 		using ExponentT = StdStoreT<ExponentWidth>;
 
-		static constexpr CoefficientT MaxCoefficient = 2 << K_TOT;
+		static constexpr CoefficientT MaxCoefficient = Bitmask<CoefficientT, K_TOT + 1>::mask1000;
 		static constexpr ExponentT MaxExponent = K_TOT;
 	};
 

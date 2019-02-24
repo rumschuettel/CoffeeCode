@@ -4,6 +4,8 @@ project (CoffeeCode)
 
 message(STATUS "Info: K_SYS and K_ENV have to be passed via command line to make, e.g. 'make K_SYS=3 K_ENV=1'.")
 message(STATUS "      If not done, make will fail to build with a bunch of errors.")
+message(STATUS "      Building the symmetric solver? MM will compile for you.")
+message(STATUS "      Building the full solver? Run ./build-all.sh before using the MM interface.")
 
 option(SYMMETRIC_SOLVER "Compile symmetric solver" ON)
 option(REDUCE_LAMBDA "Merge lambda and lambda_a before printing" ON)
@@ -96,4 +98,9 @@ if (SYMMETRIC_SOLVER)
     )
 else()
     target_sources(CoffeeCode PRIVATE "CCFull.cpp")
+
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/build-all.sh.in"
+        "${PROJECT_BINARY_DIR}/build-all.sh"
+    )
 endif()

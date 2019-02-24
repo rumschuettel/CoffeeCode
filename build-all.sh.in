@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+for ((K_SYS=1; K_SYS<=20; K_SYS++))
+do
+    for ((K_ENV=1; K_ENV<=$K_SYS; K_ENV++))
+    do
+        cmd="make -j2 -B K_ENV=$K_ENV K_SYS=$K_SYS"
+        echo $cmd
+        $cmd
+        cmd="mv CoffeeCode CoffeeCode.$K_SYS.$K_ENV"
+        echo $cmd
+        $cmd
+    done
+done

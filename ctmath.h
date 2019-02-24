@@ -6,17 +6,17 @@
 
 namespace CoffeeCode {
 	// compile-time ceil(log2)
-    constexpr size_t log2(const size_t n) {
-        return n <= 1 ? 0 : 1 + log2((n + 1) / 2);
+    constexpr size_t ilog2(const size_t n) {
+        return n <= 1 ? 0 : 1 + ilog2((n + 1) / 2);
     }
     // compile-time log-factorial, i.e. lf(n) = log_2(n!) = log_2(n) + log_2(n-1) + ... + log_2(1)
-    constexpr double log2factorial(const double n) {
-        return n <= 1 ? 0 : ::log2(n) + log2factorial(n-1);
+    constexpr double dlog2factorial(const double n) {
+        return n <= 1 ? 0 : ::log2(n) + dlog2factorial(n-1);
     }
     template<size_t n>
     constexpr size_t ilog2factorial() {
         constexpr double dn = static_cast<double>(n);
-        constexpr double l2f = log2factorial(dn);
+        constexpr double l2f = dlog2factorial(dn);
         return static_cast<size_t>(::ceil(l2f));
     }
 

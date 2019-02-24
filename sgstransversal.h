@@ -38,7 +38,7 @@ namespace CoffeeCode {
 
 		// tuple type that the SGS acts on
 		template<size_t Base>
-		using _TupleT = StdStoreExT<log2(Base - 1), Length>;
+		using _TupleT = StdStoreExT<ilog2(Base - 1), Length>;
 
 		// orbit iterator
 		// this is a minimal implementation which satisfies the conditions

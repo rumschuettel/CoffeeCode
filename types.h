@@ -52,6 +52,6 @@ namespace CoffeeCode {
 	using StdStoreExT = std::array< StdStoreT<Width>, Length >;
 
 	template<size_t Base, size_t Length>
-	using StdTupleStoreT = StdStoreExT< log2(Base - 1), Length >;
+	using StdTupleStoreT = StdStoreExT< ilog2(Base - 1), Length >;
 	// TODO: make this explicitly SIMD
 }

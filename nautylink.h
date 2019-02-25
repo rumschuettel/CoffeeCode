@@ -88,6 +88,18 @@ namespace CoffeeCode::NautyLink {
 
 			COLOR_COUNT = 8
 		};
+
+		// map integer values from CoffeeCode to graph colors in Nauty
+		template<typename NumberT>
+		static inline Color ToColor(NumberT nc)
+		{
+			// 4 colors
+			assert(0 <= nc && nc <= 3);
+
+			// cast
+			return static_cast<Color>(nc);
+		}
+
 		using ColoringT = std::array<Color, K_TOT>;
 		// colorings where environment is not yet specified
 		using PartialColoringT = StdTupleStoreT<4, K_SYS>;
@@ -192,7 +204,7 @@ namespace CoffeeCode::NautyLink {
 			ColoringT coloring;
 			// careful: coloring[0] is the first vertex, which corresponds to the rightmost bit of the partial
 			for (size_t i = 0; i < K_TOT; i++) 
-				coloring[i] = static_cast<Color>((partial & (0b01 << i)) >> i);
+				coloring[i] = ToColor((partial & (0b01 << i)) >> i);
 
 			// mark environment colors
 			for (size_t i = K_SYS; i < K_TOT; i++)
@@ -206,7 +218,7 @@ namespace CoffeeCode::NautyLink {
             // set default coloring such that environment qubits have an extra flagged color
 			ColoringT coloring;
 			for (size_t i = 0; i < K_SYS; i++)
-				coloring[i] = static_cast<Color>(partial[i]);
+				coloring[i] = ToColor(partial[i]);
 			for (size_t i = K_SYS; i < K_TOT; i++)
 				coloring[i] = ENVIRONMENT_COLOR;
 			return SetColoring(coloring);

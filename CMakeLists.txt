@@ -12,7 +12,7 @@ option(REDUCE_LAMBDA "Merge lambda and lambda_a before printing" ON)
 
 if (SYMMETRIC_SOLVER)
     set(PATH_CUSTOM_CC_INSTANCE "${PROJECT_BINARY_DIR}/cc-instance-custom.h" CACHE PATH "File for custom symmetric CC instance")
-    set(PATH_NAUTY "/home/jkrb2/programming/libs/nauty27rc1/" CACHE PATH "Nauty 2.7 RC1 path")
+    set(PATH_NAUTY "/home/jkrb2/programming/libs/nauty27rc2/" CACHE PATH "Nauty 2.7 RC2 path")
     set(PATH_BOOST "/home/jkrb2/programming/libs/boost/boost_1_69_0/" CACHE PATH "Boost 1.69 path")
 endif()
 

@@ -101,7 +101,14 @@ int SymmetricSolver() {
 
 	const auto fullGroupOrder = nauty.GroupOrder();
 
-	auto start = std::chrono::steady_clock::now();
+	// PERFORMANCE MEASURE
+	auto now = std::chrono::high_resolution_clock::now;
+	auto time_total_start = now();
+	decltype(now()) time_temp;
+	decltype(now() - now()) time_nauty_GO, time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;
+	size_t counter_channel = 0;
+	size_t counter_ptrace = 0;
+
 
 	// CHANNEL ACTION
 
@@ -117,13 +124,16 @@ int SymmetricSolver() {
 	>;
 	LambdaT lambda, lambda_pre;
 
-	size_t counter = 0;
+
+	auto time_channel_start = now();
 	for (const auto& tuple : instance::sgs::TupleCosets<4>()) {
-		counter++;
+		counter_channel++;
 
 		// calculate multiplicity of base 4 tuple
+		time_temp = now();
 		nauty.SetColoring(tuple);
 		const auto stabGroupOrder4 = nauty.GroupOrder();
+		time_nauty_GO += now() - time_temp;
 		const auto orbitSize4 = fullGroupOrder / stabGroupOrder4;
 
 		// get low and high bit from tuples
@@ -146,7 +156,9 @@ int SymmetricSolver() {
 		//// A: Add to lambda
 		{
 			// multiplicity of resulting base 2 tuple
+			time_temp = now();
 			const auto[UIdxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(term.Uidx);
+			time_nauty_CCA += now() - time_temp;
 			const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
 			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
 
@@ -160,9 +172,11 @@ int SymmetricSolver() {
 		//// B: Add to lambda_pre
 		{
 			// we project out the environment for term.Uidx
+			time_temp = now();
 			const auto[UIdxCanonical_pre, stabGroupOrder2_pre] = nauty.CanonicalColoring(
 				term.Uidx & CoffeeCode::Bitmask<decltype(term.Uidx), instance::k_sys>::mask0111
 			);
+			time_nauty_CCB += now() - time_temp;
 			const auto orbitSize2_pre = fullGroupOrder / stabGroupOrder2_pre;
 			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2_pre);
 
@@ -173,6 +187,7 @@ int SymmetricSolver() {
 			mult = orbitSize2_pre;
 		}
 	}
+	auto time_channel = now() - time_channel_start;
 
 
 	// PARTIAL TRACE
@@ -180,12 +195,20 @@ int SymmetricSolver() {
 	using SubsetAT = decltype(instance::MAB)::ColumnVectorT::StoreT;
 	LambdaT lambda_a;
 
+	auto time_ptrace_start = now();
 	for (const auto& tuple : instance::sgs::TupleCosets<2>()) {
+		counter_ptrace ++;
+
 		// TupleT to SubsetT and HashT because that one can be different
 		SubsetAT subsetA{ 0 };
 		for (size_t i = 0; i < instance::k_sys; i++) 
 			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
+
+		time_temp = now();
 		const auto [Akey, _] = nauty.CanonicalColoring(subsetA);
+		time_nauty_CCC += now() - time_temp;
+
+		time_temp = now();
 
 		// this inner loop is as in CCFull with the break condition at the end to avoid overflows
 		for (SubsetBT subsetB = 0; ; subsetB++) {
@@ -206,14 +229,27 @@ int SymmetricSolver() {
 			
 			if (subsetB == CoffeeCode::BaseKSubsets<2, instance::k_env>::count - 1) break;
 		}
+		
+		time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::k_env>::count;
 	}
+	auto time_ptrace = (now() - time_ptrace_start);
 
 
 	// EXPORT AS JSON
 	// some statistics
-	std::cout << "{\n\"tuples\": " << counter << ",\n\"time\": ";
-	auto end = std::chrono::steady_clock::now();
-	std::cout << std::chrono::duration <double, std::milli> (end-start).count() << ",\n";
+	auto duration = [](auto t) { return std::chrono::duration<double, std::milli>(t).count(); };
+	auto print_time = [&](auto what, auto t) { std::cout << "\"" << what << "\": " << duration(t) << ",\n"; };
+	std::cout << "{\n";
+	std::cout << "\"channel\": " << counter_channel << ",\n";
+	std::cout << "\"ptrace\": " << counter_ptrace << ",\n";
+	print_time("total time [ms]", now() - time_total_start);
+	print_time("channel time [ms]", time_channel);
+	print_time("ptrace time [ms]", time_ptrace);
+	print_time("nauty GroupOrder [ms]", time_nauty_GO);
+	print_time("nauty CanonicalColoring A [ms]", time_nauty_CCA);
+	print_time("nauty CanonicalColoring B [ms]", time_nauty_CCB);
+	print_time("nauty CanonicalColoring C [ms]", time_nauty_CCC);
+	print_time("nauty CanonicalColoring D [ms]", time_nauty_CCD);
 
 	// lambda
 	std::cout << "\"lambda\": [\n";

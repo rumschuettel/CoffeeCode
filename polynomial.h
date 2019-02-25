@@ -24,7 +24,7 @@ namespace CoffeeCode {
 		using CoefficientT = StdStoreT<CoefficientWidth>;
 		using ExponentT = StdStoreT<ExponentWidth>;
 
-		static constexpr CoefficientT MaxCoefficient = Bitmask<CoefficientT, K_TOT + 1>::mask1000;
+		static constexpr CoefficientT MaxCoefficient = Bitmask<CoefficientT, K_TOT>::mask1000;
 		static constexpr ExponentT MaxExponent = K_TOT;
 	};
 

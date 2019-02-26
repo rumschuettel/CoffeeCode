@@ -29,7 +29,7 @@ namespace CoffeeCode::NautyLink {
 		// for K_SYS, maximum orbit size is K_SYS!
 		// meaning that maximum size of orbit has 2^n = K_SYS! bits.
 		// It thus suffices to have an integer of size n >= log_2(K_SYS!) + 1 bits.
-		constexpr static size_t MAX_GROUP_ORBIT = CoffeeCode::ilog2factorial<K_SYS>() + 1;
+		constexpr static size_t MAX_GROUP_ORBIT = CoffeeCode::ilog2factorial(K_SYS) + 1;
 
 		using namespace boost::multiprecision;
 

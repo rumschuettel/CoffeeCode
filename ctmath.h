@@ -9,15 +9,10 @@ namespace CoffeeCode {
     constexpr size_t ilog2(const size_t n) {
         return n <= 1 ? 0 : 1 + ilog2((n + 1) / 2);
     }
-    // compile-time log-factorial, i.e. lf(n) = log_2(n!) = log_2(n) + log_2(n-1) + ... + log_2(1)
-    constexpr double dlog2factorial(const double n) {
-        return n <= 1 ? 0 : ::log2(n) + dlog2factorial(n-1);
-    }
-    template<size_t n>
-    constexpr size_t ilog2factorial() {
-        constexpr double dn = static_cast<double>(n);
-        constexpr double l2f = dlog2factorial(dn);
-        return static_cast<size_t>(::ceil(l2f));
+
+	// approximate ceil(log2(n!))
+	constexpr size_t ilog2factorial(const size_t n) {
+		return (n + 1)*ilog2(n) - n;
     }
 
 	// compile time integer exponent

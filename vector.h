@@ -1,7 +1,6 @@
 #pragma once
 
 #include "types.h"
-#include "libpopcnt.h"
 
 #include <cctype>
 #include <iostream>
@@ -9,11 +8,6 @@
 #include <tuple>
 
 namespace CoffeeCode {
-
-	// fast popcount implementation
-	constexpr auto __popcount = popcnt64;
-
-
 	// binary vector class
 	template <size_t Width>
 	struct Vector {
@@ -49,7 +43,7 @@ namespace CoffeeCode {
 
 		// get number of 1s
 		inline size_t popcount() const {
-			return static_cast<size_t>(__popcount(vec));
+			return Popcount(vec);
 		}
 
 		// addition
@@ -65,7 +59,7 @@ namespace CoffeeCode {
 		// dot product
 		// pass by value
 		inline BitT operator*(const Vector rhs) const {
-			return static_cast<BitT>(__popcount(vec & rhs.vec)) & BitT{1};
+			return static_cast<BitT>(Popcount(vec & rhs.vec)) & BitT{1};
 		}
 
 		// bit access

@@ -25,23 +25,9 @@ namespace CoffeeCode::NautyLink {
 
 	// implementation details for nauty interface
 	namespace ImplDetails {
-		// orbit sizes can be huge
-		// for K_SYS, maximum orbit size is K_SYS!
-		// meaning that maximum size of orbit has 2^n = K_SYS! bits.
-		// It thus suffices to have an integer of size n >= log_2(K_SYS!) + 1 bits.
-		constexpr static size_t MAX_GROUP_ORBIT = CoffeeCode::ilog2factorial(K_SYS) + 1;
-
-		using namespace boost::multiprecision;
-
-		using OrbitSizeT = number<cpp_int_backend<
-			MAX_GROUP_ORBIT,
-			MAX_GROUP_ORBIT,
-			unsigned_magnitude,
-			unchecked
-		>>;
-
 		// group order
 		// this is calling legacy C code so we allow a global variable
+		using OrbitSizeT = CoffeeCode::OrbitType<>::SizeT;
 		OrbitSizeT __grouporder;
 		void UserLevelProc_GroupOrder(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)
 		{

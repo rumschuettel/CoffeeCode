@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "sgstransversal.h"
+#include "trivialtransversal.h"
 #include "matrix.h"
 #include "polynomial.h"
 

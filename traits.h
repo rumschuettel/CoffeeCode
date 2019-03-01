@@ -19,4 +19,15 @@ namespace {
 	// get nth element
 	template <size_t Idx, typename... Ts>
 	using nth_element = typename std::tuple_element<Idx, std::tuple<Ts...>>::type;
+
+
+	// iterator proxy type
+
+	// features a begin and end function to be used in a
+	// range-based for loop
+	template <typename IteratorT>
+	struct IteratorProxy {
+		IteratorT begin() const { return IteratorT(); }
+		const auto end() const { return typename IteratorT::Done{}; }
+	};
 }

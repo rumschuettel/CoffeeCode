@@ -44,6 +44,9 @@ namespace {
 	using CoffeeCode::Permutation;
 	using CoffeeCode::AdjacencyMatrix;
 
+	using CoffeeCode::TrivialSGSTransversal;
+	using CoffeeCode::TrivialSGSOrbit;
+
 	template<size_t S>
 	using AdjacencyMatrixT = std::array<std::array<CoffeeCode::StdBitT, S>, S>;
 
@@ -86,8 +89,9 @@ namespace {
 }
 
 
-// nauty library
+// group library
 #include "nautylink.h"
+#include "utility.h"
 
 int SymmetricSolver() {
 	using VectorT = typename instance::RowVectorT;
@@ -96,10 +100,10 @@ int SymmetricSolver() {
 	using ExponentT = typename CoffeeCode::Monomial::ExponentT;
 	using CoefficientT = typename CoffeeCode::Monomial::CoefficientT;
 
-	auto nauty = CoffeeCode::NautyLink::NautyLink(instance::M);
-	using CanonicalImageT = decltype(nauty)::CanonicalImageT;
+	auto group = CoffeeCode::NautyLink::NautyLink(instance::M);
+	using CanonicalImageT = decltype(group)::CanonicalImageT;
 
-	const auto fullGroupOrder = nauty.GroupOrder();
+	const auto fullGroupOrder = group.GroupOrder();
 
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
@@ -126,13 +130,13 @@ int SymmetricSolver() {
 
 
 	auto time_channel_start = now();
-	for (const auto& tuple : instance::sgs::TupleCosets<4>()) {
+	for (const auto& [tuple, mult] : instance::sgs::TupleCosets<4>()) {
 		counter_channel++;
 
 		// calculate multiplicity of base 4 tuple
 		time_temp = now();
-		nauty.SetColoring(tuple);
-		const auto stabGroupOrder4 = nauty.GroupOrder();
+		group.SetColoring(tuple);
+		const auto stabGroupOrder4 = group.GroupOrder();
 		time_nauty_GO += now() - time_temp;
 		const auto orbitSize4 = fullGroupOrder / stabGroupOrder4;
 
@@ -157,7 +161,7 @@ int SymmetricSolver() {
 		{
 			// multiplicity of resulting base 2 tuple
 			time_temp = now();
-			const auto[UIdxCanonical, stabGroupOrder2] = nauty.CanonicalColoring(term.Uidx);
+			const auto[UIdxCanonical, stabGroupOrder2] = group.CanonicalColoring(term.Uidx);
 			time_nauty_CCA += now() - time_temp;
 			const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
 			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
@@ -173,7 +177,7 @@ int SymmetricSolver() {
 		{
 			// we project out the environment for term.Uidx
 			time_temp = now();
-			const auto[UIdxCanonical_pre, stabGroupOrder2_pre] = nauty.CanonicalColoring(
+			const auto[UIdxCanonical_pre, stabGroupOrder2_pre] = group.CanonicalColoring(
 				term.Uidx & CoffeeCode::Bitmask<decltype(term.Uidx), instance::k_sys>::mask0111
 			);
 			time_nauty_CCB += now() - time_temp;
@@ -196,7 +200,7 @@ int SymmetricSolver() {
 	LambdaT lambda_a;
 
 	auto time_ptrace_start = now();
-	for (const auto& tuple : instance::sgs::TupleCosets<2>()) {
+	for (const auto& [tuple, mult] : instance::sgs::TupleCosets<2>()) {
 		counter_ptrace ++;
 
 		// TupleT to SubsetT and HashT because that one can be different
@@ -205,7 +209,7 @@ int SymmetricSolver() {
 			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
 
 		time_temp = now();
-		const auto [Akey, _] = nauty.CanonicalColoring(subsetA);
+		const auto [Akey, _] = group.CanonicalColoring(subsetA);
 		time_nauty_CCC += now() - time_temp;
 
 		time_temp = now();
@@ -216,7 +220,7 @@ int SymmetricSolver() {
 			const auto BtoA = static_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
 
 			// find canonical image for key
-			const auto [key, keyStabOrder] = nauty.CanonicalColoring(BtoA);
+			const auto [key, keyStabOrder] = group.CanonicalColoring(BtoA);
 			const auto keyMult = fullGroupOrder / keyStabOrder;
 
 			//// C: Add to lambda_a
@@ -245,11 +249,11 @@ int SymmetricSolver() {
 	print_time("total time [ms]", now() - time_total_start);
 	print_time("channel time [ms]", time_channel);
 	print_time("ptrace time [ms]", time_ptrace);
-	print_time("nauty GroupOrder [ms]", time_nauty_GO);
-	print_time("nauty CanonicalColoring A [ms]", time_nauty_CCA);
-	print_time("nauty CanonicalColoring B [ms]", time_nauty_CCB);
-	print_time("nauty CanonicalColoring C [ms]", time_nauty_CCC);
-	print_time("nauty CanonicalColoring D [ms]", time_nauty_CCD);
+	print_time("group GroupOrder [ms]", time_nauty_GO);
+	print_time("group CanonicalColoring A [ms]", time_nauty_CCA);
+	print_time("group CanonicalColoring B [ms]", time_nauty_CCB);
+	print_time("group CanonicalColoring C [ms]", time_nauty_CCC);
+	print_time("group CanonicalColoring D [ms]", time_nauty_CCD);
 
 	// lambda
 	std::cout << "\"lambda\": [\n";

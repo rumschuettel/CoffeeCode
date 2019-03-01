@@ -40,6 +40,7 @@ namespace CoffeeCode {
 		template<size_t Base>
 		using _TupleT = StdStoreExT<ilog2(Base - 1), Length>;
 
+	private:
 		// orbit iterator
 		// this is a minimal implementation which satisfies the conditions
 		// required for a range-based for. A proper input iterator
@@ -155,20 +156,12 @@ namespace CoffeeCode {
 			}
 		};
 
-		// features a begin and end function to be used in a
-		// range-based for loop
-		template <size_t Base>
-		struct OrbitIteratorProxy {
-			using IteratorT = CosetIterator<Base>;
-			IteratorT begin() const { return IteratorT(); }
-			const auto end() const { return typename IteratorT::Done{}; }
-		};
-
+	public:
 		// range-based for loop iterator for tuples over Base
 		template<size_t Base>
-		inline static OrbitIteratorProxy<Base> TupleCosets()
+		inline static IteratorProxy<CosetIterator<Base>> TupleCosets()
 		{
-			return OrbitIteratorProxy<Base>();
+			return IteratorProxy<CosetIterator<Base>>();
 		}
 
 	private:

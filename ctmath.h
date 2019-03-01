@@ -16,8 +16,11 @@ namespace CoffeeCode {
     }
 
 	// compile time integer exponent
-	constexpr size_t ipow(const size_t base, const int exp, const size_t result = 1) {
-		return exp < 1 ? result : ipow(base*base, exp / 2, (exp % 2) ? result * base : result);
+	template<typename IntegerT>
+	constexpr IntegerT ipow(const IntegerT base, const int exp, const IntegerT result = 1) {
+		return exp < 1 ?
+			result :
+			ipow(base*base, exp / 2, (exp % 2) ? result * static_cast<IntegerT>(base) : result);
 	}
 
 
@@ -27,7 +30,11 @@ namespace CoffeeCode {
 		static constexpr auto count = ipow(base, tuple_length);
 	};
 	// compile time bitmask with k 1s
-	template<typename MaskT, const size_t number_of_1s>
+	template<
+		typename MaskT,
+		size_t number_of_1s,
+		typename = std::enable_if_t<std::numeric_limits<MaskT>::digits >= number_of_1s + 1>
+	>
 	struct Bitmask {
         static constexpr auto mask1000 = static_cast<MaskT>( 0b01 ) << number_of_1s;
 		static constexpr auto mask0111 = mask1000 - 1;

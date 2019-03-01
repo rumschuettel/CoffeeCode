@@ -27,6 +27,26 @@ namespace CoffeeCode {
 
 		// types
 		using RowVectorT = typename MatrixT::RowVectorT;
+
+		// group functionality provider
+		template<typename Q = typename T::sgs>
+		static typename std::enable_if_t<
+			std::is_same<Q, TrivialSGSTransversal>::value,
+			TrivialSGSTransversal::NautyRepl
+		>
+		GroupLink()
+		{
+			return Q::NautyRepl{};
+		}
+		template<typename Q = typename T::sgs>
+		static typename std::enable_if_t<
+			std::is_same<Q, SGSTransversal>::value,
+			NautyLink::NautyLink
+		>
+		GroupLink()
+		{
+			return NautyLink::NautyLink(M);
+		}
 	};
 
 }
@@ -100,13 +120,13 @@ int SymmetricSolver() {
 	using ExponentT = typename CoffeeCode::Monomial::ExponentT;
 	using CoefficientT = typename CoffeeCode::Monomial::CoefficientT;
 
-	auto group = CoffeeCode::NautyLink::NautyLink(instance::M);
+	auto group = instance::GroupLink();
 	using CanonicalImageT = decltype(group)::CanonicalImageT;
 
 	const auto fullGroupOrder = group.GroupOrder();
 
 	// PERFORMANCE MEASURE
-	auto now = std::chrono::high_resolution_clock::now;
+	using std::chrono::high_resolution_clock::now;
 	auto time_total_start = now();
 	decltype(now()) time_temp;
 	decltype(now() - now()) time_nauty_GO, time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;

@@ -21,8 +21,8 @@ namespace CoffeeCode {
 
 		// default constructors
 		constexpr Vector() : vec{ 0 } {};
-		constexpr Vector(const StoreT vec) : vec{ vec } {};
-		constexpr Vector(const Vector& c) = default;
+		constexpr explicit Vector(const StoreT vec) : vec{ vec } {};
+		constexpr explicit Vector(const Vector& c) = default;
 
 	private:
 		template<size_t... Idx>
@@ -31,7 +31,7 @@ namespace CoffeeCode {
 		{
 		}
 	public:
-		constexpr Vector(const std::array<BitT, Width>& entries)
+		constexpr explicit Vector(const std::array<BitT, Width>& entries)
 			: Vector(entries, std::make_index_sequence<Width>{})
 		{
 		}

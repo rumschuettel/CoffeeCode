@@ -121,6 +121,19 @@ namespace {
 			std::cout << "\n";
 		}
 	}
+
+	// extract tuple and multiplicity from iterator;
+	// if not provided will call appropriate group functions automatically
+	template<typename GroupT, typename IteratorT>
+	auto TupleAndMult(GroupT& group, const IteratorT& it) 
+	{
+		if constexpr( is_pair<std::decay_t<IteratorT>> ) 
+			return it;
+		else {
+			group.SetColoring(it);
+			return std::make_pair(it, group.GroupOrder());
+		}
+	};
 }
 
 
@@ -150,20 +163,9 @@ int SymmetricSolver() {
 	// CHANNEL ACTION
 	instance::LambdaT lambda, lambda_pre;
 
-	// extract tuple and multiplicity from iterator;
-	// if not provided will call appropriate group functions automatically
-	auto TupleAndMult = [&](const auto& it) -> auto {
-		if constexpr(is_pair<decltype(it)>) 
-			return it;
-		else {
-			group.SetColoring(it);
-			return std::make_pair(it, group.GroupOrder());
-		}
-	};
-
 	auto time_channel_start = now();
 	for (const auto& it : instance::sgs::TupleCosets<4>()) {
-		const auto& [tuple, mult] = TupleAndMult(it);
+		const auto& [tuple, mult] = TupleAndMult(group, it);
 
 		counter_channel++;
 
@@ -237,7 +239,7 @@ int SymmetricSolver() {
 
 	auto time_ptrace_start = now();
 	for (const auto& it : instance::sgs::TupleCosets<2>()) {
-		const auto& [tuple, mult] = TupleAndMult(it);
+		const auto& [tuple, mult] = TupleAndMult(group, it);
 		counter_ptrace ++;
 
 		// TupleT to SubsetT and HashT because that one can be different

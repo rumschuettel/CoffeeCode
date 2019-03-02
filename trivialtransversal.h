@@ -145,10 +145,11 @@ namespace CoffeeCode {
                                 continue;
 
                             // last orbit also saturated, so try incrementing remainder
-                            if (++remainder == MaxRemainder) {
+                            if (++remainder == MaxRemainder)
                                 done = true;
-                                return *this;
-                            }
+                            
+                            break;
+
                         case NoCarry:
                             return *this;
                     }
@@ -173,7 +174,7 @@ namespace CoffeeCode {
 
                 for (size_t ii = 0; ii < N_orbits; ii ++) {
                     const auto& idcs = indices[ii];
-                    const auto Start = OrbitStarts[ii];
+                    //const auto Start = OrbitStarts[ii];
                     const auto End = OrbitEnds[ii];
                     const auto Length = OrbitLengths[ii];
 

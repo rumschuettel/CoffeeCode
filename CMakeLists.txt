@@ -42,6 +42,7 @@ if (SYMMETRIC_SOLVER)
     target_compile_definitions(Nauty
         PRIVATE
             "MAXN=(\$\(K_SYS\)+\$\(K_ENV\))"
+            WORDSIZE=64
     )
 endif()
 
@@ -84,6 +85,7 @@ if (SYMMETRIC_SOLVER)
     target_compile_definitions(CoffeeCode
         PRIVATE
             "MAXN=(K_SYS+K_ENV)"
+            WORDSIZE=64
             SYMMETRIC_SOLVER
     )
     target_sources(CoffeeCode

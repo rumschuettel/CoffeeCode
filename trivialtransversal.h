@@ -55,12 +55,11 @@ namespace CoffeeCode {
         constexpr static std::array<size_t, N_orbits> OrbitEnds = { Orbits::End... };
         constexpr static std::array<size_t, N_orbits> OrbitLengths = { Orbits::Length... };
 
-        using OrbitSizeT = OrbitType<>::SizeT;
-
 
         template<size_t Base>
         struct OrbitProductIterator {
 			using TupleT = StdTupleStoreT<Base, Length>;
+            using OrbitSizeT = OrbitType<>::SizeT;
 
         private:
             // within one orbit, we need Base-1 indices to mark the boundaries
@@ -209,9 +208,13 @@ namespace CoffeeCode {
 
         // canonicalization struct
         template<typename MatrixT>
-        struct NautyRepl {
+        struct SymmetryProvider {
             using ColoringRawT = typename MatrixT::RowVectorT::StoreT;
             using CanonicalImageT = ColoringRawT;
+            using CanonicalImageHashT = std::hash<CanonicalImageT>;
+            using OrbitSizeT = OrbitType<>::SizeT;
+
+            SymmetryProvider(const MatrixT&) {}
 
             inline static auto CanonicalColoring(const ColoringRawT coloring)
             {
@@ -225,11 +228,16 @@ namespace CoffeeCode {
                 return std::make_pair(out, mult);
             }
 
+            constexpr inline static auto GroupOrder()
+            {
+                return ( OrbitType<>::Factorial(Orbits::Length) * ... );                
+            }
+
         private:
             // sort and return multiplicity, which is simply
             // Orbit::Length choose #1s
             template<typename Orbit>
-            inline static void SortBitSubset(const ColoringRawT& src, const OrbitSizeT& mult)
+            inline static void SortBitSubset(ColoringRawT& src, OrbitSizeT& mult)
             {
                 // bitmask with 1s between orbit start and end
                 constexpr ColoringRawT mask = Orbit::template Mask<ColoringRawT>::value;
@@ -242,7 +250,7 @@ namespace CoffeeCode {
                     return;
 
                 // otherwise overwrite section with padded 1s
-                const auto sorted = ((decltype(src){1} << count1s) - 1) >> Orbit::Start;
+                const auto sorted = ((static_cast<ColoringRawT>(1) << count1s) - 1) << Orbit::Start;
 
                 src &= ~mask;
                 src ^= sorted;

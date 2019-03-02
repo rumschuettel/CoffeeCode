@@ -19,6 +19,12 @@ namespace {
 	// get nth element
 	template <size_t Idx, typename... Ts>
 	using nth_element = typename std::tuple_element<Idx, std::tuple<Ts...>>::type;
+		
+	// check whether something is a tuple
+	template <typename T>
+	constexpr bool is_pair = false;
+	template<typename... Ts>
+	constexpr bool is_pair<std::pair<Ts...>> = true;
 
 
 	// iterator proxy type

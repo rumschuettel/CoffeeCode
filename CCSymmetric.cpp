@@ -1,9 +1,13 @@
+#include "nautylink.h"
+
 #include "CoffeeCode.h"
 
 #include <unordered_map>
 #include <unordered_set>
 #include <chrono>
 #include <bitset>
+
+#include <experimental/type_traits>
 
 namespace CoffeeCode {
 	// extract compile time parameters
@@ -29,24 +33,35 @@ namespace CoffeeCode {
 		using RowVectorT = typename MatrixT::RowVectorT;
 
 		// group functionality provider
-		template<typename Q = typename T::sgs>
-		static typename std::enable_if_t<
-			std::is_same<Q, TrivialSGSTransversal>::value,
-			TrivialSGSTransversal::NautyRepl
-		>
-		GroupLink()
+	private:
+		template<typename Q>
+		using SymmetryProviderT = typename Q::template SymmetryProvider<MatrixT>;
+		using SymmetryProvider = std::experimental::detected_or_t<
+			NautyLink::NautyLink<MatrixT>,
+			SymmetryProviderT,
+			sgs
+		>;
+		
+	public:
+		constexpr static auto GroupLink()
 		{
-			return Q::NautyRepl{};
+			return SymmetryProvider(M);
 		}
-		template<typename Q = typename T::sgs>
-		static typename std::enable_if_t<
-			std::is_same<Q, SGSTransversal>::value,
-			NautyLink::NautyLink
-		>
-		GroupLink()
-		{
-			return NautyLink::NautyLink(M);
-		}
+
+		using OrbitSizeT = typename SymmetryProvider::OrbitSizeT;
+		using CanonicalImageT = typename SymmetryProvider::CanonicalImageT;
+		using CanonicalImageHashT = typename SymmetryProvider::CanonicalImageHashT;
+
+		// lambdas as hashmaps
+		// TODO: replace with https://github.com/greg7mdp/sparsepp
+		using LambdaT = std::unordered_map<
+			CanonicalImageT,
+			std::pair<
+				CoffeeCode::Polynomial,
+				OrbitSizeT
+			>,
+			CanonicalImageHashT
+		>;
 	};
 
 }
@@ -110,7 +125,6 @@ namespace {
 
 
 // group library
-#include "nautylink.h"
 #include "utility.h"
 
 int SymmetricSolver() {
@@ -121,12 +135,11 @@ int SymmetricSolver() {
 	using CoefficientT = typename CoffeeCode::Monomial::CoefficientT;
 
 	auto group = instance::GroupLink();
-	using CanonicalImageT = decltype(group)::CanonicalImageT;
 
 	const auto fullGroupOrder = group.GroupOrder();
 
 	// PERFORMANCE MEASURE
-	using std::chrono::high_resolution_clock::now;
+	auto now = std::chrono::high_resolution_clock::now;
 	auto time_total_start = now();
 	decltype(now()) time_temp;
 	decltype(now() - now()) time_nauty_GO, time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;
@@ -135,28 +148,28 @@ int SymmetricSolver() {
 
 
 	// CHANNEL ACTION
+	instance::LambdaT lambda, lambda_pre;
 
-	// lambdas as hash maps
-	// TODO: replace with https://github.com/greg7mdp/sparsepp
-	using LambdaT = std::unordered_map<
-		CanonicalImageT,
-		std::pair<
-			CoffeeCode::Polynomial,
-			CoffeeCode::NautyLink::OrbitSizeT
-		>,
-		CanonicalImageT::Hash
-	>;
-	LambdaT lambda, lambda_pre;
-
+	// extract tuple and multiplicity from iterator;
+	// if not provided will call appropriate group functions automatically
+	auto TupleAndMult = [&](const auto& it) -> auto {
+		if constexpr(is_pair<decltype(it)>) 
+			return it;
+		else {
+			group.SetColoring(it);
+			return std::make_pair(it, group.GroupOrder());
+		}
+	};
 
 	auto time_channel_start = now();
-	for (const auto& [tuple, mult] : instance::sgs::TupleCosets<4>()) {
+	for (const auto& it : instance::sgs::TupleCosets<4>()) {
+		const auto& [tuple, mult] = TupleAndMult(it);
+
 		counter_channel++;
 
 		// calculate multiplicity of base 4 tuple
 		time_temp = now();
-		group.SetColoring(tuple);
-		const auto stabGroupOrder4 = group.GroupOrder();
+		const auto stabGroupOrder4 = mult;
 		time_nauty_GO += now() - time_temp;
 		const auto orbitSize4 = fullGroupOrder / stabGroupOrder4;
 
@@ -171,6 +184,8 @@ int SymmetricSolver() {
 			CoffeeCode::OrBit(subsetY, !!high_bit, i);
 		}
 
+		print(tuple);
+
 		// apply channel
 		const auto term = ChannelAction(subsetX, subsetY, instance::M);
 		
@@ -182,6 +197,7 @@ int SymmetricSolver() {
 			// multiplicity of resulting base 2 tuple
 			time_temp = now();
 			const auto[UIdxCanonical, stabGroupOrder2] = group.CanonicalColoring(term.Uidx);
+
 			time_nauty_CCA += now() - time_temp;
 			const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
 			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
@@ -217,10 +233,11 @@ int SymmetricSolver() {
 	// PARTIAL TRACE
 	using SubsetBT = decltype(instance::MAB)::RowVectorT::StoreT;
 	using SubsetAT = decltype(instance::MAB)::ColumnVectorT::StoreT;
-	LambdaT lambda_a;
+	instance::LambdaT lambda_a;
 
 	auto time_ptrace_start = now();
-	for (const auto& [tuple, mult] : instance::sgs::TupleCosets<2>()) {
+	for (const auto& it : instance::sgs::TupleCosets<2>()) {
+		const auto& [tuple, mult] = TupleAndMult(it);
 		counter_ptrace ++;
 
 		// TupleT to SubsetT and HashT because that one can be different

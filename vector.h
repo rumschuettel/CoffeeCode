@@ -21,8 +21,8 @@ namespace CoffeeCode {
 
 		// default constructors
 		constexpr Vector() : vec{ 0 } {};
-		constexpr explicit Vector(const StoreT vec) : vec{ vec } {};
-		constexpr explicit Vector(const Vector& c) = default;
+		constexpr Vector(const StoreT vec) : vec{ vec } {};
+		constexpr Vector(const Vector& c) = default;
 
 	private:
 		template<size_t... Idx>

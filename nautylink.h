@@ -36,9 +36,6 @@ namespace CoffeeCode::NautyLink {
 		}
 	}
 
-	using OrbitSizeT = ImplDetails::OrbitSizeT;
-
-
 	// make sure we picked right word size for nauty sets
 	#if MAXN <= 64 && WORDSIZE < MAXN
 	#error "consider increasing WORDSIZE to " MAXN " for a performance boost"
@@ -134,8 +131,8 @@ namespace CoffeeCode::NautyLink {
 			return ImplDetails::__grouporder;
 		}
 
-		struct CanonicalImageT {
-			CanonicalImageT(const decltype(G_canon)& in, const ColoringT& coloring)
+		struct CanonicalImage {
+			CanonicalImage(const decltype(G_canon)& in, const ColoringT& coloring)
 				: vertexColorCounts{ 0 }
 			{
 				std::copy(std::begin(in), std::end(in), std::begin(G_canon));
@@ -149,7 +146,7 @@ namespace CoffeeCode::NautyLink {
 
 			// hash for this type
 			struct Hash {
-				inline std::size_t operator()(CanonicalImageT const& image) const noexcept
+				inline std::size_t operator()(CanonicalImage const& image) const noexcept
 				{
 					std::size_t h = boost::hash_range(std::begin(image.G_canon), std::end(image.G_canon));
 					std::size_t h2 = boost::hash_range(std::begin(image.vertexColorCounts), std::end(image.vertexColorCounts));
@@ -158,11 +155,15 @@ namespace CoffeeCode::NautyLink {
 				}
 			};
 			// comparison for this type
-			bool operator==(const CanonicalImageT& rhs) const
+			bool operator==(const CanonicalImage& rhs) const
 			{
 				return (vertexColorCounts == rhs.vertexColorCounts) && std::equal(std::begin(G_canon), std::end(G_canon), std::begin(rhs.G_canon));
 			}
 		};
+		
+		using OrbitSizeT = ImplDetails::OrbitSizeT;
+		using CanonicalImageT = CanonicalImage;
+		using CanonicalImageHashT = typename CanonicalImage::Hash;
 
 
 		// reorders to get canonical image of the partial coloring given
@@ -181,7 +182,7 @@ namespace CoffeeCode::NautyLink {
 			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, G_canon);
 
 			// rely on return value optimization
-			CanonicalImageT out(G_canon, coloring);
+			CanonicalImage out(G_canon, coloring);
 			return std::make_tuple(out, ImplDetails::__grouporder);
 		}
 

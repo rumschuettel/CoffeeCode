@@ -8,7 +8,7 @@
 
 namespace LibPopcount {
 	#include "libpopcnt.h"
-};
+}
 
 #include <type_traits>
 #include <array>

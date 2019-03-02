@@ -136,7 +136,7 @@ namespace {
 			group.SetColoring(it);
 			return std::make_pair(it, group.GroupOrder());
 		}
-	};
+	}
 }
 
 
@@ -171,7 +171,6 @@ int SymmetricSolver() {
 		const auto& [tuple, groupStabOrder4] = TupleAndStabOrder(group, it);
 		const auto orbitSize4 = fullGroupOrder / groupStabOrder4;
 
-		print(tuple);
 		counter_channel++;
 
 		// calculate multiplicity of base 4 tuple
@@ -189,10 +188,8 @@ int SymmetricSolver() {
 			CoffeeCode::OrBit(subsetY, !!high_bit, i);
 		}
 
-
 		// apply channel
 		const auto term = ChannelAction(subsetX, subsetY, instance::M);
-
 		
 		// monomial exponents
 		const ExponentT p_exponent = term.uSum();
@@ -213,8 +210,6 @@ int SymmetricSolver() {
 			auto& [poly, mult] = lambda[UIdxCanonical];
 			poly.Add(p_exponent, coeff);
 			mult = orbitSize2;
-
-			std::cout << "    " << +coeff << "\n";
 		}
 
 		//// B: Add to lambda_pre

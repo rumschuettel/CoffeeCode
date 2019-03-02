@@ -125,11 +125,14 @@ namespace {
 	// extract tuple and multiplicity from iterator;
 	// if not provided will call appropriate group functions automatically
 	template<typename GroupT, typename IteratorT>
-	auto TupleAndMult(GroupT& group, const IteratorT& it) 
+	auto TupleAndStabOrder(GroupT& group, const IteratorT& it) 
 	{
-		if constexpr( is_pair<std::decay_t<IteratorT>> ) 
+		if constexpr( is_pair<std::decay_t<IteratorT>> ) {
+			// iterator returns tuple and stabilizer group order; just pass along
 			return it;
+		}
 		else {
+			// iterator just returns tuple. Calculate stabilizer group order.
 			group.SetColoring(it);
 			return std::make_pair(it, group.GroupOrder());
 		}
@@ -165,15 +168,15 @@ int SymmetricSolver() {
 
 	auto time_channel_start = now();
 	for (const auto& it : instance::sgs::TupleCosets<4>()) {
-		const auto& [tuple, mult] = TupleAndMult(group, it);
+		const auto& [tuple, groupStabOrder4] = TupleAndStabOrder(group, it);
+		const auto orbitSize4 = fullGroupOrder / groupStabOrder4;
 
+		print(tuple);
 		counter_channel++;
 
 		// calculate multiplicity of base 4 tuple
 		time_temp = now();
-		const auto stabGroupOrder4 = mult;
 		time_nauty_GO += now() - time_temp;
-		const auto orbitSize4 = fullGroupOrder / stabGroupOrder4;
 
 		// get low and high bit from tuples
 		// note that SubsetT is such that the i'th index equals a bit shit i to the left
@@ -186,10 +189,10 @@ int SymmetricSolver() {
 			CoffeeCode::OrBit(subsetY, !!high_bit, i);
 		}
 
-		print(tuple);
 
 		// apply channel
 		const auto term = ChannelAction(subsetX, subsetY, instance::M);
+
 		
 		// monomial exponents
 		const ExponentT p_exponent = term.uSum();
@@ -200,6 +203,7 @@ int SymmetricSolver() {
 			time_temp = now();
 			const auto[UIdxCanonical, stabGroupOrder2] = group.CanonicalColoring(term.Uidx);
 
+
 			time_nauty_CCA += now() - time_temp;
 			const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
 			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
@@ -209,6 +213,8 @@ int SymmetricSolver() {
 			auto& [poly, mult] = lambda[UIdxCanonical];
 			poly.Add(p_exponent, coeff);
 			mult = orbitSize2;
+
+			std::cout << "    " << +coeff << "\n";
 		}
 
 		//// B: Add to lambda_pre
@@ -239,7 +245,7 @@ int SymmetricSolver() {
 
 	auto time_ptrace_start = now();
 	for (const auto& it : instance::sgs::TupleCosets<2>()) {
-		const auto& [tuple, mult] = TupleAndMult(group, it);
+		const auto& [tuple, _] = TupleAndStabOrder(group, it);
 		counter_ptrace ++;
 
 		// TupleT to SubsetT and HashT because that one can be different
@@ -248,7 +254,7 @@ int SymmetricSolver() {
 			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
 
 		time_temp = now();
-		const auto [Akey, _] = group.CanonicalColoring(subsetA);
+		const auto [Akey, __] = group.CanonicalColoring(subsetA);
 		time_nauty_CCC += now() - time_temp;
 
 		time_temp = now();

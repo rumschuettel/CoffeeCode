@@ -39,6 +39,16 @@ namespace CoffeeCode {
         // number of points not covered by any orbit
         constexpr static size_t N_remaining = Length - ( Orbits::Length + ... );
 
+        // group order
+        // no compile time support for cpp_int multiplication or template args
+        // so just cache the call
+        // TODO: remove the redundant group order calls overall
+        inline const static auto _GroupOrder()
+        {
+            const static auto order = ( OrbitType<>::Factorial(Orbits::Length) * ... );
+            return order;
+        }
+
 
 		// first and last orbit
 		using FirstOrbit = nth_element<0, Orbits...>;
@@ -164,6 +174,7 @@ namespace CoffeeCode {
                 for (size_t ii = 0; ii < N_orbits; ii ++) {
                     const auto& idcs = indices[ii];
                     const auto Start = OrbitStarts[ii];
+                    const auto End = OrbitEnds[ii];
                     const auto Length = OrbitLengths[ii];
 
                     // calculate orbit size
@@ -178,9 +189,9 @@ namespace CoffeeCode {
                     // within sections determined by indices
                     for (size_t i = 0; i < idcs.size()-1; i ++)
                         for (size_t j = idcs[i]; j < idcs[i+1]; j ++)
-                            out[j + Start] = static_cast<BaseT>(i+1);
+                            out[End - j - 1] = static_cast<BaseT>(i+1);
                     for (size_t j = idcs[idcs.size()-1]; j < Length; j ++)
-                        out[j + Start] = Base-1;
+                        out[End - j - 1] = Base-1;
                 }
 
                 // fill remainder
@@ -192,7 +203,10 @@ namespace CoffeeCode {
                     out[j + Length - N_remaining] = digit;
                 }
 
-                return { out, orbit };
+                // we have to return the stabilizer group order, not the multiplicity
+                // we hope the compiler optimizes this division away
+                // TODO
+                return { out, _GroupOrder() / orbit };
 			}
         };
 
@@ -225,12 +239,16 @@ namespace CoffeeCode {
                 // and accumulate the multiplicities
                 ( SortBitSubset<Orbits>(out, mult), ... );
 
-                return std::make_pair(out, mult);
+                // we are expected to return the stabilizer group order,
+                // not the tuple's multiplicity directly; so divide full group
+                // order by multiplicity. We trust the compiler optimizes
+                // the divisions away
+                return std::make_pair(out, GroupOrder() / mult);
             }
 
             constexpr inline static auto GroupOrder()
             {
-                return ( OrbitType<>::Factorial(Orbits::Length) * ... );                
+                return _GroupOrder();                
             }
 
         private:

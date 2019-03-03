@@ -7,6 +7,8 @@
 #include <boost/container_hash/hash.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
+#include <tuple>
+
 namespace CoffeeCode::NautyLink {
 	#if MAXN != (K_SYS+K_ENV)
 	#error "MAXN should be equal to K_SYS+K_ENV"
@@ -27,7 +29,7 @@ namespace CoffeeCode::NautyLink {
 	namespace ImplDetails {
 		// group order
 		// this is calling legacy C code so we allow a global variable
-		using OrbitSizeT = CoffeeCode::OrbitType<>::SizeT;
+		using OrbitSizeT = CoffeeCode::OrbitType;
 		OrbitSizeT __grouporder;
 		void UserLevelProc_GroupOrder(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)
 		{
@@ -53,6 +55,9 @@ namespace CoffeeCode::NautyLink {
 		int ptn[K_TOT];
 		int orbits[K_TOT];
 		statsblk stats;
+
+		// not static since we need to first call nauty to fill it with a value
+		ImplDetails::OrbitSizeT FULL_GROUP_ORDER;
 
 		enum Color {
 			// 4 colors at most since our Us have at most 4 different states per vertex
@@ -116,6 +121,9 @@ namespace CoffeeCode::NautyLink {
 			for (size_t i = K_SYS; i < K_TOT; i++)
 				coloring[i] = ENVIRONMENT_COLOR;
 			SetColoring(coloring);
+
+			// calculate full group order with default coloring
+			FULL_GROUP_ORDER = GroupOrder();
 		}
 
 		auto inline GroupOrder()
@@ -161,14 +169,15 @@ namespace CoffeeCode::NautyLink {
 			}
 		};
 		
-		using OrbitSizeT = ImplDetails::OrbitSizeT;
+
+		using MultiplicityT = MultiplicityType;
 		using CanonicalImageT = CanonicalImage;
 		using CanonicalImageHashT = typename CanonicalImage::Hash;
 
 
 		// reorders to get canonical image of the partial coloring given
 		// also returns the group order
-		auto inline CanonicalColoring(const ColoringRawT raw_coloring)
+		std::pair<CanonicalImageT, MultiplicityT> CanonicalColoring(const ColoringRawT raw_coloring)
 		{
 			const auto coloring = SetColoring(raw_coloring);
 
@@ -183,7 +192,10 @@ namespace CoffeeCode::NautyLink {
 
 			// rely on return value optimization
 			CanonicalImage out(G_canon, coloring);
-			return std::make_tuple(out, ImplDetails::__grouporder);
+			return {
+				out,
+				static_cast<MultiplicityT>(FULL_GROUP_ORDER / ImplDetails::__grouporder)
+			};
 		}
 
 		auto inline SetColoring(const ColoringRawT partial)

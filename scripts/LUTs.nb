@@ -1,0 +1,169 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      7010,        161]
+NotebookOptionsPosition[      6145,        137]
+NotebookOutlinePosition[      6490,        152]
+CellTagsIndexPosition[      6447,        149]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"Binomial", "[", 
+    RowBox[{"64", ",", "32"}], "]"}], "//", "Log2"}], "//", "N"}]], "Input",
+ CellChangeTimes->{{3.7606162218005238`*^9, 3.7606162363547163`*^9}, {
+  3.7606163283712797`*^9, 3.7606163312934637`*^9}},
+ CellLabel->"In[87]:=",ExpressionUUID->"2cda58f2-46a2-4ba7-888f-c2a6fc3d0412"],
+
+Cell[BoxData["60.66861663700343`"], "Output",
+ CellChangeTimes->{{3.7606162288399987`*^9, 3.760616236688769*^9}, 
+   3.760616331806207*^9},
+ CellLabel->"Out[87]=",ExpressionUUID->"2d2ef5a9-7c5e-4bcf-a47c-8c7b098c30d4"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Binomial Coefficient Lookup Table", "Subsection",
+ CellChangeTimes->{{3.7606158362233305`*^9, 
+  3.7606158432217665`*^9}},ExpressionUUID->"43bd579d-c271-40fd-a8b1-\
+5a6ae0792b85"],
+
+Cell["\<\
+The string literal _cppui is for cpp_int; the numbers have to be in hex for \
+this and precisely the correct length you want to support.\
+\>", "Text",
+ CellChangeTimes->{{3.7606158459643817`*^9, 3.7606158647045794`*^9}, {
+  3.76061700836672*^9, 
+  3.7606170171161356`*^9}},ExpressionUUID->"795416e2-e5db-4751-a311-\
+98390b6be097"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{
+     "\"\<template<>\\nstruct BinomialCoefficient<\>\"", "<>", "#1", "<>", 
+      "\"\<> {\\nconstexpr static \>\"", "<>", "#1", "<>", "\"\< lut[\>\"", "<>", 
+      RowBox[{"ToString", "[", "#2", "]"}], "<>", "\"\<][\>\"", "<>", 
+      RowBox[{"ToString", "[", "#2", "]"}], "<>", "\"\<] = \>\"", "<>", 
+      RowBox[{"ToString", "@", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Binomial", "[", 
+            RowBox[{"n", ",", "k"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"n", ",", "0", ",", 
+             RowBox[{"#2", "-", "1"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"k", ",", "0", ",", 
+             RowBox[{"#2", "-", "1"}]}], "}"}]}], "]"}], "/.", 
+         RowBox[{"m_Integer", "\[RuleDelayed]", 
+          RowBox[{"(", 
+           RowBox[{"\"\<0x\>\"", "<>", 
+            RowBox[{"IntegerString", "[", 
+             RowBox[{"m", ",", "16", ",", 
+              RowBox[{"Ceiling", "[", 
+               RowBox[{"#2", "/", "16"}], "]"}]}], "]"}], "<>", "#3"}], 
+           ")"}]}]}], ")"}]}], "<>", "\"\<;\\n};\\n\>\""}], ")"}], "&"}], "@@@", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"\"\<uint8_t\>\"", ",", "8", ",", "\"\<\>\""}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<uint16_t\>\"", ",", "16", ",", "\"\<\>\""}], "}"}]}], 
+    "}"}]}], "//", "StringJoin"}]], "Input",
+ CellChangeTimes->{{3.7606154399953747`*^9, 3.760615527501439*^9}, {
+  3.7606157144964824`*^9, 3.760615766834267*^9}, {3.7606158820167675`*^9, 
+  3.760615887372439*^9}, {3.7606159962209325`*^9, 3.7606159973550067`*^9}, {
+  3.7606170232826014`*^9, 3.760617037234835*^9}, {3.7606170728835807`*^9, 
+  3.760617345400792*^9}, {3.7606175800443387`*^9, 3.760617582447386*^9}, {
+  3.7606176253870306`*^9, 
+  3.76061765885898*^9}},ExpressionUUID->"7e809d1a-3705-4399-90d7-\
+1c8dbd509140"],
+
+Cell[BoxData["\<\"template<>\\nstruct BinomialCoefficient<uint8_t> \
+{\\nconstexpr static uint8_t lut[8][7] = {{0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, \
+0x0}, {0x1, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x2, 0x1, 0x0, 0x0, \
+0x0, 0x0, 0x0}, {0x1, 0x3, 0x3, 0x1, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x4, 0x6, \
+0x4, 0x1, 0x0, 0x0, 0x0}, {0x1, 0x5, 0xa, 0xa, 0x5, 0x1, 0x0, 0x0}, {0x1, \
+0x6, 0xf, 0x4, 0xf, 0x6, 0x1, 0x0}, {0x1, 0x7, 0x5, 0x3, 0x3, 0x5, 0x7, \
+0x1}};\\n};\\ntemplate<>\\nstruct BinomialCoefficient<uint16_t> {\\nconstexpr \
+static uint16_t lut[16][15] = {{0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, \
+0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, \
+0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x2, 0x1, 0x0, 0x0, 0x0, 0x0, \
+0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x3, 0x3, 0x1, 0x0, 0x0, \
+0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x4, 0x6, 0x4, 0x1, \
+0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x5, 0xa, 0xa, \
+0x5, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x6, 0xf, \
+0x4, 0xf, 0x6, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, 0x7, \
+0x5, 0x3, 0x3, 0x5, 0x7, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, {0x1, \
+0x8, 0xc, 0x8, 0x6, 0x8, 0xc, 0x8, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, \
+{0x1, 0x9, 0x4, 0x4, 0xe, 0xe, 0x4, 0x4, 0x9, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, \
+0x0}, {0x1, 0xa, 0xd, 0x8, 0x2, 0xc, 0x2, 0x8, 0xd, 0xa, 0x1, 0x0, 0x0, 0x0, \
+0x0, 0x0}, {0x1, 0xb, 0x7, 0x5, 0xa, 0xe, 0xe, 0xa, 0x5, 0x7, 0xb, 0x1, 0x0, \
+0x0, 0x0, 0x0}, {0x1, 0xc, 0x2, 0xc, 0xf, 0x8, 0xc, 0x8, 0xf, 0xc, 0x2, 0xc, \
+0x1, 0x0, 0x0, 0x0}, {0x1, 0xd, 0xe, 0xe, 0xb, 0x7, 0x4, 0x4, 0x7, 0xb, 0xe, \
+0xe, 0xd, 0x1, 0x0, 0x0}, {0x1, 0xe, 0xb, 0xc, 0x9, 0x2, 0xb, 0x8, 0xb, 0x2, \
+0x9, 0xc, 0xb, 0xe, 0x1, 0x0}, {0x1, 0xf, 0x9, 0x7, 0x5, 0xb, 0xd, 0x3, 0x3, \
+0xd, 0xb, 0x5, 0x7, 0x9, 0xf, 0x1}};\\n};\\n\"\>"], "Output",
+ CellChangeTimes->{{3.7606154650455728`*^9, 3.7606154900778284`*^9}, {
+   3.76061575903592*^9, 3.7606157671424437`*^9}, 3.7606158879488974`*^9, 
+   3.7606159986097517`*^9, {3.760617028140956*^9, 3.760617038921299*^9}, {
+   3.760617076493054*^9, 3.7606170864585934`*^9}, {3.7606172891551533`*^9, 
+   3.7606173352975082`*^9}, 3.760617460816674*^9, 3.760617582866297*^9, 
+   3.760617643567912*^9},
+ CellLabel->"Out[99]=",ExpressionUUID->"e34642db-d856-4325-a549-fb2c3164835c"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1904, 1021},
+WindowMargins->{{1842, Automatic}, {Automatic, 0}},
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 342, 7, 28, "Input",ExpressionUUID->"2cda58f2-46a2-4ba7-888f-c2a6fc3d0412"],
+Cell[925, 31, 218, 3, 32, "Output",ExpressionUUID->"2d2ef5a9-7c5e-4bcf-a47c-8c7b098c30d4"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1180, 39, 185, 3, 53, "Subsection",ExpressionUUID->"43bd579d-c271-40fd-a8b1-5a6ae0792b85"],
+Cell[1368, 44, 340, 7, 34, "Text",ExpressionUUID->"795416e2-e5db-4751-a311-98390b6be097"],
+Cell[CellGroupData[{
+Cell[1733, 55, 1974, 45, 48, "Input",ExpressionUUID->"7e809d1a-3705-4399-90d7-1c8dbd509140"],
+Cell[3710, 102, 2407, 31, 299, "Output",ExpressionUUID->"e34642db-d856-4325-a549-fb2c3164835c"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

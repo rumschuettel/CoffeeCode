@@ -7,7 +7,7 @@
 #include <chrono>
 #include <bitset>
 
-#include <experimental/type_traits>
+
 
 namespace CoffeeCode {
 	// extract compile time parameters
@@ -36,7 +36,7 @@ namespace CoffeeCode {
 	private:
 		template<typename Q>
 		using SymmetryProviderT = typename Q::template SymmetryProvider<MatrixT>;
-		using SymmetryProvider = std::experimental::detected_or_t<
+		using SymmetryProvider = detected_or_t<
 			NautyLink::NautyLink<MatrixT>,
 			SymmetryProviderT,
 			sgs
@@ -48,7 +48,7 @@ namespace CoffeeCode {
 			return SymmetryProvider(M);
 		}
 
-		using OrbitSizeT = typename SymmetryProvider::OrbitSizeT;
+		using MultiplicityT = typename SymmetryProvider::MultiplicityT;
 		using CanonicalImageT = typename SymmetryProvider::CanonicalImageT;
 		using CanonicalImageHashT = typename SymmetryProvider::CanonicalImageHashT;
 
@@ -58,7 +58,7 @@ namespace CoffeeCode {
 			CanonicalImageT,
 			std::pair<
 				CoffeeCode::Polynomial,
-				OrbitSizeT
+			MultiplicityT
 			>,
 			CanonicalImageHashT
 		>;
@@ -143,6 +143,12 @@ namespace {
 // group library
 #include "utility.h"
 
+#ifndef MEASURE_ALL
+#define MEASURE_FILTER1(sth)
+#else
+#define MEASURE_FILTER1(sth) sth
+#endif
+
 int SymmetricSolver() {
 	using VectorT = typename instance::RowVectorT;
 	using SubsetT = typename VectorT::StoreT;
@@ -152,13 +158,11 @@ int SymmetricSolver() {
 
 	auto group = instance::GroupLink();
 
-	const auto fullGroupOrder = group.GroupOrder();
-
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
 	auto time_total_start = now();
 	decltype(now()) time_temp;
-	decltype(now() - now()) time_nauty_GO, time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;
+	MEASURE_FILTER1(decltype(now() - now()) time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;)
 	size_t counter_channel = 0;
 	size_t counter_ptrace = 0;
 
@@ -168,14 +172,11 @@ int SymmetricSolver() {
 
 	auto time_channel_start = now();
 	for (const auto& it : instance::sgs::TupleCosets<4>()) {
-		const auto& [tuple, groupStabOrder4] = TupleAndStabOrder(group, it);
-		const auto orbitSize4 = fullGroupOrder / groupStabOrder4;
+		const auto& [tuple, orbitSize4] = TupleAndStabOrder(group, it);
 
 		counter_channel++;
 
 		// calculate multiplicity of base 4 tuple
-		time_temp = now();
-		time_nauty_GO += now() - time_temp;
 
 		// get low and high bit from tuples
 		// note that SubsetT is such that the i'th index equals a bit shit i to the left
@@ -197,12 +198,10 @@ int SymmetricSolver() {
 		//// A: Add to lambda
 		{
 			// multiplicity of resulting base 2 tuple
-			time_temp = now();
-			const auto[UIdxCanonical, stabGroupOrder2] = group.CanonicalColoring(term.Uidx);
+			MEASURE_FILTER1(time_temp = now();)
+			const auto[UIdxCanonical, orbitSize2] = group.CanonicalColoring(term.Uidx);
+			MEASURE_FILTER1(time_nauty_CCA += now() - time_temp;)
 
-
-			time_nauty_CCA += now() - time_temp;
-			const auto orbitSize2 = fullGroupOrder / stabGroupOrder2;
 			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
 
 			// accumulate polynomial with potentially pre-existing terms
@@ -215,12 +214,12 @@ int SymmetricSolver() {
 		//// B: Add to lambda_pre
 		{
 			// we project out the environment for term.Uidx
-			time_temp = now();
-			const auto[UIdxCanonical_pre, stabGroupOrder2_pre] = group.CanonicalColoring(
+			MEASURE_FILTER1(time_temp = now();)
+			const auto[UIdxCanonical_pre, orbitSize2_pre] = group.CanonicalColoring(
 				term.Uidx & CoffeeCode::Bitmask<decltype(term.Uidx), instance::k_sys>::mask0111
 			);
-			time_nauty_CCB += now() - time_temp;
-			const auto orbitSize2_pre = fullGroupOrder / stabGroupOrder2_pre;
+			MEASURE_FILTER1(time_nauty_CCB += now() - time_temp;)
+
 			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2_pre);
 
 			// accumulate polynomial with same terms as above
@@ -248,11 +247,11 @@ int SymmetricSolver() {
 		for (size_t i = 0; i < instance::k_sys; i++) 
 			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
 
-		time_temp = now();
+		MEASURE_FILTER1(time_temp = now();)
 		const auto [Akey, __] = group.CanonicalColoring(subsetA);
-		time_nauty_CCC += now() - time_temp;
+		MEASURE_FILTER1(time_nauty_CCC += now() - time_temp;)
 
-		time_temp = now();
+		MEASURE_FILTER1(time_temp = now();)
 
 		// this inner loop is as in CCFull with the break condition at the end to avoid overflows
 		for (SubsetBT subsetB = 0; ; subsetB++) {
@@ -260,8 +259,7 @@ int SymmetricSolver() {
 			const auto BtoA = static_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
 
 			// find canonical image for key
-			const auto [key, keyStabOrder] = group.CanonicalColoring(BtoA);
-			const auto keyMult = fullGroupOrder / keyStabOrder;
+			const auto [key, keyMult] = group.CanonicalColoring(BtoA);
 
 			//// C: Add to lambda_a
 			const auto& [poly_pre, mult_pre] = lambda_pre[key];
@@ -274,10 +272,11 @@ int SymmetricSolver() {
 			if (subsetB == CoffeeCode::BaseKSubsets<2, instance::k_env>::count - 1) break;
 		}
 		
-		time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::k_env>::count;
+		MEASURE_FILTER1(time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::k_env>::count;)
 	}
-	auto time_ptrace = (now() - time_ptrace_start);
+	auto time_ptrace = now() - time_ptrace_start;
 
+	
 
 	// EXPORT AS JSON
 	// some statistics
@@ -289,11 +288,14 @@ int SymmetricSolver() {
 	print_time("total time [ms]", now() - time_total_start);
 	print_time("channel time [ms]", time_channel);
 	print_time("ptrace time [ms]", time_ptrace);
-	print_time("group GroupOrder [ms]", time_nauty_GO);
-	print_time("group CanonicalColoring A [ms]", time_nauty_CCA);
-	print_time("group CanonicalColoring B [ms]", time_nauty_CCB);
-	print_time("group CanonicalColoring C [ms]", time_nauty_CCC);
-	print_time("group CanonicalColoring D [ms]", time_nauty_CCD);
+
+	MEASURE_FILTER1(
+		print_time("group CanonicalColoring A [ms]", time_nauty_CCA);
+		print_time("group CanonicalColoring B [ms]", time_nauty_CCB);
+		print_time("group CanonicalColoring C [ms]", time_nauty_CCC);
+		print_time("group CanonicalColoring D [ms]", time_nauty_CCD);
+	)
+
 
 	// lambda
 	std::cout << "\"lambda\": [\n";

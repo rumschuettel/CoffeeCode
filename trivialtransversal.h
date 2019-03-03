@@ -7,13 +7,13 @@ namespace CoffeeCode {
 	template <size_t _Start, size_t _End>
 	struct TrivialSGSOrbit
 	{
-		constexpr static const size_t Start = _Start;
-		constexpr static const size_t End = _End;
+		constexpr static size_t Start = _Start;
+		constexpr static size_t End = _End;
 
         // we only allow non-trivial orbits
 		static_assert(Start < End);
 
-		constexpr static const size_t Length = End - Start;
+		constexpr static size_t Length = End - Start;
 
         // bitmask for a given type; 1s between Start and End, 0 elsewhere
         template<typename T>
@@ -37,17 +37,7 @@ namespace CoffeeCode {
         static_assert(N_orbits >= 1);
 
         // number of points not covered by any orbit
-        constexpr static size_t N_remaining = Length - ( Orbits::Length + ... );
-
-        // group order
-        // no compile time support for cpp_int multiplication or template args
-        // so just cache the call
-        // TODO: remove the redundant group order calls overall
-        inline const static auto _GroupOrder()
-        {
-            const static auto order = ( OrbitType<>::Factorial(Orbits::Length) * ... );
-            return order;
-        }
+        constexpr static size_t N_remaining = Length - sum<Orbits::Length...>;
 
 
 		// first and last orbit
@@ -56,7 +46,7 @@ namespace CoffeeCode {
         using LastOrbit = nth_element<N_orbits-1, Orbits...>;
         static_assert(LastOrbit::End < Length);
 
-        // check that orbits are consecutive
+        // check that orbits are consecutive, e.g. <0, 10>, <10, 11>, ...
         // TODO; for now we just assume that
 
     private:
@@ -69,7 +59,7 @@ namespace CoffeeCode {
         template<size_t Base>
         struct OrbitProductIterator {
 			using TupleT = StdTupleStoreT<Base, Length>;
-            using OrbitSizeT = OrbitType<>::SizeT;
+            using MultiplicityT = MultiplicityType;
 
         private:
             // within one orbit, we need Base-1 indices to mark the boundaries
@@ -166,10 +156,10 @@ namespace CoffeeCode {
 			}
 
 			// dereference
-			const std::pair<TupleT, OrbitSizeT> operator*() const
+			const std::pair<TupleT, MultiplicityT> operator*() const
 			{
                 TupleT out{0};
-                OrbitSizeT orbit{1};
+				OrbitType orbit{1};
                 using BaseT = typename TupleT::value_type;
 
                 for (size_t ii = 0; ii < N_orbits; ii ++) {
@@ -180,11 +170,12 @@ namespace CoffeeCode {
 
                     // calculate orbit size
                     // this is simply word_length! / prod_i #color_i!
-                    orbit *= OrbitType<>::Factorial(Length);
-                    orbit /= OrbitType<>::Factorial(idcs[0]);
+					// todo: make this use MultiplicityT
+                    orbit *= Factorial<OrbitType>(Length);
+                    orbit /= Factorial<OrbitType>(idcs[0]);
                     for (size_t i = 0; i < idcs.size()-1; i ++)
-                        orbit /= OrbitType<>::Factorial(idcs[i+1] - idcs[i]);
-                    orbit /= OrbitType<>::Factorial(Length - idcs[idcs.size()-1]);
+                        orbit /= Factorial<OrbitType>(idcs[i+1] - idcs[i]);
+                    orbit /= Factorial<OrbitType>(Length - idcs[idcs.size()-1]);
 
                     // fill vector in with numbers 0, 1, 2, ..., Base-1
                     // within sections determined by indices
@@ -204,10 +195,7 @@ namespace CoffeeCode {
                     out[j + Length - N_remaining] = digit;
                 }
 
-                // we have to return the stabilizer group order, not the multiplicity
-                // we hope the compiler optimizes this division away
-                // TODO
-                return { out, _GroupOrder() / orbit };
+                return { out, static_cast<MultiplicityT>(orbit) };
 			}
         };
 
@@ -227,36 +215,28 @@ namespace CoffeeCode {
             using ColoringRawT = typename MatrixT::RowVectorT::StoreT;
             using CanonicalImageT = ColoringRawT;
             using CanonicalImageHashT = std::hash<CanonicalImageT>;
-            using OrbitSizeT = OrbitType<>::SizeT;
+            using MultiplicityT = MultiplicityType;
 
             SymmetryProvider(const MatrixT&) {}
 
             inline static auto CanonicalColoring(const ColoringRawT coloring)
             {
                 ColoringRawT out = coloring;
-                OrbitSizeT mult = 1;
+				MultiplicityT mult = 1;
 
                 // for every orbit segment, we sort the bit subsets
                 // and accumulate the multiplicities
                 ( SortBitSubset<Orbits>(out, mult), ... );
 
-                // we are expected to return the stabilizer group order,
-                // not the tuple's multiplicity directly; so divide full group
-                // order by multiplicity. We trust the compiler optimizes
-                // the divisions away
-                return std::make_pair(out, GroupOrder() / mult);
+                return std::make_pair(out, mult);
             }
 
-            constexpr inline static auto GroupOrder()
-            {
-                return _GroupOrder();                
-            }
 
         private:
             // sort and return multiplicity, which is simply
             // Orbit::Length choose #1s
             template<typename Orbit>
-            inline static void SortBitSubset(ColoringRawT& src, OrbitSizeT& mult)
+            inline static void SortBitSubset(ColoringRawT& src, MultiplicityT& mult)
             {
                 // bitmask with 1s between orbit start and end
                 constexpr ColoringRawT mask = Orbit::template Mask<ColoringRawT>::value;
@@ -275,7 +255,7 @@ namespace CoffeeCode {
                 src ^= sorted;
 
                 // update multiplicity
-                mult *= OrbitType<>::Binomial(Orbit::Length, count1s);
+                mult *= Binomial<MultiplicityT>(Orbit::Length, count1s);
             }
 
         };

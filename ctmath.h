@@ -1,6 +1,10 @@
 #pragma once
 
+#include "ctlookup.h"
+
 #include <cstddef>
+#include <stdint.h>
+
 #include <limits>
 #include <cmath>
 
@@ -20,15 +24,16 @@ namespace CoffeeCode {
 	constexpr IntegerT ipow(const IntegerT base, const int exp, const IntegerT result = 1) {
 		return exp < 1 ?
 			result :
-			ipow(base*base, exp / 2, (exp % 2) ? result * static_cast<IntegerT>(base) : result);
+			ipow(base*base, exp / 2, (exp % 2) ? result*base : result);
 	}
 
 
 	// compile time size of base k tuple
 	template<const size_t base, const size_t tuple_length>
 	struct BaseKSubsets {
-		static constexpr auto count = ipow(base, tuple_length);
+		static constexpr size_t count = ipow(base, tuple_length);
 	};
+
 	// compile time bitmask with k 1s
 	template<
 		typename MaskT,
@@ -39,4 +44,19 @@ namespace CoffeeCode {
         static constexpr auto mask1000 = static_cast<MaskT>( 0b01 ) << number_of_1s;
 		static constexpr auto mask0111 = mask1000 - 1;
 	};
+
+
+	// factorial function
+	template<typename SizeT>
+	constexpr inline static SizeT Factorial(size_t n)
+	{
+		return n <= 1 ? 1 : (Factorial<SizeT>(n - 1) * n);
+	}
+
+	// binomial function using lookup tables
+	template<typename T>
+	constexpr T Binomial(const T n, const T k)
+	{
+		return LUTs::BinomialCoefficient<T>::lut[n][k];
+	}
 }

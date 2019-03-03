@@ -46,17 +46,20 @@ namespace CoffeeCode {
 	};
 
 
-	// factorial function
+	// factorial function using lookup tables
 	template<typename SizeT>
-	constexpr inline static SizeT Factorial(size_t n)
+	constexpr inline SizeT Factorial(size_t n)
 	{
-		return n <= 1 ? 1 : (Factorial<SizeT>(n - 1) * n);
+		assert(n < sizeof(LUTs::Factorial<SizeT>::lut));
+		return LUTs::Factorial<SizeT>::lut[n];
 	}
 
 	// binomial function using lookup tables
-	template<typename T>
-	constexpr T Binomial(const T n, const T k)
+	template<typename SizeT>
+	constexpr inline SizeT Binomial(const SizeT n, const SizeT k)
 	{
-		return LUTs::BinomialCoefficient<T>::lut[n][k];
+		assert(n < sizeof(LUTs::BinomialCoefficient<SizeT>::lut));
+		assert(k < sizeof(LUTs::BinomialCoefficient<SizeT>::lut[n]));
+		return LUTs::BinomialCoefficient<SizeT>::lut[n][k];
 	}
 }

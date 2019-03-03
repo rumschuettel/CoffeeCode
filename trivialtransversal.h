@@ -20,6 +20,10 @@ namespace CoffeeCode {
         struct Mask {
             constexpr static auto value = Bitmask<T, End>::mask0111 & ~Bitmask<T, Start>::mask0111;
         };
+
+		// this is to check LUTs in ctlookup.h -- we will call Binomial and Factorial
+		// for (Length, ...) and Length, respectively, so we need to make sure they're precomputed
+		static_assert(Length < LUTs::UpperLimit, "increase LUTs in ctlookup.h for given orbit size");
 	};
 
 

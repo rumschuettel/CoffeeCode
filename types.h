@@ -5,7 +5,6 @@
 
 // clone from https://github.com/calccrypto/uint256_t.git
 // provides fast 128 and 256 bit integers
-#include "src/uint256_t/uint256_t.h"
 
 //#include "src/vectorclass/vectorclass.h"
 
@@ -44,9 +43,9 @@ namespace CoffeeCode {
 		std::conditional_t<
 		Width <= 64, uint64_t,
 		std::conditional_t<
-		Width <= 128, uint128_t,
+		Width <= 128, boost::multiprecision::uint128_t,
 		std::conditional_t<
-		Width <= 256, uint256_t,
+		Width <= 256, boost::multiprecision::uint256_t,
 		WideIntegerT<Width>
 	>>>>>>;
 

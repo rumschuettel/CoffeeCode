@@ -46,8 +46,10 @@ namespace CoffeeCode {
 		Width <= 128, boost::multiprecision::uint128_t,
 		std::conditional_t<
 		Width <= 256, boost::multiprecision::uint256_t,
-		WideIntegerT<Width>
-	>>>>>>;
+		std::conditional_t<
+		Width <= 512, boost::multiprecision::uint512_t,
+		InvalidIntegerType<>
+	>>>>>>>;
 
 	using StdBitT = StdStoreT<1>;
 

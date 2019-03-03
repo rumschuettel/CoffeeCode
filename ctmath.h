@@ -21,7 +21,7 @@ namespace CoffeeCode {
 
 	// compile time integer exponent
 	template<typename IntegerT>
-	constexpr IntegerT ipow(const IntegerT base, const int exp, const IntegerT result = 1) {
+	constexpr IntegerT ipow(const IntegerT base, const IntegerT exp, const IntegerT result = 1) {
 		return exp < 1 ?
 			result :
 			ipow(base*base, exp / 2, (exp % 2) ? result*base : result);

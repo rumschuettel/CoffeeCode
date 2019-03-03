@@ -158,8 +158,11 @@ namespace CoffeeCode {
 			// dereference
 			const std::pair<TupleT, MultiplicityT> operator*() const
 			{
+				// this is always the same
+				static const OrbitType orbit_enumerator{ (Factorial<OrbitType>(Orbits::Length) * ...) };
+				OrbitType orbit_denominator{ 1 };
+
                 TupleT out{0};
-				OrbitType orbit{1};
                 using BaseT = typename TupleT::value_type;
 
                 for (size_t ii = 0; ii < N_orbits; ii ++) {
@@ -171,11 +174,11 @@ namespace CoffeeCode {
                     // calculate orbit size
                     // this is simply word_length! / prod_i #color_i!
 					// todo: make this use MultiplicityT
-                    orbit *= Factorial<OrbitType>(Length);
-                    orbit /= Factorial<OrbitType>(idcs[0]);
+					orbit_denominator *= Factorial<OrbitType>(idcs[0]);
                     for (size_t i = 0; i < idcs.size()-1; i ++)
-                        orbit /= Factorial<OrbitType>(idcs[i+1] - idcs[i]);
-                    orbit /= Factorial<OrbitType>(Length - idcs[idcs.size()-1]);
+						orbit_denominator *= Factorial<OrbitType>(idcs[i+1] - idcs[i]);
+					orbit_denominator *= Factorial<OrbitType>(Length - idcs[idcs.size()-1]);
+					
 
                     // fill vector in with numbers 0, 1, 2, ..., Base-1
                     // within sections determined by indices
@@ -183,19 +186,19 @@ namespace CoffeeCode {
                         for (size_t j = idcs[i]; j < idcs[i+1]; j ++)
                             out[End - j - 1] = static_cast<BaseT>(i+1);
                     for (size_t j = idcs[idcs.size()-1]; j < Length; j ++)
-                        out[End - j - 1] = Base-1;
+                        out[End - j - 1] = static_cast<BaseT>(Base-1);
                 }
 
                 // fill remainder
                 BaseCounterT rem = remainder;
                 for (size_t j = 0; j < N_remaining; j ++) {
-                    const auto digit = rem % Base;
+                    const BaseT digit = rem % Base;
                     rem /= Base;
 
                     out[j + Length - N_remaining] = digit;
                 }
 
-                return { out, static_cast<MultiplicityT>(orbit) };
+                return { out, static_cast<MultiplicityT>(orbit_enumerator / orbit_denominator) };
 			}
         };
 
@@ -249,7 +252,7 @@ namespace CoffeeCode {
                     return;
 
                 // otherwise overwrite section with padded 1s
-                const auto sorted = ((static_cast<ColoringRawT>(1) << count1s) - 1) << Orbit::Start;
+                const ColoringRawT sorted = ((static_cast<ColoringRawT>(1) << count1s) - 1) << Orbit::Start;
 
                 src &= ~mask;
                 src ^= sorted;

@@ -12,7 +12,6 @@ namespace CoffeeCode::LUTs {
 	// FACTORIAL
 	template<typename SizeT>
 	struct Factorial {
-		constexpr static SizeT lut[];
 	};
 	
 	template<>
@@ -50,7 +49,6 @@ namespace CoffeeCode::LUTs {
 
 	template<typename SizeT>
 	struct BinomialCoefficient {
-		constexpr static SizeT lut[][];
 	};
 
 	template<>

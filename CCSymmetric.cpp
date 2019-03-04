@@ -162,7 +162,7 @@ int SymmetricSolver() {
 	auto now = std::chrono::high_resolution_clock::now;
 	auto time_total_start = now();
 	decltype(now()) time_temp;
-	MEASURE_FILTER1(decltype(now() - now()) time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;)
+	MEASURE_FILTER1((decltype(now() - now()) time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;))
 	size_t counter_channel = 0;
 	size_t counter_ptrace = 0;
 
@@ -272,7 +272,7 @@ int SymmetricSolver() {
 			if (subsetB == CoffeeCode::BaseKSubsets<2, instance::k_env>::count - 1) break;
 		}
 		
-		MEASURE_FILTER1(time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::k_env>::count;)
+		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::k_env>::count;))
 	}
 	auto time_ptrace = now() - time_ptrace_start;
 

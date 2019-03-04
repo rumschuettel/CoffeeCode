@@ -18,7 +18,7 @@ namespace CoffeeCode {
         // bitmask for a given type; 1s between Start and End, 0 elsewhere
         template<typename T>
         struct Mask {
-            constexpr static auto value = Bitmask<T, End>::mask0111 & ~Bitmask<T, Start>::mask0111;
+            constexpr static auto value = Bitmask<T, End>::mask0111 & ~(Bitmask<T, Start>::mask0111);
         };
 
 		// this is to check LUTs in ctlookup.h -- we will call Binomial and Factorial

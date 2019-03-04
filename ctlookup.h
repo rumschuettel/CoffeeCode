@@ -2,7 +2,6 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 
-
 namespace CoffeeCode::LUTs {
 	using namespace boost::multiprecision::literals;
 

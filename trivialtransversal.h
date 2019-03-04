@@ -30,7 +30,8 @@ namespace CoffeeCode {
     // SGSTransversal equivalent featuring a TupleCosets function,
     // as well as a plug-in replacement for NautyLink's CanonicalImage
     // we require that the orbits are in a consecutive block at the beginning of the graph,
-    // e.g. {0, 1}, {2, 5}, {6, 7}, {8, 33}
+    // e.g. {0, 2}, {2, 5}, {5, 7}, {7, 33}
+    // where the second index points to the element AFTER the orbit.
     template<size_t _Length, typename... Orbits>
     struct TrivialSGSTransversal
     {
@@ -48,9 +49,9 @@ namespace CoffeeCode {
 		using FirstOrbit = nth_element<0, Orbits...>;
         static_assert(FirstOrbit::Start == 0);
         using LastOrbit = nth_element<N_orbits-1, Orbits...>;
-        static_assert(LastOrbit::End < Length);
+        static_assert(LastOrbit::End <= Length);
 
-        // check that orbits are consecutive, e.g. <0, 10>, <10, 11>, ...
+        // check that orbits are consecutive, e.g. <0, 10>, <10, 12>, ...
         // TODO; for now we just assume that
 
     private:
@@ -63,7 +64,7 @@ namespace CoffeeCode {
         template<size_t Base>
         struct OrbitProductIterator {
 			using TupleT = StdTupleStoreT<Base, Length>;
-            using MultiplicityT = MultiplicityType;
+            using MultiplicityT = MultiplicityType<Base>;
 
         private:
             // within one orbit, we need Base-1 indices to mark the boundaries
@@ -222,7 +223,7 @@ namespace CoffeeCode {
             using ColoringRawT = typename MatrixT::RowVectorT::StoreT;
             using CanonicalImageT = ColoringRawT;
             using CanonicalImageHashT = std::hash<CanonicalImageT>;
-            using MultiplicityT = MultiplicityType;
+            using MultiplicityT = MultiplicityType<2>;
 
             SymmetryProvider(const MatrixT&) {}
 

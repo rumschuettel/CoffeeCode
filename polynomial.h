@@ -1,5 +1,6 @@
 #pragma once
 
+#include "types.h"
 #include "ctmath.h"
 
 #include <boost/container_hash/hash.hpp>
@@ -15,16 +16,15 @@ namespace CoffeeCode {
 	//     as we have at most (X wo Y) + (Y wo X) + (X and Y) = (X or Y) <= K_TOT
 	//     marked vertices within a set.
 	// maximum coefficient: the number of sets giving the same Uidx
-	//     can be upper-bounded by 2^K_TOT, as we have a linear affine map mod 2
-	//     K_TOT bits is thus a safe bet; since we actually might need to store 2^K_TOT, we add 1
+	//     can be upper-bounded by 2^K_SYS, as we have a linear affine map mod 2
+	//     starting from {0, 1, 2, 3}^K_SYS.
+	//     This is precisely given by the corresponding MultiplicityT
 	struct Monomial {
-		static constexpr size_t CoefficientWidth = K_TOT + 1;
 		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
 
-		using CoefficientT = StdStoreT<CoefficientWidth>;
+		using CoefficientT = MultiplicityType<4>;
 		using ExponentT = StdStoreT<ExponentWidth>;
 
-		static constexpr CoefficientT MaxCoefficient = Bitmask<CoefficientT, K_TOT>::mask1000;
 		static constexpr ExponentT MaxExponent = K_TOT;
 	};
 
@@ -33,7 +33,6 @@ namespace CoffeeCode {
 		using CoefficientT = Monomial::CoefficientT;
 		using ExponentT = Monomial::ExponentT;
 		static constexpr auto MaxExponent = Monomial::MaxExponent;
-		static constexpr auto MaxCoefficient = Monomial::MaxCoefficient;
 
 		CoefficientT coefficients[MaxExponent];
 

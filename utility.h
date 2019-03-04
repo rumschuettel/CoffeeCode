@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bitset>
+
 namespace {
 	// debug helper
 	template<typename T>

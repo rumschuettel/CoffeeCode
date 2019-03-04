@@ -139,6 +139,12 @@ namespace CoffeeCode::NautyLink {
 			return ImplDetails::__grouporder;
 		}
 
+		template<size_t ColorCount>
+		auto inline ColoringMultiplicity()
+		{
+			return static_cast<MultiplicityType<ColorCount>>(FULL_GROUP_ORDER / GroupOrder());
+		}
+
 		struct CanonicalImage {
 			CanonicalImage(const decltype(G_canon)& in, const ColoringT& coloring)
 				: vertexColorCounts{ 0 }
@@ -170,14 +176,13 @@ namespace CoffeeCode::NautyLink {
 		};
 		
 
-		using MultiplicityT = MultiplicityType;
 		using CanonicalImageT = CanonicalImage;
 		using CanonicalImageHashT = typename CanonicalImage::Hash;
 
 
 		// reorders to get canonical image of the partial coloring given
 		// also returns the group order
-		std::pair<CanonicalImageT, MultiplicityT> CanonicalColoring(const ColoringRawT raw_coloring)
+		auto CanonicalColoring(const ColoringRawT raw_coloring)
 		{
 			const auto coloring = SetColoring(raw_coloring);
 
@@ -192,10 +197,10 @@ namespace CoffeeCode::NautyLink {
 
 			// rely on return value optimization
 			CanonicalImage out(G_canon, coloring);
-			return {
+			return std::make_pair(
 				out,
-				static_cast<MultiplicityT>(FULL_GROUP_ORDER / ImplDetails::__grouporder)
-			};
+				static_cast<MultiplicityType<2>>(FULL_GROUP_ORDER / ImplDetails::__grouporder)
+			);
 		}
 
 		auto inline SetColoring(const ColoringRawT partial)

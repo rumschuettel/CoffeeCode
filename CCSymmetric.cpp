@@ -5,7 +5,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <chrono>
-#include <bitset>
+
+#include <tuple>
 
 
 
@@ -48,7 +49,6 @@ namespace CoffeeCode {
 			return SymmetryProvider(M);
 		}
 
-		using MultiplicityT = typename SymmetryProvider::MultiplicityT;
 		using CanonicalImageT = typename SymmetryProvider::CanonicalImageT;
 		using CanonicalImageHashT = typename SymmetryProvider::CanonicalImageHashT;
 
@@ -58,7 +58,7 @@ namespace CoffeeCode {
 			CanonicalImageT,
 			std::pair<
 				CoffeeCode::Polynomial,
-			MultiplicityT
+				MultiplicityType<2>
 			>,
 			CanonicalImageHashT
 		>;
@@ -102,7 +102,6 @@ namespace {
 		// aggregate
 		for (const auto& [key, value] : lambda) {
 			const auto& [poly, mult] = value;
-			assert(mult < PolynomialT::MaxCoefficient);
 			out[poly] += static_cast<typename PolynomialT::CoefficientT>(mult);
 		}
 		
@@ -125,16 +124,16 @@ namespace {
 	// extract tuple and multiplicity from iterator;
 	// if not provided will call appropriate group functions automatically
 	template<typename GroupT, typename IteratorT>
-	auto TupleAndStabOrder(GroupT& group, const IteratorT& it) 
+	auto TupleAndStabMult(GroupT& group, const IteratorT& it) 
 	{
 		if constexpr( is_pair<std::decay_t<IteratorT>> ) {
-			// iterator returns tuple and stabilizer group order; just pass along
+			// iterator returns tuple and multiplicity; just pass along
 			return it;
 		}
 		else {
-			// iterator just returns tuple. Calculate stabilizer group order.
+			// iterator just returns tuple. Calculate tuple's multiplicity
 			group.SetColoring(it);
-			return std::make_pair(it, group.GroupOrder());
+			return std::make_pair(it, group.template ColoringMultiplicity<4>());
 		}
 	}
 }
@@ -172,7 +171,7 @@ int SymmetricSolver() {
 
 	auto time_channel_start = now();
 	for (const auto& it : instance::sgs::TupleCosets<4>()) {
-		const auto& [tuple, orbitSize4] = TupleAndStabOrder(group, it);
+		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, it);
 
 		counter_channel++;
 
@@ -239,7 +238,7 @@ int SymmetricSolver() {
 
 	auto time_ptrace_start = now();
 	for (const auto& it : instance::sgs::TupleCosets<2>()) {
-		const auto& [tuple, _] = TupleAndStabOrder(group, it);
+		const auto& [tuple, _] = TupleAndStabMult(group, it);
 		counter_ptrace ++;
 
 		// TupleT to SubsetT and HashT because that one can be different

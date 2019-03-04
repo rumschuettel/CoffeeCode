@@ -83,7 +83,8 @@ namespace CoffeeCode {
 	constexpr static size_t MAX_GROUP_ORBIT_BITS = CoffeeCode::ilog2factorial(K_SYS) + 1;
 	using OrbitType = StdStoreT<MAX_GROUP_ORBIT_BITS>;
 		
-	// multiplicity sizes are smaller, and upper bounded by 2^K_SYS
-	using MultiplicityType = StdStoreT<K_SYS + 1>;
+	// multiplicity sizes are smaller, and upper bounded by Base^K_SYS
+	template<size_t Base>
+	using MultiplicityType = StdStoreT< ilog2(Base-1)*K_SYS + 1 >;
 
 }

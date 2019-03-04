@@ -54,11 +54,11 @@ namespace CoffeeCode {
 	using StdBitT = StdStoreT<1>;
 
 
-	template<typename StoreT>
-	inline size_t Popcount(const StoreT& s)
+	inline size_t Popcount(const uint64_t& s)
 	{
 		return LibPopcount::popcount64(s);
 	}
+	// TODO: wider popcounts
 
 
 	template<typename StoreT>
@@ -72,7 +72,7 @@ namespace CoffeeCode {
 	using StdStoreExT = std::array< StdStoreT<Width>, Length >;
 
 	template<size_t Base, size_t Length>
-	using StdTupleStoreT = StdStoreExT< ilog2(Base - 1), Length >;
+	using StdTupleStoreT = StdStoreExT< ilog2(Base), Length >;
 	// TODO: make this explicitly SIMD
 
 
@@ -85,6 +85,6 @@ namespace CoffeeCode {
 		
 	// multiplicity sizes are smaller, and upper bounded by Base^K_SYS
 	template<size_t Base>
-	using MultiplicityType = StdStoreT< ilog2(Base-1)*K_SYS + 1 >;
+	using MultiplicityType = StdStoreT< ilog2(Base)*K_SYS + 1 >;
 
 }

@@ -4,7 +4,7 @@
 
 * gcc 8 or newer/msvc 2017 or newer
 * boost 1.69.0 source
-* nauty 2.7rc1
+* nauty 2.7rc1 or 2.7rc2
 
 The cxx compiler must be installed, boost and nauty extracted to some folders, respectively.
 Note down these directories for the build instructions below.
@@ -68,7 +68,23 @@ Advanced config options (such as a path to a custom compiler, or optimization op
 
 ## Specifying Problem Instances
 
-The easiest way to interface CoffeeCode is via the Mathematica script found under `scripts/`. Don't forget to set the paths up in the first few lines of the notebook.
+The easiest way to interface CoffeeCode is via the Mathematica script found under `scripts/`. **Don't forget to set the paths up in the first few lines of the notebook**, and read the instructions therein; in particular, in order to allow Mathematica to execute CoffeeCode in parallel, it must have one separate build environment per kernel launched.
+
+This is done automatically with the script `scripts/make-build-dir.sh`, which you should open prior to running `CCInterface.nb`, in order to set up how new build environments are created. The script is something like
+
+```
+#!/usr/bin/env bash
+
+mkdir -p $1
+cd $1
+
+source /home/jkrb2/opt/anaconda5/etc/profile.d/conda.sh
+conda activate gcc8
+
+cmake -D CMAKE_BUILD_TYPE=Release ../..
+```
+
+`$1` is the path passed from `CCInterface.nb` (as a command line argument when invoking the script, e.g. via `make-build-dir.sh my-new-path/`). The lines regarding conda are there in order to set up an appropriate conda environment to run `cmake` in. For modifying the build environment further, you can pass arguments to `cmake` as seen in `ccmake`, by specifying them after a `-D ...`. In the above case, only the build type is set to release.
 
 ### Non-Symmetric Case
 

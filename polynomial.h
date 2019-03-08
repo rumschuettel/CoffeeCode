@@ -5,6 +5,8 @@
 
 #include <boost/container_hash/hash.hpp>
 
+#include <map>
+
 #include <assert.h>
 // TODO: implement sparse polynomial with larger coefficients
 
@@ -24,60 +26,137 @@ namespace CoffeeCode {
 		using ExponentT = StdStoreT<ExponentWidth>;
 
 		static constexpr ExponentT MaxExponent = K_TOT;
+		using CoefficientArrayT = typename std::array<CoefficientT, MaxExponent + 1>;
+
+		template<typename T>
+		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3)
+		{
+			return static_cast<ExponentT>(u1 + u2 + u3);
+		}
+
+		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs)
+		{
+			for (size_t i = 0; i < lhs.size(); i++)
+				lhs[i] += rhs[i];
+		}
+
+		inline static void PrintCoefficientArray(std::ostream& stream, const CoefficientArrayT& coefficients)
+		{			
+			size_t i = coefficients.size();
+			for (const auto& coeff : coefficients) {
+				stream << +coeff;
+				if (--i) stream << ",";
+			}
+		}
+
+		inline static auto HashCoefficientArray(const CoefficientArrayT& coefficients)
+		{
+			return boost::hash_range(std::begin(coefficients), std::end(coefficients));
+		}
+	};
+
+	template<size_t VariableCount = 3>
+	struct MultivariateMonomial {
+		static constexpr size_t K_TOT = K_SYS + K_ENV;
+		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
+
+		using CoefficientT = MultiplicityType<4>;
+		using SingleExponentT = StdStoreT<ExponentWidth>;
+		using ExponentT = std::array<SingleExponentT, VariableCount>;
+
+		// this needs to be an ordered map since we hash the coefficient array
+		using CoefficientArrayT = typename std::map<ExponentT, CoefficientT>;
+
+		template<typename T>
+		inline static ExponentT MakeExponent(const T& u1, const T& u2, const T& u3)
+		{
+			return ExponentT{
+				static_cast<SingleExponentT>(u1),
+				static_cast<SingleExponentT>(u2),
+				static_cast<SingleExponentT>(u3)
+			};
+		}
+
+		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs)
+		{
+			for (const auto& [exponents, coeff] : rhs)
+				lhs[exponents] += coeff;
+		}
+
+		// print as array elements like [15, [1, 0, 3]]
+		// meaning 15 u1^1 u2^0 u3^3
+		inline static void PrintCoefficientArray(std::ostream& stream, const CoefficientArrayT& coefficients)
+		{			
+			size_t i = coefficients.size();
+			for (const auto& [exponents, coeff] : coefficients) {
+				stream << "[" << +coeff << ",[";
+				size_t j = exponents.size();
+				for (const auto ex : exponents) {
+					stream << +ex;
+					if (--j) stream << ",";
+				}
+				stream << "]]";
+				if (--i) stream << ",";
+			}
+		}
+
+		inline static auto HashCoefficientArray(const CoefficientArrayT& coefficients) noexcept
+		{
+			size_t seed = 0;
+			for (const auto& [exponents, coeff] : coefficients) {
+				boost::hash_range(seed, std::begin(exponents), std::end(exponents));
+				boost::hash_combine(seed, coeff);
+			}
+			return seed;
+		}
 	};
 
 	// polynomial
-	template<typename MonomialT>
+	template<typename _MonomialT>
 	struct Polynomial {
-		using CoefficientT = typename MonomialT::CoefficientT;
-		using ExponentT = typename MonomialT::ExponentT;
-		static constexpr auto MaxExponent = MonomialT::MaxExponent;
+		using MonomialT = _MonomialT;
 
-		CoefficientT coefficients[MaxExponent];
+		using CoefficientT = typename MonomialT::CoefficientT;
+		using CoefficientArrayT = typename MonomialT::CoefficientArrayT;
+		using ExponentT = typename MonomialT::ExponentT;
+
+		CoefficientArrayT coefficients;
 
 		Polynomial() = default; // zero-initializes coefficients
 
 		void Add(const ExponentT exponent, const CoefficientT coefficient = 1) {
-			assert(exponent < MaxExponent);
 			coefficients[exponent] += coefficient;
 		}
 
+		// addition of monomials
+		inline Polynomial& operator+=(const ExponentT& rhs) {
+			coefficients[rhs] += 1;
+			return *this;
+		}
 		// addition of polynomials
 		inline Polynomial& operator+=(const Polynomial& rhs) {
-			for (size_t i = 0; i < MaxExponent; i++)
-				coefficients[i] += rhs.coefficients[i];
+			MonomialT::AddCoefficientArrays(coefficients, rhs.coefficients);
 			return *this;
 		}
 
 		// to string
 		friend std::ostream& operator<< (std::ostream& stream, const Polynomial& poly) {
-			// exploit integer promotion for too-small types
-			for (size_t i = 0; i < MaxExponent - 1; i++)
-				stream << +poly.coefficients[i] << ", ";
-			stream << +poly.coefficients[MaxExponent - 1];
+			MonomialT::PrintCoefficientArray(stream, poly.coefficients);
 			return stream;
 		}
 
-		// hash
+		// FOR USE IN LAMBDA
 		struct Hash
 		{
 			inline std::size_t operator()(Polynomial const &poly) const noexcept
 			{
-				return boost::hash_range(
-					std::begin(poly.coefficients),
-					std::end(poly.coefficients)
-				);
+				return MonomialT::HashCoefficientArray(poly.coefficients);
 			}
 		};
 
-		// comparison for this type
 		bool operator==(const Polynomial& rhs) const
 		{
-			return std::equal(
-				std::begin(coefficients),
-				std::end(coefficients),
-				std::begin(rhs.coefficients)
-			);
+			return coefficients == rhs.coefficients;
 		}
 	};
 
@@ -86,7 +165,7 @@ namespace CoffeeCode {
 	#ifdef OPTIMIZE_FOR_DEPOLARIZING
 		using Polynomial = typename CoffeeCode::Polynomial<UnivariateMonomial>;
 	#else
-		using Polynomial = typename CoffeeCode::Polynomial<UnivariateMonomial>;
+		using Polynomial = typename CoffeeCode::Polynomial<MultivariateMonomial<3>>;
 	#endif
 	}
 }

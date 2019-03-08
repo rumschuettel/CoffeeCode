@@ -79,9 +79,8 @@ int FullSolver()
 			const SubsetT UAidx = term.Uidx & Bitmask<SubsetT, K_SYS>::mask0111;
 
 			// add monomials
-			const Polynomial::ExponentT p_exponent = term.uSum();
-			lambda[term.Uidx].Add(p_exponent);
-			lambda_pre[UAidx].Add(p_exponent);
+			lambda[term.Uidx] += term.exponent;
+			lambda_pre[UAidx] += term.exponent;
 
 			if (subsetY == BaseKSubsets<2, K_SYS>::count - 1) break;
 		}

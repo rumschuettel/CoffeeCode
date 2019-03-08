@@ -14,18 +14,16 @@ namespace CoffeeCode {
 	template<typename T>
 	struct SymmetricInstance {
 		// parameters given
-		constexpr static size_t k_sys = K_SYS;
-		constexpr static size_t k_env = K_ENV;
-		constexpr static size_t k_tot = k_sys + k_env;
+		constexpr static size_t K_TOT = K_SYS + K_ENV;
 		using sgs = typename T::sgs;
 
 		// validate parameters
-		static_assert(T::sgs::Length == k_sys);
-		static_assert(T::adjacency_matrix.size() == k_tot);
-		static_assert(T::adjacency_matrix[0].size() == k_tot);
+		static_assert(T::sgs::Length == K_SYS);
+		static_assert(T::adjacency_matrix.size() == K_TOT);
+		static_assert(T::adjacency_matrix[0].size() == K_TOT);
 
 		// adjacency matrix
-		using MatrixT = CoffeeCode::AdjacencyMatrix<k_sys, k_env>;
+		using MatrixT = CoffeeCode::AdjacencyMatrix<K_SYS, K_ENV>;
 		constexpr static auto M = MatrixT{ T::adjacency_matrix };
 		constexpr static auto MAB = M.AB();
 
@@ -149,9 +147,6 @@ namespace {
 int SymmetricSolver() {
 	using VectorT = typename instance::RowVectorT;
 	using SubsetT = typename VectorT::StoreT;
-
-
-	using ExponentT = typename Polynomial::ExponentT;
 	using CoefficientT = typename Polynomial::CoefficientT;
 
 	auto group = instance::GroupLink();
@@ -179,7 +174,7 @@ int SymmetricSolver() {
 		// get low and high bit from tuples
 		// note that SubsetT is such that the i'th index equals a bit shit i to the left
 		SubsetT subsetX{ 0 }, subsetY{ 0 };
-		for (size_t i = 0; i < instance::k_sys; i++) {
+		for (size_t i = 0; i < K_SYS; i++) {
 			const auto low_bit = tuple[i] & 0b01;
 			const auto high_bit = (tuple[i] & 0b10) >> 1;
 
@@ -190,9 +185,6 @@ int SymmetricSolver() {
 		// apply channel
 		const auto term = ChannelAction(subsetX, subsetY, instance::M);
 		
-		// monomial exponents
-		const ExponentT p_exponent = term.uSum();
-
 		//// A: Add to lambda
 		{
 			// multiplicity of resulting base 2 tuple
@@ -205,7 +197,7 @@ int SymmetricSolver() {
 			// accumulate polynomial with potentially pre-existing terms
 			// note that mult is equal for U123 that map to the same UIdxCanonical
 			auto& [poly, mult] = lambda[UIdxCanonical];
-			poly.Add(p_exponent, coeff);
+			poly.Add(term.exponent, coeff);
 			mult = orbitSize2;
 		}
 
@@ -214,7 +206,7 @@ int SymmetricSolver() {
 			// we project out the environment for term.Uidx
 			MEASURE_FILTER1(time_temp = now();)
 			const auto[UIdxCanonical_pre, orbitSize2_pre] = group.CanonicalColoring(
-				term.Uidx & CoffeeCode::Bitmask<decltype(term.Uidx), instance::k_sys>::mask0111
+				term.Uidx & CoffeeCode::Bitmask<decltype(term.Uidx), K_SYS>::mask0111
 			);
 			MEASURE_FILTER1(time_nauty_CCB += now() - time_temp;)
 
@@ -223,7 +215,7 @@ int SymmetricSolver() {
 			// accumulate polynomial with same terms as above
 			// multiplicity is 1
 			auto& [poly, mult] = lambda_pre[UIdxCanonical_pre];
-			poly.Add(p_exponent, coeff);
+			poly.Add(term.exponent, coeff);
 			mult = orbitSize2_pre;
 		}
 	}
@@ -242,7 +234,7 @@ int SymmetricSolver() {
 
 		// TupleT to SubsetT and HashT because that one can be different
 		SubsetAT subsetA{ 0 };
-		for (size_t i = 0; i < instance::k_sys; i++) 
+		for (size_t i = 0; i < K_SYS; i++) 
 			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
 
 		MEASURE_FILTER1(time_temp = now();)
@@ -267,10 +259,10 @@ int SymmetricSolver() {
 			poly_a += poly_pre;
 			mult_a = keyMult;
 			
-			if (subsetB == CoffeeCode::BaseKSubsets<2, instance::k_env>::count - 1) break;
+			if (subsetB == CoffeeCode::BaseKSubsets<2, K_ENV>::count - 1) break;
 		}
 		
-		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::k_env>::count;))
+		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::K_ENV>::count;))
 	}
 	auto time_ptrace = now() - time_ptrace_start;
 

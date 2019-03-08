@@ -20,6 +20,7 @@ namespace {
 
 	// map reduce for lambdas
 	// should match this format for use with CoffeeCode::PrintLambda
+	[[maybe_unused]]
 	auto ReduceLambda(const std::vector<Polynomial>& lambda)
 	{
 		ReducedLambdaT<Polynomial> out;
@@ -32,6 +33,7 @@ namespace {
 	}
 		
 	// print helper for CCFull-specific output format
+	[[maybe_unused]]
 	void PrintLambda(const std::vector<Polynomial>& lambda)
 	{
 		size_t i = lambda.size();

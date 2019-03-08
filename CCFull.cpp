@@ -9,20 +9,20 @@ using std::cout;
 using std::endl;
 
 
+using namespace CoffeeCode::Std;
+
+
 namespace {
 	enum ReturnValue {
 		RET_OK = 0,
 		RET_WRONG_INPUT = 1
 	};
 
-	constexpr auto k_sys = K_SYS, k_env = K_ENV, k_tot = k_sys + k_env;
-
 	// map reduce for lambdas
 	// should match this format for use with CoffeeCode::PrintLambda
-	template<typename PolynomialT>
-	auto ReduceLambda(const std::vector<PolynomialT>& lambda)
+	auto ReduceLambda(const std::vector<Polynomial>& lambda)
 	{
-		ReducedLambdaT<PolynomialT> out;
+		ReducedLambdaT<Polynomial> out;
 
 		// aggregate
 		for (const auto& poly : lambda)
@@ -32,8 +32,7 @@ namespace {
 	}
 		
 	// print helper for CCFull-specific output format
-	template<typename PolynomialT>
-	void PrintLambda(const std::vector<PolynomialT>& lambda)
+	void PrintLambda(const std::vector<Polynomial>& lambda)
 	{
 		size_t i = lambda.size();
 		for (const auto& poly : lambda) {
@@ -47,26 +46,26 @@ namespace {
 
 int FullSolver()
 {
-	using CoffeeCode::Monomial;
-	using CoffeeCode::Polynomial;
 	using CoffeeCode::Bitmask;
 	using CoffeeCode::BaseKSubsets;
 	using CoffeeCode::ipow;
 
+	constexpr auto K_TOT = K_SYS+K_ENV;
+
 	// read matrix from cin
 	std::string input = "";
 	std::getline(std::cin, input);
-	if (input.length() != (k_tot * k_tot)) {
-		std::cerr << "wrong input size for k_sys=" << k_sys << " and k_env=" << k_env << endl;
+	if (input.length() != (K_TOT * K_TOT)) {
+		std::cerr << "wrong input size for K_SYS=" << K_SYS << " and K_ENV=" << K_ENV << endl;
 		return RET_WRONG_INPUT;
 	}
 
-	const auto M = CoffeeCode::AdjacencyMatrix<k_sys, k_env>::FromString(input);
+	const auto M = CoffeeCode::AdjacencyMatrix<K_SYS, K_ENV>::FromString(input);
 
 	auto start = std::chrono::steady_clock::now();
 
 	// Calculate lambda and lambda_pre
-	std::vector<Polynomial> lambda(ipow(2, k_tot)), lambda_pre(ipow(2, k_sys));
+	std::vector<Polynomial> lambda(ipow(2, K_TOT)), lambda_pre(ipow(2, K_SYS));
 
 	// iterate over all U1, U2 and U3 subsets
 	using VectorT = decltype(M)::RowVectorT;
@@ -77,21 +76,21 @@ int FullSolver()
 		for (SubsetT subsetY = 0; ; subsetY++) {
 			const auto term = ChannelAction(subsetX, subsetY, M);
 			// extract system vertices; they're stored rightmost
-			const SubsetT UAidx = term.Uidx & Bitmask<SubsetT, k_sys>::mask0111;
+			const SubsetT UAidx = term.Uidx & Bitmask<SubsetT, K_SYS>::mask0111;
 
 			// add monomials
-			const Monomial::ExponentT p_exponent = term.uSum();
+			const Polynomial::ExponentT p_exponent = term.uSum();
 			lambda[term.Uidx].Add(p_exponent);
 			lambda_pre[UAidx].Add(p_exponent);
 
-			if (subsetY == BaseKSubsets<2, k_sys>::count - 1) break;
+			if (subsetY == BaseKSubsets<2, K_SYS>::count - 1) break;
 		}
 
-		if (subsetX == BaseKSubsets<2, k_sys>::count - 1) break;
+		if (subsetX == BaseKSubsets<2, K_SYS>::count - 1) break;
 	}
 
 	// Calculate lambda_a
-	std::vector<Polynomial> lambda_a(ipow(2, k_sys));
+	std::vector<Polynomial> lambda_a(ipow(2, K_SYS));
 
 	// build Ulookup
 	const auto MAB = M.AB();
@@ -102,15 +101,15 @@ int FullSolver()
 			const auto Ulookup = (MAB * subsetB + subsetA).vec;
 			lambda_a[subsetA] += lambda_pre[Ulookup];
 
-			if (subsetB == BaseKSubsets<2, k_env>::count - 1) break;
+			if (subsetB == BaseKSubsets<2, K_ENV>::count - 1) break;
 		}
 
-		if (subsetA == BaseKSubsets<2, k_sys>::count - 1) break;
+		if (subsetA == BaseKSubsets<2, K_SYS>::count - 1) break;
 	}
 
 	// EXPORT AS JSON
 	// some statistics
-	std::cout << "{\n\"tuples\": " << BaseKSubsets<4, k_sys>::count << ",\n\"time\": ";
+	std::cout << "{\n\"tuples\": " << BaseKSubsets<4, K_SYS>::count << ",\n\"time\": ";
 	auto end = std::chrono::steady_clock::now();
 	std::cout << std::chrono::duration <double, std::milli> (end-start).count() << ",\n";
 

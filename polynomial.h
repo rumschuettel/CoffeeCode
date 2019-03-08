@@ -9,17 +9,15 @@
 // TODO: implement sparse polynomial with larger coefficients
 
 namespace CoffeeCode {
-	static constexpr size_t K_TOT = K_SYS + K_ENV;
-
-	// monomial type
+	// monomial types
 	// maximum exponent: is equal to the size of the graph,
 	//     as we have at most (X wo Y) + (Y wo X) + (X and Y) = (X or Y) <= K_TOT
 	//     marked vertices within a set.
 	// maximum coefficient: the number of sets giving the same Uidx
-	//     can be upper-bounded by 2^K_SYS, as we have a linear affine map mod 2
-	//     starting from {0, 1, 2, 3}^K_SYS.
+	//     can be crudely upper-bounded by 4^K_SYS
 	//     This is precisely given by the corresponding MultiplicityT
-	struct Monomial {
+	struct UnivariateMonomial {
+		static constexpr size_t K_TOT = K_SYS + K_ENV;
 		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
 
 		using CoefficientT = MultiplicityType<4>;
@@ -29,10 +27,11 @@ namespace CoffeeCode {
 	};
 
 	// polynomial
+	template<typename MonomialT>
 	struct Polynomial {
-		using CoefficientT = Monomial::CoefficientT;
-		using ExponentT = Monomial::ExponentT;
-		static constexpr auto MaxExponent = Monomial::MaxExponent;
+		using CoefficientT = typename MonomialT::CoefficientT;
+		using ExponentT = typename MonomialT::ExponentT;
+		static constexpr auto MaxExponent = MonomialT::MaxExponent;
 
 		CoefficientT coefficients[MaxExponent];
 
@@ -81,4 +80,13 @@ namespace CoffeeCode {
 			);
 		}
 	};
+
+	namespace Std {
+	// choose right specialization based on compiler flags
+	#ifdef OPTIMIZE_FOR_DEPOLARIZING
+		using Polynomial = typename CoffeeCode::Polynomial<UnivariateMonomial>;
+	#else
+		using Polynomial = typename CoffeeCode::Polynomial<UnivariateMonomial>;
+	#endif
+	}
 }

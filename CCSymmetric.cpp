@@ -9,7 +9,6 @@
 #include <tuple>
 
 
-
 namespace CoffeeCode {
 	// extract compile time parameters
 	template<typename T>
@@ -57,7 +56,7 @@ namespace CoffeeCode {
 		using LambdaT = std::unordered_map<
 			CanonicalImageT,
 			std::pair<
-				CoffeeCode::Polynomial,
+				CoffeeCode::Std::Polynomial,
 				MultiplicityType<2>
 			>,
 			CanonicalImageHashT
@@ -72,6 +71,7 @@ namespace {
 		RET_WRONG_INPUT = 1
 	};
 
+	using namespace CoffeeCode::Std;
 
 	using CoffeeCode::SGSTransversal;
 	using CoffeeCode::SGSGenerator;
@@ -95,14 +95,12 @@ namespace {
 	template<typename LambdaT>
 	auto ReduceLambda(const LambdaT& lambda)
 	{
-		// ugly, yeah...
-		using PolynomialT = typename LambdaT::value_type::second_type::first_type;
-		ReducedLambdaT<PolynomialT> out;
+		ReducedLambdaT<Polynomial> out;
 
 		// aggregate
 		for (const auto& [key, value] : lambda) {
 			const auto& [poly, mult] = value;
-			out[poly] += static_cast<typename PolynomialT::CoefficientT>(mult);
+			out[poly] += static_cast<typename Polynomial::CoefficientT>(mult);
 		}
 		
 		return out;
@@ -152,8 +150,9 @@ int SymmetricSolver() {
 	using VectorT = typename instance::RowVectorT;
 	using SubsetT = typename VectorT::StoreT;
 
-	using ExponentT = typename CoffeeCode::Monomial::ExponentT;
-	using CoefficientT = typename CoffeeCode::Monomial::CoefficientT;
+
+	using ExponentT = typename Polynomial::ExponentT;
+	using CoefficientT = typename Polynomial::CoefficientT;
 
 	auto group = instance::GroupLink();
 

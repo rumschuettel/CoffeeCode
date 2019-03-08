@@ -225,7 +225,7 @@ namespace CoffeeCode {
             using CanonicalImageHashT = std::hash<CanonicalImageT>;
             using MultiplicityT = MultiplicityType<2>;
 
-            SymmetryProvider(const MatrixT&) {}
+            SymmetryProvider(const MatrixT&) {};
 
             inline static auto CanonicalColoring(const ColoringRawT coloring)
             {

@@ -11,8 +11,8 @@ namespace CoffeeCode {
 	// binary vector class
 	template <size_t Width>
 	struct Vector {
-		using StoreT = StdStoreT<Width>;
-		using BitT = StdBitT;
+		using StoreT = BitStorageType<Width>;
+		using BitT = BitType;
 
 		// enough bits to store vector?
 		static_assert(Width <= 8 * sizeof(StoreT), "StoreT too short");
@@ -27,8 +27,8 @@ namespace CoffeeCode {
 	private:
 		template<size_t... Idx>
 		constexpr Vector(const std::array<BitT, Width>& entries, std::index_sequence<Idx...>)
-			: vec{static_cast<StoreT>( (
-					(static_cast<StoreT>(entries[Idx]) << Idx) ^ ... ^ 0)
+			: vec{static_cast<StoreT>( 
+					(Bitmask<StoreT, Idx>::mask1000 ^ ... ^ 0)
 				)}
 		{
 		}

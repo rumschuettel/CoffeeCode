@@ -41,8 +41,8 @@ namespace CoffeeCode {
 		typename = std::enable_if_t<std::numeric_limits<MaskT>::digits >= number_of_1s + 1>
 	>
 	struct Bitmask {
-        static constexpr auto mask1000 = static_cast<MaskT>( 0b01 ) << number_of_1s;
-		static constexpr auto mask0111 = mask1000 - 1;
+		static constexpr auto mask1000 = LUTs::Bitmasks<MaskT>::lut1000[number_of_1s];
+		static constexpr auto mask0111 = LUTs::Bitmasks<MaskT>::lut0111[number_of_1s];
 	};
 
 
@@ -58,8 +58,10 @@ namespace CoffeeCode {
 	template<typename SizeT>
 	constexpr inline SizeT Binomial(const SizeT n, const SizeT k)
 	{
-		assert(n < sizeof(LUTs::BinomialCoefficient<SizeT>::lut));
-		assert(k < sizeof(LUTs::BinomialCoefficient<SizeT>::lut[n]));
-		return LUTs::BinomialCoefficient<SizeT>::lut[n][k];
+		constexpr auto& lut = LUTs::BinomialCoefficient<SizeT>::get_lut();
+
+		assert(n < sizeof(lut));
+		assert(k < sizeof(lut[n]));
+		return lut[n][k];
 	}
 }

@@ -63,7 +63,7 @@ namespace CoffeeCode {
 
         template<size_t Base>
         struct OrbitProductIterator {
-			using TupleT = StdTupleStoreT<Base, Length>;
+			using TupleT = SizeStorageTypeArray<Base, Length>;
             using MultiplicityT = MultiplicityType<Base>;
 
         private:
@@ -76,7 +76,7 @@ namespace CoffeeCode {
 
             // for the remainder of the tuples we have to brute force count to base B
             // that number can be as large as Base^N_remaining
-            using BaseCounterT = StdStoreT< N_remaining * ilog2(Base) + 1 >;
+            using BaseCounterT = BitStorageType< N_remaining * ilog2(Base) + 1 >;
             constexpr static auto MaxRemainder = ipow<BaseCounterT>(Base, N_remaining);
             BaseCounterT remainder;
 

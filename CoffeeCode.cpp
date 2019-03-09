@@ -10,7 +10,7 @@
 #ifdef SYMMETRIC_SOLVER
 int SymmetricSolver();
 #else
-int FullSolver();
+int FullSolver<>();
 #endif
 
 int main()
@@ -18,6 +18,6 @@ int main()
 #ifdef SYMMETRIC_SOLVER
 	return SymmetricSolver();
 #else
-	return FullSolver();
+	return FullSolver<>();
 #endif
 }

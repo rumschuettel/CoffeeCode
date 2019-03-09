@@ -23,7 +23,7 @@ namespace CoffeeCode {
 		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
 
 		using CoefficientT = MultiplicityType<4>;
-		using ExponentT = StdStoreT<ExponentWidth>;
+		using ExponentT = BitStorageType<ExponentWidth>;
 
 		static constexpr ExponentT MaxExponent = K_TOT;
 		using CoefficientArrayT = typename std::array<CoefficientT, MaxExponent + 1>;
@@ -61,7 +61,7 @@ namespace CoffeeCode {
 		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
 
 		using CoefficientT = MultiplicityType<4>;
-		using SingleExponentT = StdStoreT<ExponentWidth>;
+		using SingleExponentT = BitStorageType<ExponentWidth>;
 		using ExponentT = std::array<SingleExponentT, VariableCount>;
 
 		// this needs to be an ordered map since we hash the coefficient array

@@ -17,14 +17,6 @@ namespace LibPopcount {
 #include <array>
 
 namespace CoffeeCode {
-	// TODO: better integer type that can save at least Width number of bits
-	template<size_t Width>
-	using WideIntegerT = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
-		Width,
-		Width,
-		boost::multiprecision::unsigned_magnitude,
-		boost::multiprecision::unchecked
-	>>;
 
 	// automatic selection of smallest-possible integer
 	template<bool raise = true>
@@ -32,9 +24,13 @@ namespace CoffeeCode {
 		static_assert(raise, "not enough bits");
 	};
 
+	// BIT STORES
+	// we use these types for bit manipulations, i.e. binary vectors, binary matrices, masks, colorings
+
 	// for storing Width number of bits
+	// TODO: add wider-than-64 bit bit store that allows constexpr operations
 	template<size_t Width>
-	using StdStoreT = std::conditional_t<
+	using BitStorageType = std::conditional_t<
 		Width <= 8,	uint8_t,
 		std::conditional_t<
 		Width <= 16, uint16_t,
@@ -42,24 +38,22 @@ namespace CoffeeCode {
 		Width <= 32, uint32_t,
 		std::conditional_t<
 		Width <= 64, uint64_t,
-		std::conditional_t<
-		Width <= 128, boost::multiprecision::uint128_t,
-		std::conditional_t<
-		Width <= 256, boost::multiprecision::uint256_t,
-		std::conditional_t<
-		Width <= 512, boost::multiprecision::uint512_t,
 		InvalidIntegerType<>
-	>>>>>>>;
+	>>>>;
 
-	using StdBitT = StdStoreT<1>;
-
+	using BitType = BitStorageType<1>;
 
 	inline size_t Popcount(const uint64_t& s)
 	{
 		return LibPopcount::popcount64(s);
 	}
-	// TODO: wider popcounts
-
+	template<typename T>
+	inline size_t Popcount(const boost::multiprecision::number<T>& s)
+	{
+		const auto* limbs = s.backend().limbs();
+		const size_t limb_count = s.backend().size();
+		return LibPopcount::popcnt(limbs, limb_count * sizeof(limbs[0]));
+	}
 
 	template<typename StoreT>
 	inline void OrBit(StoreT& s, const bool bit, const size_t i)
@@ -67,13 +61,28 @@ namespace CoffeeCode {
 		s |= static_cast<StoreT>(static_cast<StoreT>(bit) << i);
 	}
 
-	// tuple type
-	template<size_t Width, size_t Length>
-	using StdStoreExT = std::array< StdStoreT<Width>, Length >;
+	// storage for multiple limbs of bits in array form
+	template<size_t Width, size_t Count>
+	using BitStorageTypeArray = std::array< BitStorageType<Width>, Count >;
 
-	template<size_t Base, size_t Length>
-	using StdTupleStoreT = StdStoreExT< ilog2(Base), Length >;
-	// TODO: make this explicitly SIMD
+
+
+	// SIZE STORE
+	// use these for storing elements up to some specific size
+	template<size_t Base>
+	using SizeStorageType = std::conditional_t<
+		Base <= std::numeric_limits<uint8_t>::max(), uint8_t,
+		std::conditional_t<
+		Base <= std::numeric_limits<uint16_t>::max(), uint16_t,
+		std::conditional_t<
+		Base <= std::numeric_limits<uint32_t>::max(), uint32_t,
+		std::conditional_t<
+		Base <= std::numeric_limits<uint64_t>::max(), uint64_t,
+		InvalidIntegerType<>
+		>>>>;
+
+	template<size_t Base, size_t Count>
+	using SizeStorageTypeArray = std::array< SizeStorageType<Base>, Count >;
 
 
 	// orbit sizes can be huge
@@ -81,10 +90,10 @@ namespace CoffeeCode {
 	// meaning that maximum size of orbit has 2^n = K_SYS! bits.
 	// It thus suffices to have an integer of size n >= log_2(K_SYS!) + 1 bits.
 	constexpr static size_t MAX_GROUP_ORBIT_BITS = CoffeeCode::ilog2factorial(K_SYS) + 1;
-	using OrbitType = StdStoreT<MAX_GROUP_ORBIT_BITS>;
+	using OrbitType = BitStorageType<MAX_GROUP_ORBIT_BITS>;
 		
 	// multiplicity sizes are smaller, and upper bounded by Base^K_SYS
 	template<size_t Base>
-	using MultiplicityType = StdStoreT< ilog2(Base)*K_SYS + 1 >;
+	using MultiplicityType = BitStorageType< ilog2(Base)*K_SYS + 1 >;
 
 }

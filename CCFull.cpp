@@ -45,7 +45,7 @@ namespace {
 	}
 }
 
-
+template<typename = bool>
 int FullSolver()
 {
 	using CoffeeCode::Bitmask;
@@ -70,8 +70,8 @@ int FullSolver()
 	std::vector<Polynomial> lambda(ipow(2, K_TOT)), lambda_pre(ipow(2, K_SYS));
 
 	// iterate over all U1, U2 and U3 subsets
-	using VectorT = decltype(M)::RowVectorT;
-	using SubsetT = VectorT::StoreT;
+	using VectorT = typename decltype(M)::RowVectorT;
+	using SubsetT = typename VectorT::StoreT;
 
 	// could overflow the type, hence we put the break condition at end
 	for (SubsetT subsetX = 0; ; subsetX++) {
@@ -95,8 +95,8 @@ int FullSolver()
 
 	// build Ulookup
 	const auto MAB = M.AB();
-	using SubsetAT = decltype(MAB)::ColumnVectorT::StoreT;
-	using SubsetBT = decltype(MAB)::RowVectorT::StoreT;
+	using SubsetAT = typename decltype(MAB)::ColumnVectorT::StoreT;
+	using SubsetBT = typename decltype(MAB)::RowVectorT::StoreT;
 	for (SubsetAT subsetA = 0; ; subsetA++) {
 		for (SubsetBT subsetB = 0; ; subsetB++) {
 			const auto Ulookup = (MAB * subsetB + subsetA).vec;

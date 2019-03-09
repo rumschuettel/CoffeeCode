@@ -90,7 +90,7 @@ namespace CoffeeCode::NautyLink {
 
 		using ColoringT = std::array<Color, K_TOT>;
 		// colorings where environment is not yet specified
-		using PartialColoringT = StdTupleStoreT<4, K_SYS>;
+		using PartialColoringT = SizeStorageTypeArray<4, K_SYS>;
 		using ColoringRawT = typename MatrixT::RowVectorT::StoreT;
 
 	public:
@@ -156,7 +156,7 @@ namespace CoffeeCode::NautyLink {
 			// stores canonical image
 			decltype(G) G_canon;
 			// stores number of colors in coloring
-			StdTupleStoreT<K_TOT, COLOR_COUNT> vertexColorCounts;
+			SizeStorageTypeArray<K_TOT, COLOR_COUNT> vertexColorCounts;
 
 			// hash for this type
 			struct Hash {

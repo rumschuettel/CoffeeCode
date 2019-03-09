@@ -81,7 +81,7 @@ namespace {
 	using CoffeeCode::TrivialSGSOrbit;
 
 	template<size_t S>
-	using AdjacencyMatrixT = std::array<std::array<CoffeeCode::StdBitT, S>, S>;
+	using AdjacencyMatrixT = std::array<std::array<CoffeeCode::BitType, S>, S>;
 
 	#include "cc-instance.h"
 

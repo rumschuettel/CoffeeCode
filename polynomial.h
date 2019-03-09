@@ -145,7 +145,7 @@ namespace CoffeeCode {
 			return stream;
 		}
 
-		// FOR USE IN LAMBDA
+		// FOR USE IN REDUCE_LAMBDA compressed output
 		struct Hash
 		{
 			inline std::size_t operator()(Polynomial const &poly) const noexcept

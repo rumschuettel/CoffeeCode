@@ -75,7 +75,7 @@ namespace CoffeeCode {
 	// Note: Log2Base for 256 is 8, so if we actually want to store 256 we need 9 bits.
 	template<size_t Base, size_t Log2Base = ilog2(Base)>
 	using SizeStorageType = std::conditional_t <
-		(Log2Base < std::numeric_limits<size_t>::max()), size_t,
+		Log2Base < 64, uint64_t,
 #ifdef FLOATING_POINT_MULTIPLICITY
 		double
 #else

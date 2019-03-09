@@ -60,8 +60,8 @@ namespace CoffeeCode {
 
 		// dot product
 		// pass by value
-		inline BitT operator*(const Vector rhs) const {
-			return static_cast<BitT>(Popcount(vec & rhs.vec)) & BitT{1};
+		inline StoreT operator*(const Vector rhs) const {
+			return Popcount(vec & rhs.vec) & 0b01;
 		}
 
 		// bit access

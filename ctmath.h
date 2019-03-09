@@ -56,12 +56,29 @@ namespace CoffeeCode {
 
 	// binomial function using lookup tables
 	template<typename SizeT>
-	constexpr inline SizeT Binomial(const SizeT n, const SizeT k)
+	constexpr inline SizeT Binomial(const size_t n, const size_t k)
 	{
 		constexpr auto& lut = LUTs::BinomialCoefficient<SizeT>::get_lut();
 
 		assert(n < sizeof(lut));
 		assert(k < sizeof(lut[n]));
+		assert(n >= k);
+
 		return lut[n][k];
+	}
+
+	template<>
+	constexpr inline double Binomial(const size_t n, const size_t k)
+	{
+		constexpr auto& lut = LUTs::BinomialCoefficient<double>::get_lut();
+		
+		assert(n > k);
+		if (n < sizeof(lut)) {
+			assert(k < sizeof(lut[n]));
+			return lut[n][k];
+		}
+
+		// otherwise approximate
+		return boost::math::binomial_coefficient<double>(n, k);
 	}
 }

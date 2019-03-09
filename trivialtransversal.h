@@ -63,7 +63,7 @@ namespace CoffeeCode {
 
         template<size_t Base>
         struct OrbitProductIterator {
-			using TupleT = SizeStorageTypeArray<Base, Length>;
+			using TupleT = NibbleStorageTypeArray<Base, Length>;
             using MultiplicityT = MultiplicityType<Base>;
 
         private:

@@ -65,35 +65,43 @@ namespace CoffeeCode {
 	template<size_t Width, size_t Count>
 	using BitStorageTypeArray = std::array< BitStorageType<Width>, Count >;
 
+	// storage for multiple nibbles from 0...Base-1
+	template<size_t Base, size_t Count>
+	using NibbleStorageTypeArray = std::array< BitStorageType<ilog2(Base-1)>, Count >;
 
 
 	// SIZE STORE
 	// use these for storing elements up to some specific size
-	template<size_t Base>
-	using SizeStorageType = std::conditional_t<
-		Base <= std::numeric_limits<uint8_t>::max(), uint8_t,
+	// Note: Log2Base for 256 is 8, so if we actually want to store 256 we need 9 bits.
+	template<size_t Base, size_t Log2Base = ilog2(Base)>
+	using SizeStorageType = std::conditional_t <
+		(Log2Base < std::numeric_limits<size_t>::max()), size_t,
+#ifdef FLOATING_POINT_MULTIPLICITY
+		double
+#else
 		std::conditional_t<
-		Base <= std::numeric_limits<uint16_t>::max(), uint16_t,
+		Log2Base <= 128, boost::multiprecision::uint128_t,
 		std::conditional_t<
-		Base <= std::numeric_limits<uint32_t>::max(), uint32_t,
+		Log2Base <= 256, boost::multiprecision::uint256_t,
 		std::conditional_t<
-		Base <= std::numeric_limits<uint64_t>::max(), uint64_t,
+		Log2Base <= 512, boost::multiprecision::uint512_t,
 		InvalidIntegerType<>
-		>>>>;
+		>>>
+#endif
+	>;
 
-	template<size_t Base, size_t Count>
-	using SizeStorageTypeArray = std::array< SizeStorageType<Base>, Count >;
 
 
 	// orbit sizes can be huge
 	// for K_SYS, maximum orbit size is K_SYS!
 	// meaning that maximum size of orbit has 2^n = K_SYS! bits.
 	// It thus suffices to have an integer of size n >= log_2(K_SYS!) + 1 bits.
-	constexpr static size_t MAX_GROUP_ORBIT_BITS = CoffeeCode::ilog2factorial(K_SYS) + 1;
-	using OrbitType = BitStorageType<MAX_GROUP_ORBIT_BITS>;
+	// SizeStorageType allows overriding the bit count
+	constexpr static size_t LOG2_MAX_GROUP_ORBIT_SIZE = CoffeeCode::ilog2factorial(K_SYS);
+	using OrbitType = SizeStorageType<0, LOG2_MAX_GROUP_ORBIT_SIZE>;
 		
 	// multiplicity sizes are smaller, and upper bounded by Base^K_SYS
 	template<size_t Base>
-	using MultiplicityType = BitStorageType< ilog2(Base)*K_SYS + 1 >;
+	using MultiplicityType = SizeStorageType<0, ilog2(Base)*K_SYS>;
 
 }

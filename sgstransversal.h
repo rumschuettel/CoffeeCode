@@ -38,7 +38,7 @@ namespace CoffeeCode {
 
 		// tuple type that the SGS acts on
 		template<size_t Base>
-		using _TupleT = BitStorageTypeArray<ilog2(Base - 1), Length>;
+		using _TupleT = NibbleStorageTypeArray<Base, Length>;
 
 	private:
 		// orbit iterator

@@ -45,7 +45,6 @@ namespace {
 	}
 }
 
-template<typename = bool>
 int FullSolver()
 {
 	using CoffeeCode::Bitmask;

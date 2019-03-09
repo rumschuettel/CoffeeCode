@@ -28,7 +28,7 @@ namespace CoffeeCode {
 		template<size_t... Idx>
 		constexpr Vector(const std::array<BitT, Width>& entries, std::index_sequence<Idx...>)
 			: vec{static_cast<StoreT>( 
-					(Bitmask<StoreT, Idx>::mask1000 ^ ... ^ 0)
+					((static_cast<StoreT>(entries[Idx]) << Idx) ^ ... ^ 0)
 				)}
 		{
 		}

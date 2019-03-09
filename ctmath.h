@@ -56,7 +56,7 @@ namespace CoffeeCode {
 
 	// binomial function using lookup tables
 	template<typename SizeT>
-	const inline SizeT Binomial(const size_t n, const size_t k)
+	inline SizeT Binomial(const size_t n, const size_t k)
 	{
 		constexpr auto& lut = LUTs::BinomialCoefficient<SizeT>::get_lut();
 
@@ -68,7 +68,7 @@ namespace CoffeeCode {
 	}
 
 	template<>
-	const inline double Binomial(const size_t n, const size_t k)
+	inline double Binomial(const size_t n, const size_t k)
 	{
 		constexpr auto& lut = LUTs::BinomialCoefficient<double>::get_lut();
 		

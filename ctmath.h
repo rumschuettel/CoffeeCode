@@ -16,7 +16,7 @@ namespace CoffeeCode {
 
 	// approximate ceil(log2(n!))
 	constexpr size_t ilog2factorial(const size_t n) {
-		return (n + 1)*ilog2(n) - n;
+		return n <= 1 ? 1 : ((n + 1)*ilog2(n) - n);
     }
 
 	// compile time integer exponent

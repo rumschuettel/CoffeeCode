@@ -46,7 +46,7 @@ out=ReadString[process];
 ]
 
 Unprotect[StringForm];
-StringForm[a_,b_Parallel`Kernels`kernel]:=ToString@a
+StringForm[a_,b_Parallel`Kernels`kernel]:="\033[F"  (* ignore this output, move up a line *)
 
 
 

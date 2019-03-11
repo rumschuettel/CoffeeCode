@@ -1,6 +1,7 @@
 #include "nautylink.h"
 
 #include "CoffeeCode.h"
+#include "utility.h"
 
 #include <unordered_map>
 #include <unordered_set>
@@ -98,7 +99,7 @@ namespace {
 		// aggregate
 		for (const auto& [key, value] : lambda) {
 			const auto& [poly, mult] = value;
-			out[poly] += static_cast<typename Polynomial::CoefficientT>(mult);
+			out[poly] += checked_cast<typename Polynomial::CoefficientT>(mult);
 		}
 		
 		return out;
@@ -192,7 +193,7 @@ int SymmetricSolver() {
 			const auto[UIdxCanonical, orbitSize2] = group.CanonicalColoring(term.Uidx);
 			MEASURE_FILTER1(time_nauty_CCA += now() - time_temp;)
 
-			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2);
+			const CoefficientT coeff = checked_cast<CoefficientT>(orbitSize4 / orbitSize2);
 
 			// accumulate polynomial with potentially pre-existing terms
 			// note that mult is equal for U123 that map to the same UIdxCanonical
@@ -210,7 +211,7 @@ int SymmetricSolver() {
 			);
 			MEASURE_FILTER1(time_nauty_CCB += now() - time_temp;)
 
-			const CoefficientT coeff = static_cast<CoefficientT>(orbitSize4 / orbitSize2_pre);
+			const CoefficientT coeff = checked_cast<CoefficientT>(orbitSize4 / orbitSize2_pre);
 
 			// accumulate polynomial with same terms as above
 			// multiplicity is 1
@@ -246,7 +247,7 @@ int SymmetricSolver() {
 		// this inner loop is as in CCFull with the break condition at the end to avoid overflows
 		for (SubsetBT subsetB = 0; ; subsetB++) {
 			// new key, subset in A but cast to full subset on entire graph
-			const auto BtoA = static_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
+			const auto BtoA = checked_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
 
 			// find canonical image for key
 			const auto [key, keyMult] = group.CanonicalColoring(BtoA);

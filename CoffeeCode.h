@@ -5,6 +5,8 @@
 #include "matrix.h"
 #include "polynomial.h"
 
+#include "utility.h"
+
 
 using namespace CoffeeCode::Std;
 
@@ -45,9 +47,9 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, co
 
 	// this does integer promotion if StoreT is smaller than int,
 	// so we implicitly cast back
-	const auto XwoY = static_cast<StoreT>(subsetX & ~subsetY);
-	const auto YwoX = static_cast<StoreT>(subsetY & ~subsetX);
-	const auto XnY = static_cast<StoreT>(subsetX & subsetY);
+	const auto XwoY = checked_cast<StoreT>(subsetX & ~subsetY);
+	const auto YwoX = checked_cast<StoreT>(subsetY & ~subsetX);
+	const auto XnY = checked_cast<StoreT>(subsetX & subsetY);
 
 	return ChannelAction(XwoY, YwoX, XnY, M);
 }

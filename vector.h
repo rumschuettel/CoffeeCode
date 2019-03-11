@@ -72,9 +72,8 @@ namespace CoffeeCode {
 		// to string
 		friend std::ostream& operator<< (std::ostream& stream, const Vector& vector) {
 			for (size_t i = 0; i < Width - 1; i++)
-				// cast to normal int, otherwise it'll print chars
-				stream << static_cast<uint32_t>(vector[i]) << " ";
-			stream << static_cast<uint32_t>(vector[Width - 1]);
+				stream << +vector[i] << " ";
+			stream << +vector[Width - 1];
 			return stream;
 		}
 	};

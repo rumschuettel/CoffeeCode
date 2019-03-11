@@ -8,7 +8,42 @@
 #include <limits>
 #include <cmath>
 
+// we need to define the wider types here in case we specialize any math function
+#include <boost/multiprecision/cpp_int.hpp>
+
+using boost::multiprecision::uint128_t;
+using boost::multiprecision::uint256_t;
+using boost::multiprecision::uint512_t;
+
+// https://github.com/calccrypto/uint256_t.git
+// provides fast 128 and 256 bit integers
+//#include "src/vectorclass/vectorclass.h"
+
+
+namespace LibPopcount {
+	#include "libpopcnt.h"
+}
+
 namespace CoffeeCode {
+	// bit fiddling
+	inline size_t Popcount(const uint64_t& s)
+	{
+		return LibPopcount::popcount64(s);
+	}
+	template<typename T>
+	inline size_t Popcount(const boost::multiprecision::number<T>& s)
+	{
+		const auto* limbs = s.backend().limbs();
+		const size_t limb_count = s.backend().size();
+		return LibPopcount::popcnt(limbs, limb_count * sizeof(limbs[0]));
+	}
+
+	template<typename StoreT>
+	constexpr inline void OrBit(StoreT& s, const bool bit, const size_t i)
+	{
+		s |= static_cast<StoreT>(bit) << i;
+	}
+
 	// compile-time ceil(log2)
     constexpr size_t ilog2(const size_t n) {
         return n <= 1 ? 0 : 1 + ilog2((n + 1) / 2);
@@ -45,6 +80,13 @@ namespace CoffeeCode {
 		static constexpr auto mask0111 = LUTs::Bitmasks<MaskT>::lut0111[number_of_1s];
 	};
 
+	// n choose k
+	template<typename SizeT>
+	constexpr inline SizeT nCHk(size_t n, size_t k) {
+		if (k == 0) return 1;
+		return n * nCHk<SizeT>(n - 1, k - 1) / k;
+	}
+
 
 	// factorial function using lookup tables
 	template<typename SizeT>
@@ -55,24 +97,54 @@ namespace CoffeeCode {
 	}
 
 	// binomial function using lookup tables
+	// precalculate on startup
 	template<typename SizeT>
 	inline SizeT Binomial(const size_t n, const size_t k)
 	{
-		constexpr auto& lut = LUTs::BinomialCoefficient<SizeT>::get_lut();
+		constexpr size_t LUTSize = std::numeric_limits<SizeT>::digits;
+		static SizeT lut[LUTSize][LUTSize];
+		static bool filled = false;
 
-		assert(n < sizeof(lut));
-		assert(k < sizeof(lut[n]));
-		assert(n >= k);
+		if (!filled) {
+			for (size_t n = 0; n < LUTSize; n++)
+				for (size_t k = 0; k <= n; k++)
+					lut[n][k] = nCHk<SizeT>(n, k);
+
+			filled = true;
+		}
+
+		assert(n < LUTSize);
+		assert(k <= n);
 
 		return lut[n][k];
 	}
+	
+	// or use built-in lookup table for small types
+#define BINOMIAL_LUT(TYPE)\
+	template<>\
+	inline TYPE Binomial<TYPE>(const size_t n, const size_t k)\
+	{\
+		constexpr auto& lut = LUTs::BinomialCoefficient<TYPE>::lut;\
+\
+		assert(n < sizeof(lut));\
+		assert(k < sizeof(lut[n]));\
+		assert(k <= n);\
+\
+		return lut[n][k];\
+	}
+
+	BINOMIAL_LUT(uint8_t)
+	BINOMIAL_LUT(uint16_t)
+	BINOMIAL_LUT(uint32_t)
+	BINOMIAL_LUT(uint64_t)
+#undef BINOMIAL_LUT
 
 	template<>
-	inline double Binomial(const size_t n, const size_t k)
+	inline double Binomial<double>(const size_t n, const size_t k)
 	{
-		constexpr auto& lut = LUTs::BinomialCoefficient<double>::get_lut();
+		constexpr auto& lut = LUTs::BinomialCoefficient<double>::lut;
 		
-		assert(n > k);
+		assert(k <= n);
 		if (n < sizeof(lut)) {
 			assert(k < sizeof(lut[n]));
 			return lut[n][k];

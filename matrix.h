@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vector.h"
+#include "utility.h"
 
 #include <assert.h>
 #include <utility>
@@ -44,9 +45,12 @@ namespace CoffeeCode {
 		// pass by value
 		inline ColumnVectorT operator*(const RowVectorT rhs) const {
 			ColumnVectorT out;
+			using ColumnVectorStoreT = typename ColumnVectorT::StoreT;
 			size_t i = 0;
 			for (const auto row : rows)
-				out += static_cast<typename ColumnVectorT::StoreT>( (row * rhs) << i++);
+				out += checked_cast<ColumnVectorStoreT>( 
+					checked_cast<ColumnVectorStoreT>(row * rhs) << i++
+				);
 			return out;
 		}
 

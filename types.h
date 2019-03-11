@@ -3,17 +3,6 @@
 #include "ctmath.h"
 #include "traits.h"
 
-// clone from https://github.com/calccrypto/uint256_t.git
-// provides fast 128 and 256 bit integers
-
-//#include "src/vectorclass/vectorclass.h"
-
-#include <boost/multiprecision/cpp_int.hpp>
-
-namespace LibPopcount {
-	#include "libpopcnt.h"
-}
-
 #include <array>
 
 namespace CoffeeCode {
@@ -43,24 +32,6 @@ namespace CoffeeCode {
 
 	using BitType = BitStorageType<1>;
 
-	inline size_t Popcount(const uint64_t& s)
-	{
-		return LibPopcount::popcount64(s);
-	}
-	template<typename T>
-	inline size_t Popcount(const boost::multiprecision::number<T>& s)
-	{
-		const auto* limbs = s.backend().limbs();
-		const size_t limb_count = s.backend().size();
-		return LibPopcount::popcnt(limbs, limb_count * sizeof(limbs[0]));
-	}
-
-	template<typename StoreT>
-	inline void OrBit(StoreT& s, const bool bit, const size_t i)
-	{
-		s |= static_cast<StoreT>(static_cast<StoreT>(bit) << i);
-	}
-
 	// storage for multiple limbs of bits in array form
 	template<size_t Width, size_t Count>
 	using BitStorageTypeArray = std::array< BitStorageType<Width>, Count >;
@@ -80,17 +51,15 @@ namespace CoffeeCode {
 		double
 #else
 		std::conditional_t<
-		Log2Base <= 128, boost::multiprecision::uint128_t,
+		Log2Base < 128, uint128_t,
 		std::conditional_t<
-		Log2Base <= 256, boost::multiprecision::uint256_t,
+		Log2Base < 256, uint256_t,
 		std::conditional_t<
-		Log2Base <= 512, boost::multiprecision::uint512_t,
+		Log2Base < 512, uint512_t,
 		InvalidIntegerType<>
 		>>>
 #endif
 	>;
-
-
 
 	// orbit sizes can be huge
 	// for K_SYS, maximum orbit size is K_SYS!

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "traits.h"
+#include "utility.h"
 
 namespace CoffeeCode {
 	// compile time tuple indicating start and end of orbit
@@ -18,7 +19,7 @@ namespace CoffeeCode {
         // bitmask for a given type; 1s between Start and End, 0 elsewhere
         template<typename T>
         struct Mask {
-            constexpr static auto value = Bitmask<T, End>::mask0111 & ~(Bitmask<T, Start>::mask0111);
+            constexpr static T value = Bitmask<T, End>::mask0111 & ~(Bitmask<T, Start>::mask0111);
         };
 	};
 
@@ -72,9 +73,9 @@ namespace CoffeeCode {
 
             // for the remainder of the tuples we have to brute force count to base B
             // that number can be as large as Base^N_remaining
-            using BaseCounterT = BitStorageType< N_remaining * ilog2(Base) + 1 >;
-            constexpr static auto MaxRemainder = ipow<BaseCounterT>(Base, N_remaining);
+            using BaseCounterT = SizeStorageType<ipow<size_t>(Base, N_remaining)>;
             BaseCounterT remainder;
+            constexpr static auto MaxRemainder = ipow<BaseCounterT>(Base, N_remaining);
 
             enum StepResult { NoCarry, Carry };
 			StepResult Step(IndexTupleT& indices, const size_t OrbitLength)
@@ -185,9 +186,9 @@ namespace CoffeeCode {
                     // within sections determined by indices
                     for (size_t i = 0; i < idcs.size()-1; i ++)
                         for (size_t j = idcs[i]; j < idcs[i+1]; j ++)
-                            out[End - j - 1] = static_cast<BaseT>(i+1);
+                            out[End - j - 1] = checked_cast<BaseT>(i+1);
                     for (size_t j = idcs[idcs.size()-1]; j < Length; j ++)
-                        out[End - j - 1] = static_cast<BaseT>(Base-1);
+                        out[End - j - 1] = checked_cast<BaseT>(Base-1);
                 }
 
                 // fill remainder
@@ -199,7 +200,7 @@ namespace CoffeeCode {
                     out[j + Length - N_remaining] = digit;
                 }
 
-                return { out, static_cast<MultiplicityT>(orbit_enumerator / orbit_denominator) };
+                return { out, checked_cast<MultiplicityT>(orbit_enumerator / orbit_denominator) };
 			}
         };
 
@@ -253,7 +254,7 @@ namespace CoffeeCode {
                     return;
 
                 // otherwise overwrite section with padded 1s
-                const ColoringRawT sorted = ((static_cast<ColoringRawT>(1) << count1s) - 1) << Orbit::Start;
+                const ColoringRawT sorted = ((static_cast<ColoringRawT>(0b01) << count1s) - 1) << Orbit::Start;
 
                 src &= ~mask;
                 src ^= sorted;

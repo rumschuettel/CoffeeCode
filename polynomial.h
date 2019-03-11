@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include "ctmath.h"
+#include "utility.h"
 
 #include <boost/container_hash/hash.hpp>
 
@@ -22,16 +23,16 @@ namespace CoffeeCode {
 		static constexpr size_t K_TOT = K_SYS + K_ENV;
 		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
 
-		using CoefficientT = MultiplicityType<4>;
-		using ExponentT = BitStorageType<ExponentWidth>;
-
+		using ExponentT = SizeStorageType<K_TOT>;
 		static constexpr ExponentT MaxExponent = K_TOT;
+
+		using CoefficientT = MultiplicityType<4>;
 		using CoefficientArrayT = typename std::array<CoefficientT, MaxExponent + 1>;
 
 		template<typename T>
 		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3)
 		{
-			return static_cast<ExponentT>(u1 + u2 + u3);
+			return checked_cast<ExponentT>(u1 + u2 + u3);
 		}
 
 		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs)
@@ -58,11 +59,12 @@ namespace CoffeeCode {
 	template<size_t VariableCount = 3>
 	struct MultivariateMonomial {
 		static constexpr size_t K_TOT = K_SYS + K_ENV;
-		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
+
+		using SingleExponentT = SizeStorageType<K_TOT>;
+		static constexpr SingleExponentT MaxExponent = K_TOT;
+		using ExponentT = std::array<SingleExponentT, VariableCount>;
 
 		using CoefficientT = MultiplicityType<4>;
-		using SingleExponentT = BitStorageType<ExponentWidth>;
-		using ExponentT = std::array<SingleExponentT, VariableCount>;
 
 		// this needs to be an ordered map since we hash the coefficient array
 		using CoefficientArrayT = typename std::map<ExponentT, CoefficientT>;
@@ -71,9 +73,9 @@ namespace CoffeeCode {
 		inline static ExponentT MakeExponent(const T& u1, const T& u2, const T& u3)
 		{
 			return ExponentT{
-				static_cast<SingleExponentT>(u1),
-				static_cast<SingleExponentT>(u2),
-				static_cast<SingleExponentT>(u3)
+				checked_cast<SingleExponentT>(u1),
+				checked_cast<SingleExponentT>(u2),
+				checked_cast<SingleExponentT>(u3)
 			};
 		}
 

@@ -50,26 +50,8 @@ Assert[On];(* enable sanity checks instead of failing silently *)
 
 
 (* ::Input::Initialization:: *)
-(* avoid race conditions when building in parallel *)
-Clear[ParallelBuildDirectory]
-ParallelBuildDirectory[]:=Module[{
-targetFolder=PARALLELBUILDPATH<>"release-"<>ToString@$SessionID<>"."<>ToString@$KernelID<>"/"
-},
-If[!DirectoryQ[targetFolder],
-Echo["setting up parallel build directory: "<>targetFolder];
-RunProcess[{PARALLELBUILDSETUPSCRIPT,targetFolder}] (* bug with commands like "source" *)
-];
-targetFolder
-]
-
-
-(* ::Input:: *)
-(*ParallelBuildDirectory[]*)
-
-
-(* ::Input::Initialization:: *)
 Clear[BuglessRunProcess]
-BuglessRunProcess[exec_String,what_,input_String:"",opts:OptionsPattern[]]:=Module[{
+BuglessRunProcess[exec_,what_,input_String:"",opts:OptionsPattern[]]:=Module[{
 process=StartProcess[exec,opts],
 out
 },
@@ -86,6 +68,24 @@ out=ReadString[process];
 Unprotect[StringForm];
 StringForm[a_,b_Parallel`Kernels`kernel]:="\033[F\033[F"  (* ignore this output, move up a line *)
 
+
+
+(* ::Input::Initialization:: *)
+(* avoid race conditions when building in parallel *)
+Clear[ParallelBuildDirectory]
+ParallelBuildDirectory[]:=Module[{
+targetFolder=PARALLELBUILDPATH<>"release-"<>ToString@$SessionID<>"."<>ToString@$KernelID<>"/"
+},
+If[!DirectoryQ[targetFolder],
+Echo["setting up parallel build directory: "<>targetFolder];
+BuglessRunProcess[{PARALLELBUILDSETUPSCRIPT,targetFolder}] (* bug with commands like "source" *)
+];
+targetFolder
+]
+
+
+(* ::Input:: *)
+(*ParallelBuildDirectory[]*)
 
 
 (* ::Section:: *)
@@ -414,7 +414,7 @@ SGSTransversalMMForm[sgs,kSys]<>"\n"<>
 (* ::Input::Initialization:: *)
 Clear[MakeCC]
 MakeCC[kSys_Integer,kEnv_Integer]:=With[{
-out=RunProcess[
+out=BuglessRunProcess[
 {
 "make",
 "-B",
@@ -785,8 +785,12 @@ GraphHash[g_Graph,kSys_Integer]:=StringTrim@ExportString[ExportString[Canonicali
 
 
 (* ::Input::Initialization:: *)
+LaunchKernels[16]
+
+
+(* ::Input::Initialization:: *)
 With[{
-kSysMax=10
+kSysMax=32
 },
 
 graphsToTest=ParallelTable[

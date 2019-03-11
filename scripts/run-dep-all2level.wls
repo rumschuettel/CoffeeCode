@@ -65,6 +65,8 @@ out=ReadString[process];
 |>
 ]
 
+
+(* ::Input::Initialization:: *)
 Unprotect[StringForm];
 StringForm[a_,b_Parallel`Kernels`kernel]:="\033[F\033[F"  (* ignore this output, move up a line *)
 
@@ -414,7 +416,7 @@ SGSTransversalMMForm[sgs,kSys]<>"\n"<>
 (* ::Input::Initialization:: *)
 Clear[MakeCC]
 MakeCC[kSys_Integer,kEnv_Integer]:=With[{
-out=BuglessRunProcess[
+out=RunProcess[
 {
 "make",
 "-B",

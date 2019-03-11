@@ -51,7 +51,7 @@ Assert[On];(* enable sanity checks instead of failing silently *)
 
 (* ::Input::Initialization:: *)
 Clear[BuglessRunProcess]
-BuglessRunProcess[exec_,what_,input_String:"",opts:OptionsPattern[]]:=Module[{
+BuglessRunProcess[exec_,what_:Null,input_String:"",opts:OptionsPattern[]]:=Module[{
 process=StartProcess[exec,opts],
 out
 },

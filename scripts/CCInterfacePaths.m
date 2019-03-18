@@ -1,10 +1,20 @@
 (* ::Package:: *)
 
 (* ::Input::Initialization:: *)
-CCRELEASEPATHFULLSOLVER="/home/jkrb2/programming/CoffeeCode/build/release_full_arbch/";
+Clear[CurrentDir]
+CurrentDir:=If[$InputFileName!="",DirectoryName[$InputFileName],NotebookDirectory[]]
 
-RESULTSPATH="/home/jkrb2/Desktop/GraphStateResults/";
 
-PARALLELBUILDPATH="/home/jkrb2/programming/CoffeeCode/build/";
-PARALLELBUILDSETUPSCRIPT="/home/jkrb2/programming/CoffeeCode/scripts/make-build-dir.sh";
-CCCUSTOMINSTANCEFILE="cc-instance-custom.h";
+(* ::Input::Initialization:: *)
+CCRELEASEPATHFULLSOLVER=ParentDirectory[CurrentDir]<>"/build/release_full_arbch/";
+
+PARALLELBUILDPATH=ParentDirectory[CurrentDir]<>"/build/";
+PARALLELBUILDSETUPSCRIPT=CurrentDir<>"/make-build-dir.sh";
+
+RESULTSPATH=$HomeDirectory<>"/Desktop/GraphStateResults/";
+
+
+Print["Path to precompiled full solvers: "<>CCRELEASEPATHFULLSOLVER];
+Print["Path to create parallel solver subdirectories: "<>PARALLELBUILDPATH];
+Print["Script how to setup new parallel solver subdirectories: "<>PARALLELBUILDSETUPSCRIPT];
+Print["Results path, can be used as RESULTSPATH (can be ignored): "<>RESULTSPATH];

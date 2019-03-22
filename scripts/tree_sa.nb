@@ -1,0 +1,403 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     17166,        395]
+NotebookOptionsPosition[     15857,        364]
+NotebookOutlinePosition[     16190,        379]
+CellTagsIndexPosition[     16147,        376]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Tree Simulated Annealing", "Title",ExpressionUUID->"ada263ce-7ba1-44a9-9aa2-0240e65b9f29"],
+
+Cell["\<\
+Note that for this to work as fast as possible it might make sense to compile \
+the full solvers with OPTIMIZE_FOR_DEPOLARIZING=ON -- this can be set up with \
+ccmake as usual (you can have one folder for each choice of this flag, and \
+then just change the paths as needed).
+
+I\[CloseCurlyQuote]ve tried figuring out where this bug comes from. I suspect \
+it has to do with the way MM spawns processes, so I\[CloseCurlyQuote]m now \
+explicitly killing them once their computation is done instead of trusting in \
+MM to do so. This should be fixed in the CCInterface.nb now. In case this \
+still occurs, try to follow the hint under \[OpenCurlyDoubleQuote]Build \
+Environments\[CloseCurlyDoubleQuote] above where BuglessRunProcess is defined\
+\
+\>", "Text",ExpressionUUID->"6387751f-932c-4d80-8c1a-777180adb6ed"],
+
+Cell[CellGroupData[{
+
+Cell["Annealing Procedures", "Section",ExpressionUUID->"42c4d0b1-7120-4d9e-84f9-24f1a6df356b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"cI", "[", "G_", "]"}], ":=", 
+  RowBox[{"CIMult", "@@", 
+   RowBox[{"PauliActionCC", "[", 
+    RowBox[{"G", ",", 
+     RowBox[{
+      RowBox[{"VertexCount", "[", "G", "]"}], "-", "1"}], ",", "0.1903", ",", 
+     "False"}], "]"}]}]}]], "Input",
+ InitializationCell->True,
+ CellLabel->"In[74]:=",ExpressionUUID->"ca70a98c-5176-41cf-a9b9-6e2275dbc479"],
+
+Cell[BoxData[
+ RowBox[{"cI", "[", 
+  RowBox[{"StarGraph", "[", "6", "]"}], "]"}]], "Input",
+ CellLabel->"In[81]:=",ExpressionUUID->"85e2c1a6-c26a-4752-a1a7-8e7540b44d51"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+     "always", " ", "clear", " ", "names", " ", "of", " ", "functions", " ", 
+      "that", " ", "are", " ", "defined", " ", "with"}], " ", ":="}], ",", 
+    " ", 
+    RowBox[{"as", " ", 
+     RowBox[{"e", ".", "g", ".", " ", "if"}], " ", "you", " ", "change", " ", 
+     "the", " ", "parameters", " ", "an", " ", "old", " ", "variant", " ", 
+     "of", " ", "the", " ", "function", " ", "will", " ", "keep", " ", 
+     "existing", " ", "in", " ", "the", " ", "kernel", " ", "until", " ", 
+     "you", " ", "restart", " ", 
+     RowBox[{"it", ".", " ", 
+      RowBox[{"That", "'"}]}], "s", " ", "a", " ", "common", " ", "source", 
+     " ", "of", " ", "weird", " ", 
+     RowBox[{"bugs", "."}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+  "\[IndentingNewLine]", 
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"It", "'"}], "s", " ", "also", " ", "good", " ", "to", " ", 
+    "give", " ", "a", " ", "type", " ", "hint", " ", "to", " ", "function", 
+    " ", "parameters", " ", "whenever", " ", "possible"}], " ", "*)"}], 
+  "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"Clear", "[", "switchLeaf", "]"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"switchLeaf", "[", "G_Graph", "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+       "leavesIndices", ",", "\[IndentingNewLine]", "leafIndex", ",", 
+        "\[IndentingNewLine]", "leaf", ",", "\[IndentingNewLine]", 
+        "\[IndentingNewLine]", "neighbour", ",", "\[IndentingNewLine]", 
+        "\[IndentingNewLine]", "newG"}], "\[IndentingNewLine]", "}"}], ",", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", " ", 
+       RowBox[{
+        RowBox[{
+        "get", " ", "random", " ", "vertex", " ", "with", " ", "degree", " ", 
+         "1.", " ", "Note", " ", "that", " ", "vertex", " ", "index", " ", 
+         "is", " ", "not", " ", "necessarily", " ", "equal", " ", "to", " ", 
+         "vertex", " ", "name"}], ",", " ", 
+        RowBox[{
+        "so", " ", "once", " ", "we", " ", "pick", " ", "a", " ", "random", 
+         " ", "position", " ", "of", " ", "a", " ", "vertex", " ", "we", " ", 
+         "still", " ", "have", " ", "to", " ", "get", " ", "the", " ", 
+         "actual", " ", "vertex", " ", "name", " ", "to", " ", "delete"}]}], 
+       " ", "*)"}], "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"leavesIndices", "=", 
+        RowBox[{"Flatten", "@", 
+         RowBox[{"Position", "[", 
+          RowBox[{
+           RowBox[{"VertexDegree", "@", "G"}], ",", "1"}], "]"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"leafIndex", "=", 
+        RowBox[{"RandomChoice", "@", "leavesIndices"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"leaf", "=", 
+        RowBox[{
+         RowBox[{"VertexList", "[", "G", "]"}], "\[LeftDoubleBracket]", 
+         "leafIndex", "\[RightDoubleBracket]"}]}], ";", "\[IndentingNewLine]",
+        "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{
+        "delete", " ", "edge", " ", "between", " ", "leaf", " ", "and", " ", 
+         "neighbour"}], " ", "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"neighbour", "=", 
+        RowBox[{"First", "@", 
+         RowBox[{"AdjacencyList", "[", 
+          RowBox[{"G", ",", "leaf"}], "]"}]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"newG", "=", 
+        RowBox[{"EdgeDelete", "[", 
+         RowBox[{"G", ",", 
+          RowBox[{"leaf", "\[UndirectedEdge]", "neighbour"}]}], "]"}]}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{"add", " ", "new", " ", "random", " ", "edge"}], " ", "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"newG", "=", 
+        RowBox[{"EdgeAdd", "[", 
+         RowBox[{"newG", ",", 
+          RowBox[{"leaf", "\[UndirectedEdge]", 
+           RowBox[{"RandomChoice", "@", 
+            RowBox[{"VertexList", "@", 
+             RowBox[{"GraphDifference", "[", 
+              RowBox[{"G", ",", 
+               RowBox[{"{", 
+                RowBox[{"leaf", "\[UndirectedEdge]", "neighbour"}], "}"}]}], 
+              "]"}]}]}]}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"(*", " ", 
+        RowBox[{"return", " ", "with", " ", "index", " ", 
+         RowBox[{"labels", ".", " ", "Vertex"}], " ", "names", " ", "should", 
+         " ", "be", " ", "avoided", " ", "whenever", " ", "possible"}], " ", 
+        "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"Graph", "[", 
+        RowBox[{"newG", ",", 
+         RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], "]"}]}]}], 
+     "\[IndentingNewLine]", "]"}]}]}]}]], "Input",
+ InitializationCell->True,
+ CellLabel->"In[75]:=",ExpressionUUID->"c5d8558a-8990-432e-b18c-3acac8670e79"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"switchLeaf", "[", 
+       RowBox[{"PathGraph", "@", 
+        RowBox[{"Range", "@", "20"}]}], "]"}], ";"}], ",", 
+     RowBox[{"{", "10000", "}"}]}], "]"}], ";"}], "//", 
+  "AbsoluteTiming"}]], "Input",
+ CellLabel->
+  "In[135]:=",ExpressionUUID->"c27facb9-73d1-42ed-8e80-18a26636f2e6"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{
+    "also", " ", "try", " ", "to", " ", "give", " ", "function", " ", 
+     "parameters", " ", "longer", " ", "names"}], ",", " ", 
+    RowBox[{"otherwise", " ", 
+     RowBox[{"it", "'"}], "s", " ", "hard", " ", "to", " ", "guess", " ", 
+     "what", " ", "each", " ", "parameter", " ", "does"}]}], " ", "*)"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"Clear", "[", "simAnn", "]"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"simAnn", "[", 
+     RowBox[{"costFunction_", ",", "initialG_Graph", ",", 
+      RowBox[{"maximumTemperature_Integer:", "100"}], ",", 
+      RowBox[{"annealingSteps_Integer:", "100"}], ",", 
+      RowBox[{"annealingIterations_Integer:", "1000"}]}], "]"}], ":=", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+       "curf", ",", "curG", ",", "\[IndentingNewLine]", "topf", ",", "topG"}],
+        "\[IndentingNewLine]", "}"}], ",", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"curG", "=", "initialG"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"curf", "=", 
+        RowBox[{"costFunction", "@", "curG"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"topf", "=", "curf"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"topG", "=", "curG"}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"Range", "[", "annealingSteps", "]"}], "//", 
+        RowBox[{"Map", "[", 
+         RowBox[{"Function", "[", 
+          RowBox[{"currentStep", ",", 
+           RowBox[{"With", "[", 
+            RowBox[{
+             RowBox[{"{", "\[IndentingNewLine]", 
+              RowBox[{"(*", " ", 
+               RowBox[{
+               "keep", " ", "variables", " ", "as", " ", "local", " ", "as", 
+                " ", "possible"}], " ", "*)"}], "\[IndentingNewLine]", 
+              RowBox[{"temperature", "=", 
+               RowBox[{"maximumTemperature", "/", "currentStep"}]}], 
+              "\[IndentingNewLine]", "}"}], ",", "\[IndentingNewLine]", 
+             "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"Print", "[", 
+               RowBox[{
+               "\"\<Annealing step: \>\"", ",", "currentStep", ",", 
+                "\"\<, Temp: \>\"", ",", 
+                RowBox[{"N", "[", "temperature", "]"}]}], "]"}], ";", 
+              "\[IndentingNewLine]", "\[IndentingNewLine]", 
+              RowBox[{
+               RowBox[{"Range", "[", "annealingIterations", "]"}], "//", 
+               RowBox[{"Map", "[", 
+                RowBox[{"Function", "[", 
+                 RowBox[{"iteration", ",", 
+                  RowBox[{"Module", "[", 
+                   RowBox[{
+                    RowBox[{"{", "\[IndentingNewLine]", 
+                    RowBox[{
+                    RowBox[{"newG", "=", 
+                    RowBox[{"switchLeaf", "[", "curG", "]"}]}], ",", 
+                    "\[IndentingNewLine]", "newf"}], "\[IndentingNewLine]", 
+                    "}"}], ",", "\[IndentingNewLine]", 
+                    RowBox[{"(*", " ", 
+                    RowBox[{"disallow", " ", "disconnected", " ", 
+                    RowBox[{"graphs", "?"}]}], " ", "*)"}], 
+                    "\[IndentingNewLine]", 
+                    RowBox[{
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"ConnectedGraphQ", "@", "newG"}]}], ",", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"(*", 
+                    RowBox[{
+                    RowBox[{
+                    "PrintTemporary", "[", "\"\<skipping disconnected\>\"", 
+                    "]"}], ";"}], "*)"}], "\[IndentingNewLine]", 
+                    RowBox[{"Return", "[", "Module", "]"}]}], 
+                    "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"newf", "=", 
+                    RowBox[{"costFunction", "[", "newG", "]"}]}], ";", 
+                    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+                    RowBox[{"(*", " ", 
+                    RowBox[{"new", " ", "best", " ", "found"}], " ", "*)"}], 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"newf", ">", "curf"}], ",", "\[IndentingNewLine]", 
+                    RowBox[{
+                    RowBox[{"curf", "=", "newf"}], ";", "\[IndentingNewLine]", 
+                    RowBox[{"curG", "=", "newG"}], ";"}], 
+                    "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"(*", " ", 
+                    RowBox[{
+                    "actually", " ", "hop", " ", "there", " ", "only", " ", 
+                    "with", " ", "some", " ", "probability"}], " ", "*)"}], 
+                    "\[IndentingNewLine]", 
+                    RowBox[{
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Exp", "[", 
+                    RowBox[{
+                    RowBox[{"-", 
+                    RowBox[{"(", 
+                    RowBox[{"curf", "-", "newf"}], ")"}]}], "/", "t"}], "]"}],
+                     ">", "RandomReal"}], ",", "\[IndentingNewLine]", 
+                    RowBox[{
+                    RowBox[{"curf", "=", "newf"}], ";", " ", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"curG", "=", "newG"}]}]}], "\[IndentingNewLine]", 
+                    "]"}], ";"}]}], "\[IndentingNewLine]", "]"}], ";", 
+                    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+                    RowBox[{"(*", " ", 
+                    RowBox[{
+                    "display", " ", "that", " ", "we", " ", "found", " ", "a",
+                     " ", "new", " ", "top", " ", "choice", " ", "this", " ", 
+                    "iteration"}], " ", "*)"}], "\[IndentingNewLine]", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"curf", ">", "topf"}], ",", "\[IndentingNewLine]", 
+                    RowBox[{
+                    RowBox[{"topf", "=", "curf"}], ";", 
+                    RowBox[{"topG", "=", "curG"}], ";", 
+                    RowBox[{"Print", "[", 
+                    RowBox[{
+                    "\"\<Iteration: \>\"", ",", "iteration", ",", 
+                    "\"\<, cI = \>\"", ",", "topf"}], "]"}], ";", 
+                    RowBox[{"Print", "[", 
+                    RowBox[{"Graph", "[", 
+                    RowBox[{"topG", ",", 
+                    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}], ",", 
+                    
+                    RowBox[{"VertexStyle", "\[Rule]", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"VertexCount", "[", "topG", "]"}], "\[Rule]", 
+                    "Red"}], "}"}]}]}], "]"}], "]"}], ";"}]}], 
+                    "\[IndentingNewLine]", "]"}], ";"}]}], 
+                   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+                   "\[IndentingNewLine]", "]"}]}], "]"}], "]"}]}], ";", 
+              "\[IndentingNewLine]", "\[IndentingNewLine]", 
+              RowBox[{"Print", "[", 
+               RowBox[{"\"\<Best cI: \>\"", ",", "topf"}], "]"}], ";"}]}], 
+            "\[IndentingNewLine]", "\[IndentingNewLine]", "]"}]}], "]"}], 
+         "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"Graph", "[", 
+        RowBox[{"topG", ",", 
+         RowBox[{"VertexStyle", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"VertexCount", "[", "topG", "]"}], "\[Rule]", "Red"}], 
+           "}"}]}]}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}]}]}]], "Input",\
+
+ InitializationCell->
+  True,ExpressionUUID->"58152300-c898-46a6-81bd-97cb8dda7bf4"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Annealing Tests", "Section",ExpressionUUID->"f4b7df2c-ac3d-4043-8e8d-9c2db25f5235"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"H", "=", 
+   RowBox[{"PathGraph", "@", 
+    RowBox[{"Range", "@", "6"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"simAnn", "[", 
+  RowBox[{"cI", ",", "H", ",", "10", ",", "100", ",", "2500"}], 
+  "]"}]}], "Input",
+ CellLabel->"In[99]:=",ExpressionUUID->"21a4b42b-a109-417f-88d8-55be4dd4639c"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1280, 973},
+WindowMargins->{{0, Automatic}, {0, Automatic}},
+FrontEndVersion->"11.3 for Linux x86 (64-bit) (March 6, 2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 96, 0, 98, "Title",ExpressionUUID->"ada263ce-7ba1-44a9-9aa2-0240e65b9f29"],
+Cell[679, 24, 822, 13, 150, "Text",ExpressionUUID->"6387751f-932c-4d80-8c1a-777180adb6ed"],
+Cell[CellGroupData[{
+Cell[1526, 41, 94, 0, 68, "Section",ExpressionUUID->"42c4d0b1-7120-4d9e-84f9-24f1a6df356b"],
+Cell[1623, 43, 384, 10, 47, "Input",ExpressionUUID->"ca70a98c-5176-41cf-a9b9-6e2275dbc479",
+ InitializationCell->True],
+Cell[2010, 55, 170, 3, 31, "Input",ExpressionUUID->"85e2c1a6-c26a-4752-a1a7-8e7540b44d51"],
+Cell[2183, 60, 4843, 105, 761, "Input",ExpressionUUID->"c5d8558a-8990-432e-b18c-3acac8670e79",
+ InitializationCell->True],
+Cell[7029, 167, 387, 12, 31, "Input",ExpressionUUID->"c27facb9-73d1-42ed-8e80-18a26636f2e6"],
+Cell[7419, 181, 7949, 164, 1428, "Input",ExpressionUUID->"58152300-c898-46a6-81bd-97cb8dda7bf4",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[15405, 350, 89, 0, 54, "Section",ExpressionUUID->"f4b7df2c-ac3d-4043-8e8d-9c2db25f5235"],
+Cell[15497, 352, 332, 8, 55, "Input",ExpressionUUID->"21a4b42b-a109-417f-88d8-55be4dd4639c"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

@@ -142,9 +142,10 @@ namespace CoffeeCode {
 				return *this;
 			}
 
-			// inequality for end-checking
-			struct Done {};
-			bool operator!=(const Done&) const
+			// comparison operator is only ever invoked for end-of-loop-checking
+			// so return the state of our internal "done" variable and ignore the argument
+			using DoneT = IteratorT;
+			bool operator!=(const DoneT&) const
 			{
 				return !done;
 			}
@@ -159,9 +160,9 @@ namespace CoffeeCode {
 	public:
 		// range-based for loop iterator for tuples over Base
 		template<size_t Base>
-		inline static IteratorProxy<CosetIterator<Base>> TupleCosets()
+		inline static StatefulIteratorProxy<CosetIterator<Base>> TupleCosets()
 		{
-			return IteratorProxy<CosetIterator<Base>>();
+			return StatefulIteratorProxy<CosetIterator<Base>>();
 		}
 
 	private:

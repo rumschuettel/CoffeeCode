@@ -51,9 +51,9 @@ using detected_or_t = boost::detected_or_t<Default, Op, Args...>;
 
 // features a begin and end function to be used in a
 // range-based for loop
-template <typename IteratorT>
-struct IteratorProxy {
+template <typename IteratorT, typename DoneT = typename IteratorT::DoneT>
+struct StatefulIteratorProxy {
 
 	IteratorT begin() const { return IteratorT(); }
-	const auto end() const { return typename IteratorT::Done{}; }
+	DoneT end() const { return DoneT(); }
 };

@@ -60,6 +60,7 @@ namespace CoffeeCode {
 
         template<size_t Base>
         struct OrbitProductIterator {
+            using IteratorT = OrbitProductIterator<Base>;
 			using TupleT = NibbleStorageTypeArray<Base, Length>;
             using MultiplicityT = MultiplicityType<Base>;
 
@@ -150,12 +151,14 @@ namespace CoffeeCode {
 				return *this;
 			}
 
-			// inequality for end-checking
-			struct Done {};
-			bool operator!=(const Done&) const
+			// comparison operator is only ever invoked for end-of-loop-checking
+			// so return the state of our internal "done" variable and ignore the argument
+            using DoneT = IteratorT;
+			bool operator!=(const DoneT&) const
 			{
 				return !done;
 			}
+
 
 			// dereference
 			const std::pair<TupleT, MultiplicityT> operator*() const
@@ -208,9 +211,9 @@ namespace CoffeeCode {
 
 		// range-based for loop iterator for tuples over Base
 		template<size_t Base>
-		inline static IteratorProxy<OrbitProductIterator<Base>> TupleCosets()
+		inline static StatefulIteratorProxy<OrbitProductIterator<Base>> TupleCosets()
 		{
-			return IteratorProxy<OrbitProductIterator<Base>>();
+			return StatefulIteratorProxy<OrbitProductIterator<Base>>();
 		}
 
 

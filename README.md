@@ -4,9 +4,10 @@
 
 * gcc 8 or newer/msvc 2017 or newer
 * boost 1.69.0 source
-* nauty 2.7rc1 or 2.7rc2
+* nauty 2.7rc2
 
 The cxx compiler must be installed, boost and nauty extracted to some folders, respectively.
+For nauty, go to the extracted source folder and run `./configure`.
 Note down these directories for the build instructions below.
 
 I recommend building both the symmetric and full solver in two separate directories (e.g. under `build/release_symm` and `build/release_full`); the paths can then be set in the Mathematica interface which then calls the symmetric or full solver accordingly.
@@ -31,17 +32,21 @@ Open a terminal and `cd` into this directory. Run the following commands:
 The list of available commands is shown at the bottom of the screen.
 Press **[c]**, and set the following variables by first selecting the field, pressing **[enter]**, editing, then pressing **[enter]** again.
 
-| Option                    | Value to enter, or comment.                            |
-|---------------------------|--------------------------------------------------------|
-| `CMAKE_BUILD_TYPE`        | `Release`                                              |
-| `PATH_BOOST`              | Path to boost source directory. Must contain `boost/`. |
-| `PATH_NAUTY`              | Path to nauty source directory. Must contain `nauty.c` |
-| `PATH_CUSTOM_CC_INSTANCE` | Path to custom symmetric instance. Set in Mathematica. |
-| `SYMMETRIC_SOLVER`        | `ON` or `OFF`.                                         |
-| `REDUCE_LAMBDA`           | `ON` or `OFF`.                                         |
+| Option                         | Value to enter, or comment.                               |
+|--------------------------------|-----------------------------------------------------------|
+| `CMAKE_BUILD_TYPE`             | `Release`                                                 |
+| `PATH_BOOST`                   | Path to boost source directory. Must contain `boost/`.    |
+| `PATH_NAUTY`                   | Path to nauty source directory. Must contain `nauty.c`    |
+| `PATH_CUSTOM_CC_INSTANCE`      | Path to custom symmetric instance. Set in Mathematica.    |
+| `SYMMETRIC_SOLVER`             | `ON` or `OFF`.                                            |
+| `REDUCE_LAMBDA`                | `ON` or `OFF`.                                            |
+| `PARALLELIZE`                  | `ON` or `OFF`. Run `nauty/configure --enable-tls` first.  |
+| `FLOATING_POINT_MULTIPLICITY`  | `ON` or `OFF`. Experimental.                              |
 
 If `SYMMETRIC_SOLVER` is `OFF`, the nauty directory is irrelevant.
 `REDUCE_LAMBDA` does polynomial simplification within C++, which is faster than doing this externally and reduces the output size.
+`FLOATING_POINT_MULTIPLICITY` uses fast floating point arithmetic instead of keeping track of orbit sizes exactly. Might result in slightly wrong output.
+`PARALLELIZE` invokes the canonical image solvers in parallel, using OpenMP. The BFS traversal is not yet parallelized. Specifying a thread number can be done with the environment variable `OMP_NUM_THREADS`, otherwise one per virtual core is spawned. The program will crash if nauty is not set up for thread local storage as specified above; this should not be done if `PARALLELIZE=OFF`, as it slows the program down slightly.
 
 Now press **[c]** again, and then **[g]** to generate the cmake scripts and exit ccmake.
 

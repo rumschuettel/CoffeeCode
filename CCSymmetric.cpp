@@ -139,10 +139,17 @@ namespace {
 // group library
 #include "utility.h"
 
+#ifdef PARALLELIZE
+#include <omp.h>
+#endif
+
 #ifndef MEASURE_ALL
-#define MEASURE_FILTER1(sth)
+	#define MEASURE_FILTER1(sth)
 #else
-#define MEASURE_FILTER1(sth) sth
+	#ifdef PARALLELIZE
+	#error "cannot parallelize and measure timings within threads; no speedup"
+	#endif
+	#define MEASURE_FILTER1(sth) sth
 #endif
 
 int SymmetricSolver() {
@@ -151,6 +158,11 @@ int SymmetricSolver() {
 	using CoefficientT = typename Polynomial::CoefficientT;
 
 	auto group = instance::GroupLink();
+
+#ifdef PARALLELIZE
+	const size_t THREAD_COUNT = omp_get_num_threads();
+	assert(THREAD_COUNT > 0);
+#endif
 
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
@@ -162,13 +174,33 @@ int SymmetricSolver() {
 
 
 	// CHANNEL ACTION
-	instance::LambdaT lambda, lambda_pre;
 
 	auto time_channel_start = now();
-	for (const auto& it : instance::sgs::TupleCosets<4>()) {
-		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, it);
 
+	// we precompute the tuples to get a random access iterator
+	const auto& cosets = instance::sgs::TupleCosets<4>();
+	using CosetsAndMultT = decltype(TupleAndStabMult(group, *cosets.begin()));
+	std::vector<CosetsAndMultT> cosets_vec;
+	for (const auto& el : cosets) cosets_vec.push_back(TupleAndStabMult(group, el));
+
+	// fill lambdas
+	instance::LambdaT lambda, lambda_pre;
+
+#ifdef PARALLELIZE
+	#pragma omp parallel default(none) firstprivate(group) shared(cosets_vec, lambda, lambda_pre, counter_channel)
+	{
+	instance::LambdaT lambda_, lambda_pre_;
+	size_t counter_channel_ = 0;
+	#pragma omp for nowait schedule(static)
+#endif
+	for (auto it = cosets_vec.begin(); it < cosets_vec.end(); it++) {
+		const auto& [tuple, orbitSize4] = *it;
+
+#ifdef PARALLELIZE
+		counter_channel_++;
+#else
 		counter_channel++;
+#endif
 
 		// calculate multiplicity of base 4 tuple
 
@@ -197,7 +229,11 @@ int SymmetricSolver() {
 
 			// accumulate polynomial with potentially pre-existing terms
 			// note that mult is equal for U123 that map to the same UIdxCanonical
+		#ifdef PARALLELIZE
+			auto& [poly, mult] = lambda_[UIdxCanonical];
+		#else
 			auto& [poly, mult] = lambda[UIdxCanonical];
+		#endif
 			poly.Add(term.exponent, coeff);
 			mult = orbitSize2;
 		}
@@ -215,11 +251,40 @@ int SymmetricSolver() {
 
 			// accumulate polynomial with same terms as above
 			// multiplicity is 1
+		#ifdef PARALLELIZE
+			auto& [poly, mult] = lambda_pre_[UIdxCanonical_pre];
+		#else
 			auto& [poly, mult] = lambda_pre[UIdxCanonical_pre];
+		#endif
 			poly.Add(term.exponent, coeff);
 			mult = orbitSize2_pre;
 		}
 	}
+
+#ifdef PARALLELIZE
+	#pragma omp critical
+	{
+	// combine hashmaps into one
+	for (const auto& [U, val] : lambda_) {
+		const auto& [poly, mult] = val;
+		auto& [acc_poly, acc_mult] = lambda[U];
+		acc_poly += poly;
+		acc_mult = mult;
+	}
+	for (const auto& [U, val] : lambda_pre_) {
+		const auto& [poly, mult] = val;
+		auto& [acc_poly, acc_mult] = lambda_pre[U];
+		acc_poly += poly;
+		acc_mult = mult;
+	}
+
+	// accumulate counter
+	counter_channel += counter_channel_;
+
+	} // #pragma omp critical
+	} // #pragma omp parallel
+#endif
+
 	auto time_channel = now() - time_channel_start;
 
 

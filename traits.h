@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <type_traits>
 #include <tuple>
+#include <variant>
 
 using std::size_t;
 
@@ -52,6 +53,7 @@ using detected_or_t = boost::detected_or_t<Default, Op, Args...>;
 // range-based for loop
 template <typename IteratorT>
 struct IteratorProxy {
+
 	IteratorT begin() const { return IteratorT(); }
 	const auto end() const { return typename IteratorT::Done{}; }
 };

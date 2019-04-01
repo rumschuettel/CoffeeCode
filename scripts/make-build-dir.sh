@@ -8,4 +8,4 @@ cd "$1"
 source /home/jkrb2/opt/anaconda5/etc/profile.d/conda.sh
 conda activate gcc8
 
-cmake -D CMAKE_BUILD_TYPE=Release -D OPTIMIZE_FOR_DEPOLARIZING=ON -D FLOATING_POINT_MULTIPLICITY=OFF ../..
+cmake -D CMAKE_BUILD_TYPE=Release -D PARALLELIZE=OFF -D OPTIMIZE_FOR_DEPOLARIZING=ON -D FLOATING_POINT_MULTIPLICITY=OFF ../..

@@ -11,6 +11,7 @@ option(SYMMETRIC_SOLVER "Compile symmetric solver" ON)
 option(REDUCE_LAMBDA "Merge lambda and lambda_a before printing" ON)
 option(OPTIMIZE_FOR_DEPOLARIZING "Optimize polynomial computations for depolarizing channel" OFF)
 option(FLOATING_POINT_MULTIPLICITY "Use approximate large numbers instead of exact integers" OFF)
+option(PARALLELIZE "Use OpenMP to parallelize; number of threads picked automatically" OFF)
 
 if (SYMMETRIC_SOLVER)
     set(PATH_CUSTOM_CC_INSTANCE "${PROJECT_BINARY_DIR}/cc-instance-custom.h" CACHE PATH "File for custom symmetric CC instance")
@@ -68,6 +69,13 @@ endif()
 if (FLOATING_POINT_MULTIPLICITY)
     target_compile_definitions(CoffeeCode PRIVATE FLOATING_POINT_MULTIPLICITY)
 endif()
+if (PARALLELIZE)
+    target_compile_definitions(CoffeeCode PRIVATE PARALLELIZE)
+    find_package(OpenMP)
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(CoffeeCode PRIVATE OpenMP::OpenMP_CXX)
+    endif()
+endif()
 
 target_compile_options(CoffeeCode
     PRIVATE
@@ -100,7 +108,7 @@ if (SYMMETRIC_SOLVER)
         PRIVATE
             CCSymmetric.cpp
     )
-    target_link_libraries(CoffeeCode Nauty)
+    target_link_libraries(CoffeeCode PRIVATE Nauty)
 
     configure_file(
         "${PROJECT_SOURCE_DIR}/cc-instance.h.in"

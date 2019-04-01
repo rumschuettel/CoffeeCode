@@ -160,8 +160,7 @@ int SymmetricSolver() {
 	auto group = instance::GroupLink();
 
 #ifdef PARALLELIZE
-	const size_t THREAD_COUNT = omp_get_num_threads();
-	assert(THREAD_COUNT > 0);
+	assert(omp_get_num_threads() > 0);
 #endif
 
 	// PERFORMANCE MEASURE
@@ -177,24 +176,28 @@ int SymmetricSolver() {
 
 	auto time_channel_start = now();
 
+
+	// fill lambdas
+	instance::LambdaT lambda, lambda_pre;
+
+#ifdef PARALLELIZE
 	// we precompute the tuples to get a random access iterator
 	const auto& cosets = instance::sgs::TupleCosets<4>();
 	using CosetsAndMultT = decltype(TupleAndStabMult(group, *cosets.begin()));
 	std::vector<CosetsAndMultT> cosets_vec;
 	for (const auto& el : cosets) cosets_vec.push_back(TupleAndStabMult(group, el));
 
-	// fill lambdas
-	instance::LambdaT lambda, lambda_pre;
-
-#ifdef PARALLELIZE
 	#pragma omp parallel default(none) firstprivate(group) shared(cosets_vec, lambda, lambda_pre, counter_channel)
 	{
 	instance::LambdaT lambda_, lambda_pre_;
 	size_t counter_channel_ = 0;
 	#pragma omp for nowait schedule(static)
-#endif
 	for (auto it = cosets_vec.begin(); it < cosets_vec.end(); it++) {
 		const auto& [tuple, orbitSize4] = *it;
+#else
+	for (const auto coset : instance::sgs::TupleCosets<4>()) {
+		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
+#endif
 
 #ifdef PARALLELIZE
 		counter_channel_++;

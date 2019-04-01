@@ -31,6 +31,9 @@ namespace CoffeeCode::NautyLink {
 		// this is calling legacy C code so we allow a global variable
 		using OrbitSizeT = CoffeeCode::OrbitType;
 		OrbitSizeT __grouporder;
+		#ifdef PARALLELIZE
+		#pragma omp threadprivate(__grouporder)
+		#endif
 		void UserLevelProc_GroupOrder(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)
 		{
 			assert(index > 0);

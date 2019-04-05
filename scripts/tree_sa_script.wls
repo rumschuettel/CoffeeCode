@@ -477,8 +477,7 @@ Graph[topG,VertexStyle->{VertexCount[topG]->Red}]
 
 (* ::Input::Initialization:: *)
 Clear[estimateInitialTemperature]
-estimateInitialTemperature[costFunctionPolynomial_,depolProb_,initialG_Graph,numberTrials_Integer:100,initialAcceptanceProbability_Real:0.8]:=Module[{costFunction,functionEvaluations,initf},
-costFunction[G_]:=costFunctionPolynomial[G]/.{p->depolProb};
+estimateInitialTemperature[costFunction_,initialG_Graph,numberTrials_Integer:100,initialAcceptanceProbability_Real:0.8]:=Module[{functionEvaluations,initf},
 initf=costFunction[initialG];
 functionEvaluations=Table[costFunction[switchLeaf[initialG]]-initf,numberTrials];
 -Mean[Select[functionEvaluations,0<#&]]/Log[initialAcceptanceProbability]
@@ -502,11 +501,13 @@ kSys=ToExpression[args[[3]]];
 (* ::Input::Initialization:: *)
 (* define objective function *)
 Clear[cI]
-cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,kSys,p,False];
+cI[G_Graph]:=cI[G]=CIMult@@PauliActionCC[G,kSys,p,False];
+Clear[cIEvaled]
+cIEvaled[G_Graph]:=cI[G]/.{p->pp};
 
 
 (* ::Input::Initialization:: *)
 (* actual computation *)
 H=Nest[switchLeaf,StarGraph[n],25];
-T=estimateInitialTemperature[cI,pp,H,250];
+T=estimateInitialTemperature[cIEvaled,H,250];
 G=simAnn[cI,kSys,pp,H,T,100,1000]

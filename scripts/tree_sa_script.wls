@@ -403,7 +403,7 @@ Graph[newG,VertexLabels->"Index"]
 
 (* ::Input::Initialization:: *)
 Clear[simAnn]
-simAnn[costFunctionPolynomial_,depolProb_,initialG_Graph,maximumTemperature_Real:100,annealingSteps_Integer:100,annealingIterations_Integer:1000]:=
+simAnn[costFunctionPolynomial_,kSys_Integer,depolProb_,initialG_Graph,maximumTemperature_Real:100,annealingSteps_Integer:100,annealingIterations_Integer:1000]:=
 Module[{
 curf,curG,
 topf,topG
@@ -424,7 +424,7 @@ Print["Annealing step: ",currentStep,", Temp: ",N[temperature]];
 
 Range[annealingIterations]//Map[Function[iteration,Module[{
 newG=switchLeaf[curG],
-newPoly,newf,hash,kSys=VertexCount[curG]-1
+newPoly,newf,hash
 },
 (* disallow disconnected graphs? *)
 If[!ConnectedGraphQ@newG,
@@ -496,11 +496,12 @@ CIMult[\[Lambda]_,\[Lambda]a_]:=(ShannonEntropyMult[\[Lambda]a]-ShannonEntropyMu
 args=Rest[$ScriptCommandLine];
 pp=ToExpression[args[[1]]];
 n=ToExpression[args[[2]]];
+kSys=ToExpression[args[[3]]];
 
 
 (* ::Input::Initialization:: *)
 (* define objective function *)
-cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,VertexCount[G]-1,p,False];
+cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,kSys,p,False];
 
 
 (* ::Input::Initialization:: *)
@@ -508,4 +509,4 @@ cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,VertexCount[G]-1,p,False];
 H=Nest[switchLeaf,StarGraph[n],25];
 T=estimateInitialTemperature[cI,pp,H,250];
 Print[T];
-G=simAnn[cI,pp,H,T,100,1000]
+G=simAnn[cI,kSys,pp,H,T,100,1000]

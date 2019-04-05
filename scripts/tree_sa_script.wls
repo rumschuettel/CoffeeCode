@@ -501,6 +501,7 @@ kSys=ToExpression[args[[3]]];
 
 (* ::Input::Initialization:: *)
 (* define objective function *)
+Clear[cI]
 cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,kSys,p,False];
 
 
@@ -508,5 +509,4 @@ cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,kSys,p,False];
 (* actual computation *)
 H=Nest[switchLeaf,StarGraph[n],25];
 T=estimateInitialTemperature[cI,pp,H,250];
-Print[T];
 G=simAnn[cI,kSys,pp,H,T,100,1000]

@@ -364,6 +364,7 @@ Thread/@Thread[{\[Lambda],\[Lambda]a/2^(kTot-kSys)}->{\[Lambda]m,\[Lambda]ma}]
 ]
 
 
+(* ::Input::Initialization:: *)
 Clear[GraphHash]
 GraphHash[g_Graph,kSys_Integer]:=StringTrim@ExportString[ExportString[CanonicalizeByOrbits[g,kSys],"Graph6"],"Base64"]//StringReplace[#,{"/"->"-"}]&
 
@@ -402,13 +403,13 @@ Graph[newG,VertexLabels->"Index"]
 
 (* ::Input::Initialization:: *)
 Clear[simAnn]
-simAnn[costFunction_,initialG_Graph,maximumTemperature_Real:100,annealingSteps_Integer:100,annealingIterations_Integer:1000]:=
+simAnn[costFunctionPolynomial_,depolProb_,initialG_Graph,maximumTemperature_Real:100,annealingSteps_Integer:100,annealingIterations_Integer:1000]:=
 Module[{
 curf,curG,
 topf,topG
 },
 curG=initialG;
-curf=costFunction@curG;
+curf=costFunctionPolynomial@curG/.{p->depolProb};
 topf=curf;
 topG=curG;
 
@@ -423,7 +424,7 @@ Print["Annealing step: ",currentStep,", Temp: ",N[temperature]];
 
 Range[annealingIterations]//Map[Function[iteration,Module[{
 newG=switchLeaf[curG],
-newf,hash,kSys=VertexCount[curG]-1
+newPoly,newf,hash,kSys=VertexCount[curG]-1
 },
 (* disallow disconnected graphs? *)
 If[!ConnectedGraphQ@newG,
@@ -431,10 +432,17 @@ If[!ConnectedGraphQ@newG,
 Return[Module]
 ];
 
-newf=costFunction[newG];
+newPoly=costFunctionPolynomial[newG];
+newf=newPoly/.{p->depolProb};
 hash=GraphHash[newG,kSys];
 filename=RESULTSPATH<>"graph-"<>hash<>"."<>ToString@kSys;
-If[!FileExistsQ[filename],Put[newf,filename]];
+If[!FileExistsQ[filename],
+<|
+"graph" -> newG,
+"kSys" -> kSys,
+"pauli action" -> Compress[newPoly]
+|>//Put[#,filename]&;
+];
 
 (* new best found *)
 If[newf>curf,
@@ -469,7 +477,8 @@ Graph[topG,VertexStyle->{VertexCount[topG]->Red}]
 
 (* ::Input::Initialization:: *)
 Clear[estimateInitialTemperature]
-estimateInitialTemperature[costFunction_,initialG_Graph,numberTrials_Integer:100,initialAcceptanceProbability_Real:0.8]:=Module[{functionEvaluations,initf},
+estimateInitialTemperature[costFunctionPolynomial_,depolProb_,initialG_Graph,numberTrials_Integer:100,initialAcceptanceProbability_Real:0.8]:=Module[{costFunction,functionEvaluations,initf},
+costFunction[G_]:=costFunctionPolynomial[G]/.{p->depolProb};
 initf=costFunction[initialG];
 functionEvaluations=Table[costFunction[switchLeaf[initialG]]-initf,numberTrials];
 -Mean[Select[functionEvaluations,0<#&]]/Log[initialAcceptanceProbability]
@@ -485,17 +494,18 @@ CIMult[\[Lambda]_,\[Lambda]a_]:=(ShannonEntropyMult[\[Lambda]a]-ShannonEntropyMu
 (* ::Input::Initialization:: *)
 (* collect parameters *)
 args=Rest[$ScriptCommandLine];
-p=ToExpression[args[[1]]];
+pp=ToExpression[args[[1]]];
 n=ToExpression[args[[2]]];
 
 
 (* ::Input::Initialization:: *)
 (* define objective function *)
-cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,VertexCount[G]-1,p,False]
+cI[G_]:=cI[G]=CIMult@@PauliActionCC[G,VertexCount[G]-1,p,False];
 
 
 (* ::Input::Initialization:: *)
 (* actual computation *)
 H=Nest[switchLeaf,StarGraph[n],25];
-T=estimateInitialTemperature[cI,H,250];
-G=simAnn[cI,H,T,100,1000];
+T=estimateInitialTemperature[cI,pp,H,250];
+Print[T];
+G=simAnn[cI,pp,H,T,100,1000]

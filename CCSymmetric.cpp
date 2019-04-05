@@ -171,39 +171,37 @@ int SymmetricSolver() {
 	size_t counter_channel = 0;
 	size_t counter_ptrace = 0;
 
-
 	// CHANNEL ACTION
-
 	auto time_channel_start = now();
-
 
 	// fill lambdas
 	instance::LambdaT lambda, lambda_pre;
 
 #ifdef PARALLELIZE
-	// we precompute the tuples to get a random access iterator
-	const auto& cosets = instance::sgs::TupleCosets<4>();
-	using CosetsAndMultT = decltype(TupleAndStabMult(group, *cosets.begin()));
-	std::vector<CosetsAndMultT> cosets_vec;
-	for (const auto& el : cosets) cosets_vec.push_back(TupleAndStabMult(group, el));
-
-	#pragma omp parallel default(none) firstprivate(group) shared(cosets_vec, lambda, lambda_pre, counter_channel)
-	{
+	// #pragma omp threadprivate(...) does not work on non-pod on gcc
+	// this appears to be compatible
+	static size_t counter_channel_ = 0;
 	instance::LambdaT lambda_, lambda_pre_;
-	size_t counter_channel_ = 0;
-	#pragma omp for nowait schedule(static)
-	for (auto it = cosets_vec.begin(); it < cosets_vec.end(); it++) {
-		const auto& [tuple, orbitSize4] = *it;
-#else
-	for (const auto coset : instance::sgs::TupleCosets<4>()) {
-		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
-#endif
+	#pragma omp threadprivate(lambda_, lambda_pre_, counter_channel_)
 
-#ifdef PARALLELIZE
-		counter_channel_++;
-#else
-		counter_channel++;
+	#pragma omp parallel default(none) firstprivate(group) shared(lambda, lambda_pre, counter_channel)
+	{
+	#pragma omp single
 #endif
+	for (const auto coset : instance::sgs::TupleCosets<4>()) {
+	#ifdef PARALLELIZE
+		#pragma omp task default(none) firstprivate(group)
+		{
+	#endif
+		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
+
+	#ifdef PARALLELIZE
+		counter_channel_++;
+	#else
+		counter_channel++;
+	#endif
+
+		continue;
 
 		// calculate multiplicity of base 4 tuple
 
@@ -262,7 +260,14 @@ int SymmetricSolver() {
 			poly.Add(term.exponent, coeff);
 			mult = orbitSize2_pre;
 		}
+
+	#ifdef PARALLELIZE
+		} // #pragma omp task
+	#endif
 	}
+
+	std::cout << counter_channel << "\n";
+	return 0;
 
 #ifdef PARALLELIZE
 	#pragma omp critical

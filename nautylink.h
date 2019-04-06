@@ -5,9 +5,9 @@
 
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
-#include <boost/multiprecision/cpp_int.hpp>
 
 #include <tuple>
+
 
 namespace CoffeeCode::NautyLink {
 	#if MAXN != (K_SYS+K_ENV)
@@ -24,6 +24,8 @@ namespace CoffeeCode::NautyLink {
 	// note that it should be customized to the target hardware
 	// on windows, open nauty.h and set HAVE_UNISTD_H to 0
 	#include <nauty.h>
+
+
 
 	// implementation details for nauty interface
 	namespace ImplDetails {

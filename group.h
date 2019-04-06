@@ -181,10 +181,19 @@ namespace CoffeeCode {
 				// now iterate over all new orbit elements previously found,
 				// and apply each generator in turn
 				for (const auto& element : new_orbit_elements_copy)
-					(check_and_add(element, Permutations::permute(element)), ...);
+					( check_and_add(element, Permutations::permute(element)), ... );
 			}
 
 			return orbit;
+		}
+
+		// apply each generator to given tuple
+		template<typename T>
+		inline static OrbitSetT<T> GroupAction(const T& tuple)
+		{
+			OrbitSetT<T> action;
+			( action.insert(Permutations::permute(tuple)), ... );
+			return action;
 		}
 	};
 

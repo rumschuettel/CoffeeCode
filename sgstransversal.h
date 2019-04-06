@@ -195,8 +195,8 @@ namespace CoffeeCode {
 			ListT new_todo;
 
 			for (const auto& parent : todo) {
-				// iterate over orbit of tuple under Permutation
-				for (const auto& child : GeneratingGroup::FastOrbit(parent)) {
+				// iterate over action of group's generators on parent
+				for (const auto& child : GeneratingGroup::GroupAction(parent)) {
 					// check numerical order
 					const auto order = NumericalOrder<Pivot>(tuple, child);
 

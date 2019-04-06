@@ -193,7 +193,7 @@ int SymmetricSolver() {
 		#pragma omp task default(none) firstprivate(group)
 		{
 	#endif
-		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
+		//const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
 
 	#ifdef PARALLELIZE
 		counter_channel_++;
@@ -202,11 +202,11 @@ int SymmetricSolver() {
 	#endif
 
 		continue;
-
+		/*
 		// calculate multiplicity of base 4 tuple
 
 		// get low and high bit from tuples
-		// note that SubsetT is such that the i'th index equals a bit shit i to the left
+		// note that SubsetT is such that the i'th index equals a bit shift i to the left
 		SubsetT subsetX{ 0 }, subsetY{ 0 };
 		for (size_t i = 0; i < K_SYS; i++) {
 			const auto low_bit = tuple[i] & 0b01;
@@ -264,6 +264,7 @@ int SymmetricSolver() {
 	#ifdef PARALLELIZE
 		} // #pragma omp task
 	#endif
+	*/
 	}
 
 	std::cout << counter_channel << "\n";

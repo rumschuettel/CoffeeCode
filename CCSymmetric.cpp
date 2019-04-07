@@ -160,7 +160,8 @@ int SymmetricSolver() {
 	auto group = instance::GroupLink();
 
 #ifdef PARALLELIZE
-	assert(omp_get_num_threads() > 0);
+	const size_t THREAD_COUNT = omp_get_num_threads();
+	assert(THREAD_COUNT > 0);
 #endif
 
 	// PERFORMANCE MEASURE
@@ -168,7 +169,7 @@ int SymmetricSolver() {
 	auto time_total_start = now();
 	decltype(now()) time_temp;
 	MEASURE_FILTER1((decltype(now() - now()) time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;))
-	size_t counter_channel = 0;
+		size_t counter_channel = 0;
 	size_t counter_ptrace = 0;
 
 	// CHANNEL ACTION
@@ -177,29 +178,31 @@ int SymmetricSolver() {
 	// fill lambdas
 	instance::LambdaT lambda, lambda_pre;
 
-#ifdef PARALLELIZE
-	// #pragma omp threadprivate(...) does not work on non-pod on gcc
-	// this appears to be compatible
-	static size_t counter_channel_ = 0;
-	instance::LambdaT lambda_, lambda_pre_;
-	#pragma omp threadprivate(lambda_, lambda_pre_, counter_channel_)
 
+#ifdef PARALLELIZE
 	#pragma omp parallel default(none) firstprivate(group) shared(lambda, lambda_pre, counter_channel)
 	{
-	#pragma omp single
+	size_t counter_channel_ = 0;
+	size_t counter_coloring_ = 0;
+	instance::LambdaT lambda_, lambda_pre_;
+
+	#pragma omp for nowait
+	for (size_t i = 0; i < THREAD_COUNT; i++)
 #endif
 	for (const auto coset : instance::sgs::TupleCosets<4>()) {
-	#ifdef PARALLELIZE
-		#pragma omp task default(none) firstprivate(group)
-		{
-	#endif
+#ifdef PARALLELIZE
+		// poor man's parallelization
+		// since the bottleneck for this loop is generally not the coloring iterator, we simply have every thread loop
+		// so that the i'th thread only handles the i'th, THREAD_COUNT + i'th, 2*THREAD_COUNT + i'th, ...
+		const size_t THREAD_ID = omp_get_thread_num();
+		if (counter_coloring++ % THEAD_ID) continue;
+		counter_channel_++;
+#else
+		counter_channel++;
+#endif
+
 		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
 
-	#ifdef PARALLELIZE
-		counter_channel_++;
-	#else
-		counter_channel++;
-	#endif
 
 		// calculate multiplicity of base 4 tuple
 
@@ -258,10 +261,6 @@ int SymmetricSolver() {
 			poly.Add(term.exponent, coeff);
 			mult = orbitSize2_pre;
 		}
-
-	#ifdef PARALLELIZE
-		} // #pragma omp task
-	#endif
 	}
 
 	std::cout << counter_channel << "\n";

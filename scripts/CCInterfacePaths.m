@@ -10,6 +10,7 @@ CCRELEASEPATHFULLSOLVER=ParentDirectory[CurrentDir]<>"/build/release_full_arbch/
 
 PARALLELBUILDPATH=ParentDirectory[CurrentDir]<>"/build/";
 PARALLELBUILDSETUPSCRIPT=CurrentDir<>"/make-build-dir.sh";
+SAGEPYTHONSCRIPT=CurrentDir<>"/sage-python.sh";
 
 RESULTSPATH=$HomeDirectory<>"/Desktop/GraphStateResults/";
 

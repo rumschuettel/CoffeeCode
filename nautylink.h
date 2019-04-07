@@ -133,6 +133,7 @@ namespace CoffeeCode::NautyLink {
 			FULL_GROUP_ORDER = GroupOrder();
 		}
 
+
 		auto inline GroupOrder()
 		{
 			// default options

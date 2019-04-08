@@ -263,9 +263,6 @@ int SymmetricSolver() {
 		}
 	}
 
-	std::cout << counter_channel << "\n";
-	return 0;
-
 #ifdef PARALLELIZE
 	#pragma omp critical
 	{

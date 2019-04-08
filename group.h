@@ -191,7 +191,7 @@ namespace CoffeeCode {
 		template<typename T>
 		inline static OrbitSetT<T> GroupAction(const T& tuple)
 		{
-			OrbitSetT<T> action;
+			OrbitSetT<T> action{ tuple };
 			( action.insert(Permutations::permute(tuple)), ... );
 			return action;
 		}

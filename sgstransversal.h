@@ -185,41 +185,34 @@ namespace CoffeeCode {
 		}
 
 		// can't fold since we rely on early exit, so use recursive template
-		template<typename GeneratorX, typename... GeneratorXS, typename T, typename ListT = std::vector<T>>
-		inline static bool IsCanonicalImpl(const T& tuple, const ListT&& todo)
+		template<typename GeneratorX, typename... GeneratorXS, typename T>
+		inline static bool IsCanonicalImpl(const T& tuple, const T& parent)
 		{
 			using GeneratingGroup = typename GeneratorX::GeneratingGroup;
 			constexpr const size_t Pivot = GeneratorX::Pivot;
 			constexpr const bool RecursionEnd = sizeof...(GeneratorXS) == 0;
 
-			ListT new_todo;
+			// iterate over action of group's generators on parent
+			for (const auto& child : GeneratingGroup::GroupAction(parent)) {
+				// check numerical order
+				const auto order = NumericalOrder<Pivot>(tuple, child);
 
-			for (const auto& parent : todo) {
-				// iterate over action of group's generators on parent
-				for (const auto& child : GeneratingGroup::GroupAction(parent)) {
-					// check numerical order
-					const auto order = NumericalOrder<Pivot>(tuple, child);
+				// return false if new tuple
+				// lexicographically larger up to the pivot point
+				if (order == LARGER)
+					return false;
 
-					// return false if new tuple
-					// lexicographically larger up to the pivot point
-					if (order == LARGER)
-						return false;
+				// equal up till pivot point? need to check
+				// further generators
+				if constexpr (!RecursionEnd) {
+					if (order == EQUAL)
+						if (!IsCanonicalImpl<GeneratorXS...>(tuple, child))
+							return false;
+				}
 
-					// equal up till pivot point? need to check
-					// further generators
-					if constexpr (!RecursionEnd) {
-						if (order == EQUAL)
-							new_todo.push_back(child);
-					}
-
-					// if smaller we don't gain information; ignore
-				};
+				// if smaller we don't gain information; ignore
 			}
 
-			// further generators to check?
-			if constexpr (!RecursionEnd) {
-				return IsCanonicalImpl<GeneratorXS...>(tuple, std::move(new_todo));
-			}
 			return true;
 		}
 

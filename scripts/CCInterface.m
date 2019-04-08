@@ -87,20 +87,21 @@ Throw["Cannot evaluate SGS command in SAGE"]
 sgsList=(
 StringReplace[
 StringReplace[
-StringReplace[sageOut,{RegularExpression["\s+"]->""}]//Echo,
+StringReplace[sageOut,{RegularExpression["\\s+"]->""}],
 {
 "["->"{",
 "]"->"}"
 }
 ],
 {
-"{("->"{Cycles[{{",
+"{("->"PermutationGroup[{Cycles[{{",
 ")("->"},{",
-"),("->"}}], Cycles[{{"
+"),("->"}}], Cycles[{{",
+")}"->"}}]}]"
 }
-]//ToExpression)/.Cycles[{}]->Nothing;
+]//ToExpression)/.{Cycles[{}]->Nothing};
 
-Thread[{Range@Length@sgsList}\[Transpose]->sgsList]/.Rule[_,{}]:>Nothing
+Thread[{Range@Length@sgsList}\[Transpose]->sgsList]/.Rule[_,PermutationGroup[{}]]:>Nothing
 ]
 
 
@@ -301,7 +302,7 @@ StringRiffle[(
 (* ::Input::Initialization:: *)
 Clear[ExportSymmetricCCInstance]
 ExportSymmetricCCInstance[graph_Graph,kSys_Integer,extraStabilizedVertices_List:{},name_:"graphstate_instance"]:=With[{
-group=RestrictGroup[GroupForGraph[graph,kSys,extraStabilizedVertices],kSys],
+group=Echo@RestrictGroup[GroupForGraph[graph,kSys,extraStabilizedVertices],kSys],
 kTot=VertexCount@graph
 },
 

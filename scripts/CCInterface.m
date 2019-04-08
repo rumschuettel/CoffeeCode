@@ -84,25 +84,19 @@ sageOut=Check[
 ExternalEvaluate[SAGELINK,pythonCmd],
 Throw["Cannot evaluate SGS command in SAGE"]
 ];
-sgsList=(StringReplace[
+sgsList=(
 StringReplace[
 StringReplace[
-sageOut,
+StringReplace[sageOut,{RegularExpression["\s+"]->""}]//Echo,
 {
 "["->"{",
 "]"->"}"
 }
 ],
 {
-"{("->"{Cycles[{(",
-",("->"}],Cycles[{(",
-")}"->")}]}"
-}
-],
-{
+"{("->"{Cycles[{{",
 ")("->"},{",
-"("->"{",
-")"->"}"
+"),("->"}}], Cycles[{{"
 }
 ]//ToExpression)/.Cycles[{}]->Nothing;
 

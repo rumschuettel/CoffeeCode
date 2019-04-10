@@ -19,6 +19,8 @@ namespace CoffeeCode {
 		constexpr static size_t K_TOT = K_SYS + K_ENV;
 
 		// validate parameters
+		static_assert(T::k_sys == K_SYS);
+		static_assert(T::k_env == K_ENV);
 		static_assert(T::adjacency_matrix.size() == K_TOT);
 		static_assert(T::adjacency_matrix[0].size() == K_TOT);
 

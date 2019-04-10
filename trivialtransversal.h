@@ -218,6 +218,7 @@ namespace CoffeeCode {
 		}
 
 
+
         // canonicalization struct
         template<typename MatrixT>
         struct SymmetryProvider {
@@ -226,7 +227,17 @@ namespace CoffeeCode {
             using CanonicalImageHashT = std::hash<CanonicalImageT>;
             using MultiplicityT = MultiplicityType<2>;
 
+			// we don't check whether the matrix's entries matches the transversal
             SymmetryProvider(const MatrixT&) {};
+
+			// callback-based generator
+			template<size_t Colors>
+			inline void Colorings(const CosetGeneratorCallbackType<Colors>& callback)
+			{
+				size_t ctr = 0;
+				for (const auto& [tuple, mult] : TupleCosets<Colors>())
+					callback(tuple, mult, ctr++);
+			}
 
             inline static auto CanonicalColoring(const ColoringRawT coloring)
             {

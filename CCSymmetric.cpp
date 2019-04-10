@@ -17,10 +17,8 @@ namespace CoffeeCode {
 	struct SymmetricInstance {
 		// parameters given
 		constexpr static size_t K_TOT = K_SYS + K_ENV;
-		using sgs = typename T::sgs;
 
 		// validate parameters
-		static_assert(T::sgs::Length == K_SYS);
 		static_assert(T::adjacency_matrix.size() == K_TOT);
 		static_assert(T::adjacency_matrix[0].size() == K_TOT);
 
@@ -35,11 +33,11 @@ namespace CoffeeCode {
 		// group functionality provider
 	private:
 		template<typename Q>
-		using SymmetryProviderT = typename Q::template SymmetryProvider<MatrixT>;
+		using SymmetryProviderT = typename Q::sgs::template SymmetryProvider<MatrixT>;
 		using SymmetryProvider = detected_or_t<
 			NautyLink::NautyLink<MatrixT>,
 			SymmetryProviderT,
-			sgs
+			T
 		>;
 		
 	public:
@@ -73,12 +71,7 @@ namespace {
 
 	using namespace CoffeeCode::Std;
 
-	using CoffeeCode::SGSTransversal;
-	using CoffeeCode::SGSGenerator;
-	using CoffeeCode::Group;
-	using CoffeeCode::Permutation;
 	using CoffeeCode::AdjacencyMatrix;
-
 	using CoffeeCode::TrivialSGSTransversal;
 	using CoffeeCode::TrivialSGSOrbit;
 
@@ -170,7 +163,7 @@ int SymmetricSolver() {
 	auto time_total_start = now();
 	decltype(now()) time_temp;
 	MEASURE_FILTER1((decltype(now() - now()) time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;))
-		size_t counter_channel = 0;
+	size_t counter_channel = 0;
 	size_t counter_ptrace = 0;
 
 	// CHANNEL ACTION
@@ -295,17 +288,16 @@ int SymmetricSolver() {
 	instance::LambdaT lambda_a;
 
 	auto time_ptrace_start = now();
-	for (const auto& it : instance::sgs::TupleCosets<2>()) {
-		const auto& [tuple, _] = TupleAndStabMult(group, it);
-		counter_ptrace ++;
+	group.Colorings<2>([&](const auto& tuple, size_t orbitSize4, size_t counter) -> void {
+		counter_ptrace++;
 
 		// TupleT to SubsetT and HashT because that one can be different
 		SubsetAT subsetA{ 0 };
-		for (size_t i = 0; i < K_SYS; i++) 
+		for (size_t i = 0; i < K_SYS; i++)
 			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
 
 		MEASURE_FILTER1(time_temp = now();)
-		const auto [Akey, __] = group.CanonicalColoring(subsetA);
+		const auto[Akey, __] = group.CanonicalColoring(subsetA);
 		MEASURE_FILTER1(time_nauty_CCC += now() - time_temp;)
 
 		MEASURE_FILTER1(time_temp = now();)
@@ -316,21 +308,21 @@ int SymmetricSolver() {
 			const auto BtoA = checked_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
 
 			// find canonical image for key
-			const auto [key, keyMult] = group.CanonicalColoring(BtoA);
+			const auto[key, keyMult] = group.CanonicalColoring(BtoA);
 
 			//// C: Add to lambda_a
-			const auto& [poly_pre, mult_pre] = lambda_pre[key];
-			auto& [poly_a, mult_a] = lambda_a[Akey];
+			const auto&[poly_pre, mult_pre] = lambda_pre[key];
+			auto&[poly_a, mult_a] = lambda_a[Akey];
 
 			assert(keyMult == mult_pre);  // must hold by definition
 			poly_a += poly_pre;
 			mult_a = keyMult;
-			
+
 			if (subsetB == CoffeeCode::BaseKSubsets<2, K_ENV>::count - 1) break;
 		}
-		
-		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::K_ENV>::count;))
-	}
+
+		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp) / CoffeeCode::BaseKSubsets<2, instance::K_ENV>::count;))
+	});
 	auto time_ptrace = now() - time_ptrace_start;
 
 	

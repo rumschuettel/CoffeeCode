@@ -1,13 +1,16 @@
 #pragma once
 
+#include "nauty-color-generator-vcolg.h"
+
 #include "ctmath.h"
 #include "types.h"
+
+#include "utility.h"
 
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
 
 #include <tuple>
-
 
 namespace CoffeeCode::NautyLink {
 	#if MAXN != (K_SYS+K_ENV)
@@ -131,6 +134,20 @@ namespace CoffeeCode::NautyLink {
 
 			// calculate full group order with default coloring
 			FULL_GROUP_ORDER = GroupOrder();
+		}
+
+
+		template<size_t Colors>
+		void Colorings(const CosetGeneratorCallbackType<Colors>& callback)
+		{
+			vcolg([&](const int* cols, size_t counter) -> void {
+				PartialColoringT system_coloring;
+				for (size_t i = 0; i < K_SYS; i++)
+					system_coloring[i] = checked_cast<Color>(cols[i]);
+
+				SetColoring(system_coloring);
+				callback(system_coloring, ColoringMultiplicity<Colors>(), counter);
+			}, G, Colors);
 		}
 
 

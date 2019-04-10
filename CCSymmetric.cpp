@@ -10,6 +10,7 @@
 #include <tuple>
 
 
+
 namespace CoffeeCode {
 	// extract compile time parameters
 	template<typename T>
@@ -179,6 +180,7 @@ int SymmetricSolver() {
 	instance::LambdaT lambda, lambda_pre;
 
 
+	// iterate over colorings of graph
 #ifdef PARALLELIZE
 	#pragma omp parallel default(none) firstprivate(group) shared(lambda, lambda_pre, counter_channel)
 	{
@@ -189,7 +191,7 @@ int SymmetricSolver() {
 	#pragma omp for nowait
 	for (size_t i = 0; i < THREAD_COUNT; i++)
 #endif
-	for (const auto coset : instance::sgs::TupleCosets<4>()) {
+	group.Colorings<4>([&](const auto& tuple, size_t orbitSize4, size_t counter) -> void {
 #ifdef PARALLELIZE
 		// poor man's parallelization
 		// since the bottleneck for this loop is generally not the coloring iterator, we simply have every thread loop
@@ -200,9 +202,6 @@ int SymmetricSolver() {
 #else
 		counter_channel++;
 #endif
-
-		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
-
 
 		// calculate multiplicity of base 4 tuple
 
@@ -261,7 +260,7 @@ int SymmetricSolver() {
 			poly.Add(term.exponent, coeff);
 			mult = orbitSize2_pre;
 		}
-	}
+	});
 
 #ifdef PARALLELIZE
 	#pragma omp critical

@@ -3,7 +3,6 @@
 /* vcolg.c version 2.0; B D McKay, May 11, 2017 */
 
 #include "nauty-color-generator-vcolg.h"
-static const CoffeeCode::NautyLink::VColGCallbackType *outproc;
 
 #include "gtools.h"
 #include "naugroup.h"
@@ -11,20 +10,22 @@ static const CoffeeCode::NautyLink::VColGCallbackType *outproc;
 
 #include <array>
 
-nauty_counter vc_nin, vc_nout;
-FILE *outfile;
+static const TLS_ATTR CoffeeCode::NautyLink::VColGCallbackType *outproc;
+
+static TLS_ATTR nauty_counter vc_nin, vc_nout;
+static TLS_ATTR FILE *outfile;
 
 #define MAXNV MAXN
 
-static int col[MAXNV];
-static boolean first;
-static int lastreject[MAXNV];
-static boolean lastrejok;
-static unsigned long groupsize;
-static unsigned long newgroupsize;
-static boolean Tswitch;
+static TLS_ATTR int col[MAXNV];
+static TLS_ATTR boolean first;
+static TLS_ATTR int lastreject[MAXNV];
+static TLS_ATTR boolean lastrejok;
+static TLS_ATTR unsigned long groupsize;
+static TLS_ATTR unsigned long newgroupsize;
+static TLS_ATTR boolean Tswitch;
 
-static int fail_level;
+static TLS_ATTR int fail_level;
 
 
 /**************************************************************************/

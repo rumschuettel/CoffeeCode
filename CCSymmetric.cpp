@@ -153,10 +153,6 @@ int SymmetricSolver() {
 
 	auto group = instance::GroupLink();
 
-#ifdef PARALLELIZE
-	const size_t THREAD_COUNT = omp_get_num_threads();
-	assert(THREAD_COUNT > 0);
-#endif
 
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
@@ -175,14 +171,16 @@ int SymmetricSolver() {
 
 	// iterate over colorings of graph
 #ifdef PARALLELIZE
-	#pragma omp parallel default(none) firstprivate(group) shared(lambda, lambda_pre, counter_channel)
+	#pragma omp parallel default(none) firstprivate(group) shared(lambda, lambda_pre, counter_channel, std::cout)
 	{
+	const size_t THREAD_COUNT = omp_get_num_threads();
+
 	size_t counter_channel_ = 0;
 	size_t counter_coloring_ = 0;
 	instance::LambdaT lambda_, lambda_pre_;
 
 	#pragma omp for nowait
-	for (size_t i = 0; i < THREAD_COUNT; i++)
+	for (int i = 0; i < THREAD_COUNT; i++)
 #endif
 	group.Colorings<4>([&](const auto& tuple, size_t orbitSize4, size_t counter) -> void {
 #ifdef PARALLELIZE
@@ -190,7 +188,7 @@ int SymmetricSolver() {
 		// since the bottleneck for this loop is generally not the coloring iterator, we simply have every thread loop
 		// so that the i'th thread only handles the i'th, THREAD_COUNT + i'th, 2*THREAD_COUNT + i'th, ...
 		const size_t THREAD_ID = omp_get_thread_num();
-		if (counter_coloring++ % THEAD_ID) continue;
+		if (counter_coloring_++ % THREAD_COUNT != THREAD_ID) return;
 		counter_channel_++;
 #else
 		counter_channel++;

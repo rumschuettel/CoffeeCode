@@ -179,29 +179,19 @@ int SymmetricSolver() {
 	const size_t THREAD_ID = omp_get_thread_num();
 
 	size_t counter_channel_ = 0;
-	size_t counter_coloring_ = 0;
 	instance::LambdaT lambda_, lambda_pre_;
 
 	// poor man's parallelization
 	// since the bottleneck for this loop is generally not the coloring iterator, we simply have every thread loop
 	// so that the i'th thread only handles the i'th, THREAD_COUNT + i'th, 2*THREAD_COUNT + i'th, ...
 	#pragma omp for nowait
-	for (int i = 0; i < THREAD_COUNT; i++)
-#endif
-	group.Colorings<4>(THREAD_COUNT, THREAD_ID, [&](const auto& tuple, size_t orbitSize4, size_t counter) -> void {
-	#ifdef PARALLELIZE
+	for (int i = 0; i < (int)THREAD_COUNT; i++)
+	group.Colorings<4>(THREAD_COUNT, THREAD_ID, [&](const auto& tuple, size_t orbitSize4, size_t) -> void {
 		counter_channel_++;
-	#else
+#else
+	group.Colorings<4>(1, 0, [&](const auto& tuple, size_t orbitSize4, size_t) -> void{
 		counter_channel++;
-	#endif
-		if (counter_channel % 10000 == 0) {
-		#pragma omp critical
-		{
-			print(tuple);
-			std::cout << "\n";
-		}
-		}
-		return;
+#endif
 
 		// calculate multiplicity of base 4 tuple
 
@@ -262,8 +252,6 @@ int SymmetricSolver() {
 		}
 	});
 
-	std::cout << counter_channel << "\n";
-	return RET_OK;
 
 #ifdef PARALLELIZE
 	#pragma omp critical
@@ -298,7 +286,7 @@ int SymmetricSolver() {
 	instance::LambdaT lambda_a;
 
 	auto time_ptrace_start = now();
-	group.Colorings<2>(1, 0, [&](const auto& tuple, size_t orbitSize4, size_t counter) -> void {
+	group.Colorings<2>(1, 0, [&](const auto& tuple, size_t, size_t) -> void {
 		counter_ptrace++;
 
 		// TupleT to SubsetT and HashT because that one can be different

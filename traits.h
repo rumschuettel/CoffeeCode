@@ -35,6 +35,10 @@ constexpr bool is_pair<std::pair<Ts...>> = true;
 template<auto... Args>
 constexpr auto sum = (Args + ...);
 
+// cast-and-divide
+template<typename T, auto Enumerator, auto Denominator>
+constexpr auto cdiv = static_cast<T>(Enumerator) / static_cast<T>(Denominator);
+
 
 #if __has_include(<experimental/type_traits>)
 #include <experimental/type_traits>

@@ -35,7 +35,7 @@ namespace CoffeeCode::NautyLink {
 		// group order
 		// this is calling legacy C code so we allow a global variable
 		using OrbitSizeT = CoffeeCode::OrbitType;
-		static __declspec(thread) OrbitSizeT __grouporder;
+		static thread_local OrbitSizeT __grouporder;
 
 
 		void UserLevelProc_GroupOrder(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)

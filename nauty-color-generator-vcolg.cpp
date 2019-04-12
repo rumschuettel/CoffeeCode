@@ -4,6 +4,10 @@
 
 #include "nauty-color-generator-vcolg.h"
 
+#ifndef _Thread_local
+#define _Thread_local thread_local
+#endif
+
 #include "gtools.h"
 #include "naugroup.h"
 #include "nautinv.h"
@@ -12,8 +16,7 @@
 
 static const TLS_ATTR CoffeeCode::NautyLink::VColGCallbackType *outproc;
 
-static TLS_ATTR nauty_counter vc_nin, vc_nout;
-static TLS_ATTR FILE *outfile;
+static TLS_ATTR nauty_counter vc_nout;
 
 #define MAXNV MAXN
 
@@ -23,7 +26,6 @@ static TLS_ATTR int lastreject[MAXNV];
 static TLS_ATTR boolean lastrejok;
 static TLS_ATTR unsigned long groupsize;
 static TLS_ATTR unsigned long newgroupsize;
-static TLS_ATTR boolean Tswitch;
 
 static TLS_ATTR int fail_level;
 
@@ -79,14 +81,11 @@ testmax(int *p, int n, int *abort)
 /**************************************************************************/
 
 static int
-trythisone(grouprec *group, graph *g, boolean digraph, int m, int n)
+trythisone(grouprec *group, graph*, boolean, int, int n)
 /* Try one solution, accept if maximal. */
 /* Return value is level to return to. */
 {
-	int i, j;
 	boolean accept;
-	graph *gi;
-	size_t ne;
 
 	newgroupsize = 1;
 

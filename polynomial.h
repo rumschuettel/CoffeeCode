@@ -21,7 +21,6 @@ namespace CoffeeCode {
 	//     This is precisely given by the corresponding MultiplicityT
 	struct UnivariateMonomial {
 		static constexpr size_t K_TOT = K_SYS + K_ENV;
-		static constexpr size_t ExponentWidth = ilog2(K_TOT + 1);
 
 		using ExponentT = SizeStorageType<K_TOT>;
 		static constexpr ExponentT MaxExponent = K_TOT;
@@ -58,6 +57,7 @@ namespace CoffeeCode {
 
 	template<size_t VariableCount = 3>
 	struct MultivariateMonomial {
+		static_assert(VariableCount == 3); // for now only implemented for q1, q2, q3
 		static constexpr size_t K_TOT = K_SYS + K_ENV;
 
 		using SingleExponentT = SizeStorageType<K_TOT>;
@@ -113,6 +113,91 @@ namespace CoffeeCode {
 		}
 	};
 
+	// numerical monomial with values
+	// Vals[1]/Base, Vals[2]/Base, ...
+	template<typename FloatT, auto Base, auto... Vals>
+	struct NumericalMonomialSinglePoint {
+		static constexpr size_t K_TOT = K_SYS + K_ENV;
+		static constexpr size_t VariableCount = sizeof...(Vals);
+		 // only implemented for 1 or 3 variables
+		static_assert(VariableCount == 1 || VariableCount == 3);
+
+		// precompute Vals[1]/Base, ...
+		static constexpr std::array<FloatT, VariableCount> FloatVals = {
+			(cdiv<FloatT, Vals, Base>) ...
+		};
+
+		using SingleExponentT = SizeStorageType<K_TOT>;
+		static constexpr SingleExponentT MaxExponent = K_TOT;
+		using ExponentT = std::array<SingleExponentT, VariableCount>;
+
+		using CoefficientT = FloatT;
+
+		// encapsulate a value, such that the following proxying takes place:
+		// Type[exponent]{value} += coefficient
+		// AdditionProxy{exponent, value} += coefficient
+		// value += coefficient*FloatVals[exponent]
+		using CoefficientArrayT = struct IndexProxy {
+			CoefficientT value;
+			struct AdditionProxy {
+				const ExponentT& exponent;
+				CoefficientT& value;
+				AdditionProxy(const ExponentT& exponent, CoefficientT& value) 
+					: exponent(exponent), value(value)
+				{}
+
+				inline void operator+=(const CoefficientT& coeff)
+				{
+					CoefficientT to_add = coeff;
+					for (size_t i = 0; i < VariableCount; i ++)
+						to_add *= pow(FloatVals[i], exponent[i]);
+					value += to_add;
+				}
+			};
+			inline AdditionProxy operator[](const ExponentT& exponent)
+			{
+				return AdditionProxy(exponent, value);
+			}
+			inline bool operator==(const IndexProxy& rhs) const
+			{
+				return value == rhs.value;
+			}
+		};
+
+		template<typename T>
+		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3)
+		{
+			if constexpr (VariableCount == 1)
+				return ExponentT{ checked_cast<SingleExponentT>(u1 + u2 + u3) };
+			else
+				return ExponentT{
+					checked_cast<SingleExponentT>(u1),
+					checked_cast<SingleExponentT>(u2),
+					checked_cast<SingleExponentT>(u3)
+				};
+		}
+
+		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs)
+		{
+			lhs.value += rhs.value;
+		}
+
+		inline static void PrintCoefficientArray(std::ostream& stream, const CoefficientArrayT& value)
+		{			
+			stream << value.value;
+		}
+
+		// hashing float values is generally a bad idea
+		// since this is just used to compress the output,
+		// we don't really care.
+		inline static size_t HashCoefficientArray(const CoefficientArrayT& value)
+		{
+			// no data race if only using the const interface
+			static std::hash<FloatT> hasher;
+			return hasher(value.value);
+		}
+	};
+
 	// polynomial
 	template<typename _MonomialT>
 	struct Polynomial {
@@ -156,7 +241,7 @@ namespace CoffeeCode {
 			}
 		};
 
-		bool operator==(const Polynomial& rhs) const
+		inline bool operator==(const Polynomial& rhs) const
 		{
 			return coefficients == rhs.coefficients;
 		}

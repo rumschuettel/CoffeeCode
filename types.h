@@ -73,4 +73,16 @@ namespace CoffeeCode {
 	template<size_t Base>
 	using MultiplicityType = SizeStorageType<0, ilog2(Base)*K_SYS>;
 
+
+	///////////////////
+	template<size_t Colors>
+	using SystemColoringType = NibbleStorageTypeArray<Colors, K_SYS>;
+	template<size_t Colors>
+	using FullColoringType = NibbleStorageTypeArray<Colors, K_SYS + K_ENV>;
+
+
+	///////////////////
+	template<size_t Colors>
+	using CosetGeneratorCallbackType = std::function<void(const SystemColoringType<Colors>&, size_t, size_t)>;
+
 }

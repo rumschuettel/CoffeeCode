@@ -1,5 +1,6 @@
 #pragma once
 
+#include "types.h"
 #include "traits.h"
 #include "utility.h"
 
@@ -217,6 +218,7 @@ namespace CoffeeCode {
 		}
 
 
+
         // canonicalization struct
         template<typename MatrixT>
         struct SymmetryProvider {
@@ -225,7 +227,24 @@ namespace CoffeeCode {
             using CanonicalImageHashT = std::hash<CanonicalImageT>;
             using MultiplicityT = MultiplicityType<2>;
 
+			// we don't check whether the matrix's entries matches the transversal
             SymmetryProvider(const MatrixT&) {};
+
+			// callback-based generator
+			template<size_t Colors>
+			inline void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback)
+			{
+				size_t ctr = 0;
+				for (const auto&[tuple, mult] : TupleCosets<Colors>()) {
+					ctr++;
+
+					// skip all but every k * CallbackStride+CallbackOFfset'th element
+					if (CallbackStride > 1)
+						if (ctr % CallbackStride != CallbackOffset) continue;
+
+					callback(tuple, mult, ctr);
+				}
+			}
 
             inline static auto CanonicalColoring(const ColoringRawT coloring)
             {

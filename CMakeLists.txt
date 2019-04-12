@@ -23,6 +23,8 @@ set(CMAKE_CXX_COMPILER "/home/jkrb2/opt/anaconda5/envs/gcc8/bin/x86_64-conda_cos
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 add_compile_options(-march=native -mtune=generic -fmax-errors=5)
+
+set(CMAKE_CC_COMPILER "/home/jkrb2/opt/anaconda5/envs/gcc8/bin/x86_64-conda_cos6-linux-gnu-cc" CACHE FILE "c compiler")
  
 ##### Build Targets
 ###################
@@ -37,6 +39,9 @@ if (SYMMETRIC_SOLVER)
         "${PATH_NAUTY}/naugraph.c"
         "${PATH_NAUTY}/schreier.c"
         "${PATH_NAUTY}/naurng.c"
+        "${PATH_NAUTY}/naugroup.c"
+        "${PATH_NAUTY}/gtnauty.c"
+        "${PATH_NAUTY}/nausparse.c"
     )
     target_include_directories(Nauty
         PRIVATE
@@ -107,6 +112,7 @@ if (SYMMETRIC_SOLVER)
     target_sources(CoffeeCode
         PRIVATE
             CCSymmetric.cpp
+            nauty-color-generator-vcolg.cpp
     )
     target_link_libraries(CoffeeCode PRIVATE Nauty)
 

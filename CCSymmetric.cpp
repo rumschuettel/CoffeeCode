@@ -10,16 +10,17 @@
 #include <tuple>
 
 
+
 namespace CoffeeCode {
 	// extract compile time parameters
 	template<typename T>
 	struct SymmetricInstance {
 		// parameters given
 		constexpr static size_t K_TOT = K_SYS + K_ENV;
-		using sgs = typename T::sgs;
 
 		// validate parameters
-		static_assert(T::sgs::Length == K_SYS);
+		static_assert(T::k_sys == K_SYS);
+		static_assert(T::k_env == K_ENV);
 		static_assert(T::adjacency_matrix.size() == K_TOT);
 		static_assert(T::adjacency_matrix[0].size() == K_TOT);
 
@@ -34,11 +35,11 @@ namespace CoffeeCode {
 		// group functionality provider
 	private:
 		template<typename Q>
-		using SymmetryProviderT = typename Q::template SymmetryProvider<MatrixT>;
+		using SymmetryProviderT = typename Q::sgs::template SymmetryProvider<MatrixT>;
 		using SymmetryProvider = detected_or_t<
 			NautyLink::NautyLink<MatrixT>,
 			SymmetryProviderT,
-			sgs
+			T
 		>;
 		
 	public:
@@ -72,12 +73,7 @@ namespace {
 
 	using namespace CoffeeCode::Std;
 
-	using CoffeeCode::SGSTransversal;
-	using CoffeeCode::SGSGenerator;
-	using CoffeeCode::Group;
-	using CoffeeCode::Permutation;
 	using CoffeeCode::AdjacencyMatrix;
-
 	using CoffeeCode::TrivialSGSTransversal;
 	using CoffeeCode::TrivialSGSOrbit;
 
@@ -159,9 +155,6 @@ int SymmetricSolver() {
 
 	auto group = instance::GroupLink();
 
-#ifdef PARALLELIZE
-	assert(omp_get_num_threads() > 0);
-#endif
 
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
@@ -171,44 +164,39 @@ int SymmetricSolver() {
 	size_t counter_channel = 0;
 	size_t counter_ptrace = 0;
 
-
 	// CHANNEL ACTION
-
 	auto time_channel_start = now();
-
 
 	// fill lambdas
 	instance::LambdaT lambda, lambda_pre;
 
-#ifdef PARALLELIZE
-	// we precompute the tuples to get a random access iterator
-	const auto& cosets = instance::sgs::TupleCosets<4>();
-	using CosetsAndMultT = decltype(TupleAndStabMult(group, *cosets.begin()));
-	std::vector<CosetsAndMultT> cosets_vec;
-	for (const auto& el : cosets) cosets_vec.push_back(TupleAndStabMult(group, el));
 
-	#pragma omp parallel default(none) firstprivate(group) shared(cosets_vec, lambda, lambda_pre, counter_channel)
+	// iterate over colorings of graph
+#ifdef PARALLELIZE
+	#pragma omp parallel default(none) firstprivate(group) shared(lambda, lambda_pre, counter_channel, std::cout)
 	{
-	instance::LambdaT lambda_, lambda_pre_;
-	size_t counter_channel_ = 0;
-	#pragma omp for nowait schedule(static)
-	for (auto it = cosets_vec.begin(); it < cosets_vec.end(); it++) {
-		const auto& [tuple, orbitSize4] = *it;
-#else
-	for (const auto coset : instance::sgs::TupleCosets<4>()) {
-		const auto& [tuple, orbitSize4] = TupleAndStabMult(group, coset);
-#endif
+	const size_t THREAD_COUNT = omp_get_num_threads();
+	const size_t THREAD_ID = omp_get_thread_num();
 
-#ifdef PARALLELIZE
+	size_t counter_channel_ = 0;
+	instance::LambdaT lambda_, lambda_pre_;
+
+	// poor man's parallelization
+	// since the bottleneck for this loop is generally not the coloring iterator, we simply have every thread loop
+	// so that the i'th thread only handles the i'th, THREAD_COUNT + i'th, 2*THREAD_COUNT + i'th, ...
+	#pragma omp for nowait
+	for (int i = 0; i < (int)THREAD_COUNT; i++)
+	group.Colorings<4>(THREAD_COUNT, THREAD_ID, [&](const auto& tuple, size_t orbitSize4, size_t) -> void {
 		counter_channel_++;
 #else
+	group.Colorings<4>(1, 0, [&](const auto& tuple, size_t orbitSize4, size_t) -> void{
 		counter_channel++;
 #endif
 
 		// calculate multiplicity of base 4 tuple
 
 		// get low and high bit from tuples
-		// note that SubsetT is such that the i'th index equals a bit shit i to the left
+		// note that SubsetT is such that the i'th index equals a bit shift i to the left
 		SubsetT subsetX{ 0 }, subsetY{ 0 };
 		for (size_t i = 0; i < K_SYS; i++) {
 			const auto low_bit = tuple[i] & 0b01;
@@ -262,7 +250,8 @@ int SymmetricSolver() {
 			poly.Add(term.exponent, coeff);
 			mult = orbitSize2_pre;
 		}
-	}
+	});
+
 
 #ifdef PARALLELIZE
 	#pragma omp critical
@@ -297,17 +286,16 @@ int SymmetricSolver() {
 	instance::LambdaT lambda_a;
 
 	auto time_ptrace_start = now();
-	for (const auto& it : instance::sgs::TupleCosets<2>()) {
-		const auto& [tuple, _] = TupleAndStabMult(group, it);
-		counter_ptrace ++;
+	group.Colorings<2>(1, 0, [&](const auto& tuple, size_t, size_t) -> void {
+		counter_ptrace++;
 
 		// TupleT to SubsetT and HashT because that one can be different
 		SubsetAT subsetA{ 0 };
-		for (size_t i = 0; i < K_SYS; i++) 
+		for (size_t i = 0; i < K_SYS; i++)
 			CoffeeCode::OrBit(subsetA, !!tuple[i], i);
 
 		MEASURE_FILTER1(time_temp = now();)
-		const auto [Akey, __] = group.CanonicalColoring(subsetA);
+		const auto[Akey, __] = group.CanonicalColoring(subsetA);
 		MEASURE_FILTER1(time_nauty_CCC += now() - time_temp;)
 
 		MEASURE_FILTER1(time_temp = now();)
@@ -318,21 +306,21 @@ int SymmetricSolver() {
 			const auto BtoA = checked_cast<SubsetT>((instance::MAB * subsetB + subsetA).vec);
 
 			// find canonical image for key
-			const auto [key, keyMult] = group.CanonicalColoring(BtoA);
+			const auto[key, keyMult] = group.CanonicalColoring(BtoA);
 
 			//// C: Add to lambda_a
-			const auto& [poly_pre, mult_pre] = lambda_pre[key];
-			auto& [poly_a, mult_a] = lambda_a[Akey];
+			const auto&[poly_pre, mult_pre] = lambda_pre[key];
+			auto&[poly_a, mult_a] = lambda_a[Akey];
 
 			assert(keyMult == mult_pre);  // must hold by definition
 			poly_a += poly_pre;
 			mult_a = keyMult;
-			
+
 			if (subsetB == CoffeeCode::BaseKSubsets<2, K_ENV>::count - 1) break;
 		}
-		
-		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp)/CoffeeCode::BaseKSubsets<2, instance::K_ENV>::count;))
-	}
+
+		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp) / CoffeeCode::BaseKSubsets<2, instance::K_ENV>::count;))
+	});
 	auto time_ptrace = now() - time_ptrace_start;
 
 	

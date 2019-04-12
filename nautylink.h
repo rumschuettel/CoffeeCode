@@ -1,11 +1,14 @@
 #pragma once
 
+#include "nauty-color-generator-vcolg.h"
+
 #include "ctmath.h"
 #include "types.h"
 
+#include "utility.h"
+
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
-#include <boost/multiprecision/cpp_int.hpp>
 
 #include <tuple>
 
@@ -25,16 +28,15 @@ namespace CoffeeCode::NautyLink {
 	// on windows, open nauty.h and set HAVE_UNISTD_H to 0
 	#include <nauty.h>
 
+
+
 	// implementation details for nauty interface
 	namespace ImplDetails {
 		// group order
 		// this is calling legacy C code so we allow a global variable
 		using OrbitSizeT = CoffeeCode::OrbitType;
-	#ifdef PARALLELIZE
-		extern OrbitSizeT __grouporder;
-		#pragma omp threadprivate(__grouporder)
-	#endif
-		OrbitSizeT __grouporder;
+		static thread_local OrbitSizeT __grouporder;
+
 
 		void UserLevelProc_GroupOrder(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)
 		{
@@ -130,6 +132,27 @@ namespace CoffeeCode::NautyLink {
 			// calculate full group order with default coloring
 			FULL_GROUP_ORDER = GroupOrder();
 		}
+
+
+		template<size_t Colors>
+		void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback)
+		{
+			vcolg([&](const int* cols, size_t counter) -> void {
+				// skip callback for all elements but
+				// Offset, Stride+Offset, 2*Stride+Offset, ...
+				if (CallbackStride > 1)
+					if (counter % CallbackStride != CallbackOffset) return;
+
+				// get multiplicity of coloring
+				PartialColoringT system_coloring;
+				for (size_t i = 0; i < K_SYS; i++)
+					system_coloring[i] = checked_cast<Color>(cols[i]);
+
+				SetColoring(system_coloring);
+				callback(system_coloring, ColoringMultiplicity<Colors>(), counter);
+			}, G, Colors);
+		}
+
 
 		auto inline GroupOrder()
 		{

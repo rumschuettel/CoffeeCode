@@ -1,5 +1,36 @@
 (* ::Package:: *)
 
+(* ::Title:: *)
+(*CoffeeCode Mathematica*)
+
+
+(* ::Text:: *)
+(*CoffeeCode Mathematica Interface, \[Copyright] 2019 Johannes Bausch*)
+(*For joint Graph State project with Felix Leditzky*)
+
+
+(* ::Text:: *)
+(*This file can be exported as a module, and then imported in a script.*)
+
+
+(* ::Title:: *)
+(*CoffeeCode Interface*)
+
+
+(* ::Section:: *)
+(*Setup [Build paths to be fixed here; contains more instructions]*)
+
+
+(* ::Subsection:: *)
+(*Paths and Unicorns*)
+
+
+(* ::Text:: *)
+(*These lines HAVE TO BE MODIFIED.*)
+(**)
+(*Edit scripts/make-build-dir.sh to activate a valid build environment for building with a modern gcc (>8.2). You can remove all the conda... blabla lines there if the compilation environment is installed globally anyhow. The options you pass to cmake there have to match those that you would pick when setting up a solver directory manually with ccmake. This also includes setting the paths for the boost and nauty libraries (via the options -D PATH_BOOST=/path/to/boost -D PATH_NAUTY=/path/to/nauty).*)
+
+
 (* ::Input::Initialization:: *)
 Clear[CurrentDir]
 CurrentDir:=If[$InputFileName!="",DirectoryName[$InputFileName],NotebookDirectory[]]
@@ -8,6 +39,15 @@ CurrentDir:=If[$InputFileName!="",DirectoryName[$InputFileName],NotebookDirector
 (* ::Input::Initialization:: *)
 (* fix paths in this file *)
 Get["CCInterfacePaths.m",Path->CurrentDir];
+
+
+(* ::Input:: *)
+(*(* execute this cell to open the build script for manual editing *)*)
+(*SystemDialogInput["FileOpen",PARALLELBUILDSETUPSCRIPT]*)
+
+
+(* ::Subsection::Closed:: *)
+(*Build Environments*)
 
 
 (* ::Input::Initialization:: *)
@@ -26,6 +66,10 @@ RunProcess[{PARALLELBUILDSETUPSCRIPT,targetFolder}] (* bug with commands like "s
 ];
 targetFolder
 ]
+
+
+(* ::Input:: *)
+(*ParallelBuildDirectory[]*)
 
 
 (* ::Input::Initialization:: *)
@@ -49,65 +93,41 @@ StringForm[a_,b_Parallel`Kernels`kernel]:=""
 
 
 
-(* ::Input::Initialization:: *)
-Clear[SAGELINK]
-SAGELINK=StartExternalSession[<|
-"System"->"Python",
-"Version"->"2.7",
-"Executable"->SAGEPYTHONSCRIPT, (*can be modified in the CCInterfacePaths.m*)
-"Prolog"->"from sage.all import *",
-"ReturnType"->"String"
-|>]
+(* ::Section:: *)
+(*Basic Graph Functionality [install IGraphM once below, then forget]*)
 
 
-(* ::Input::Initialization:: *)
-Clear[PythonForm]
-PythonForm[c_Cycles]:=Identity@@Map[
-"["<>StringRiffle[#,","]<>"]"&,
-Map[
-"("<>StringRiffle[#,","]<>")"&,
-Map[ToString,c,{3}],
-{2}
-],
-{1}
-]
-PythonForm[g_PermutationGroup]:="PermutationGroup(["<>StringRiffle[Identity@@(g/.c_Cycles:>PythonForm[c]),","]<>"])"
+(* ::Subsection:: *)
+(*IGraphM*)
 
-Clear[SGSTransversalSage]
-SGSTransversalSage[g_PermutationGroup]:=Module[{
-pythonCmd=PythonForm[g]<>".strong_generating_system()",
-sageOut,
-sgsList
-},
 
-sageOut=Check[
-ExternalEvaluate[SAGELINK,pythonCmd],
-Throw["Cannot evaluate SGS command in SAGE"]
-];
-sgsList=(
-StringReplace[
-StringReplace[
-StringReplace[sageOut,{RegularExpression["\\s+"]->""}],
-{
-"["->"{",
-"]"->"}"
-}
-],
-{
-"{("->"PermutationGroup[{Cycles[{{",
-")("->"},{",
-"),("->"}}], Cycles[{{",
-")}"->"}}]}]"
-}
-]//ToExpression)/.{Cycles[{}]->Nothing};
+(* ::Text::Initialization:: *)
+(*Uncomment the last line in the following cell, then execute to install IGraphM. This only has to be done once per machine.*)
 
-Thread[{Range@Length@sgsList}\[Transpose]->sgsList]/.Rule[_,PermutationGroup[{}]]:>Nothing
-]
+
+(* ::Input:: *)
+(*updateIGraphM[]:=Module[{json,download,target,msg},Check[json=Import["https://api.github.com/repos/szhorvat/IGraphM/releases","JSON"];*)
+(*download=Lookup[First@Lookup[First[json],"assets"],"browser_download_url"];*)
+(*msg="Downloading IGraph/M "<>Lookup[First[json],"tag_name"]<>" ...";*)
+(*target=FileNameJoin[{CreateDirectory[],"IGraphM.paclet"}];*)
+(*If[$Notebooks,PrintTemporary@Labeled[ProgressIndicator[Appearance->"Necklace"],msg,Right],Print[msg]];*)
+(*URLSave[download,target],Return[$Failed]];*)
+(*If[FileExistsQ[target],PacletManager`PacletInstall[target],$Failed]]*)
+(*(*updateIGraphM[]*) (* uncomment this once and run to install IGraphM locally, then comment again *)*)
+(**)
 
 
 (* ::Input::Initialization:: *)
 Needs["IGraphM`"]
 ParallelNeeds["IGraphM`"];
+
+
+(* ::Subsection::Closed:: *)
+(*Group for Graph State*)
+
+
+(* ::Text:: *)
+(*GroupForGraph gives the full automorphism group of the underlying graph; we color the environment vertices in a different color to make sure the permutation group will be a product across this partitioning.*)
 
 
 (* ::Input::Initialization:: *)
@@ -123,9 +143,17 @@ PermutationCycles/@IGBlissAutomorphismGroup[{graph,"VertexColors"->ConstantArray
 ]
 
 
+(* ::Input:: *)
+(*(* for iterating over tuples, we'll only need the system vertices RestrictGroup, not the full group *)*)
+
+
 (* ::Input::Initialization:: *)
 Clear[RestrictGroup]
 RestrictGroup[group_PermutationGroup,kSys_Integer]:=RestrictGroup[group,kSys]=group/.{p_Integer/;p>kSys->Nothing}/.Cycles[{}]->Nothing
+
+
+(* ::Subsection:: *)
+(*Plot Environment Vertices in Red*)
 
 
 (* ::Input::Initialization:: *)
@@ -133,6 +161,10 @@ Clear[EnvironmentPlot]
 EnvironmentPlot[g_Graph,systemSize_,vl_:None]:=Graph[g,VertexStyle->(
 Thread[VertexList[g][[-(VertexCount@g-systemSize);;]]->Red]
 ),VertexSize->.2,VertexLabels->vl]
+
+
+(* ::Subsection::Closed:: *)
+(*Create all Possible Choices of Hairs to the Environment*)
 
 
 (* ::Input::Initialization:: *)
@@ -163,32 +195,12 @@ EnvironmentPlot[HairGraph[g,#],VertexCount@g]&/@uniqueHairEndpoints
 ]
 
 
-(* ::Input::Initialization:: *)
-Clear[MaxGroupActionBase]
-MaxGroupActionBase[group_PermutationGroup]:=MaxGroupActionBase[group]=List@@@GroupGenerators@group//Flatten//Max
+(* ::Input:: *)
+(*AllHairGraphs[Graph[{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}, {Null, {{1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}, {1, 7}, {1, 8}, {1, 9}, {1, 10}, {1, 11}, {1, 12}, {1, 13}, {1, 14}, {1, 15}, {1, 16}, {2, 17}, {2, 18}, {2, 19}}}, {FormatType -> TraditionalForm, ImageSize -> {296., Automatic}}],Subsets[#,{1}]&]*)
 
 
-(* ::Input::Initialization:: *)
-Clear[SGSTransversal]
-SGSTransversal[group_PermutationGroup,addEmptyGroupForMaxGAB_:True,useSage_:True]:=Module[{
-chain=GroupStabilizerChain[group],
-sgs
-},
-(* the head element of the group stabilizer chain already delivers a transversal of a strong generating set *)
-sgs=If[useSage,
-SGSTransversalSage[group],
-f@@@Partition[chain,2,1]/.f[Rule[bA_List,gA_PermutationGroup],Rule[bB_List,gB_PermutationGroup]]:>Complement[bB,bA]->PermutationGroup@If[GroupOrder@gB==1,
-GroupGenerators@gA,
-DeleteDuplicates@Flatten[RightCosetRepresentative[gB,#]&/@GroupElements[gA]]
-]/.Cycles[{}]->Nothing
-];
-
-(* we want to ensure that the transversal contains one element for the maximum index that the group acts on nontrivially, even if that element is the empty group *)
-If[addEmptyGroupForMaxGAB\[And]Max@Flatten[First/@sgs]<MaxGroupActionBase[group],
-sgs~Join~{{MaxGroupActionBase[group]}->PermutationGroup[{}]},
-sgs
-]
-]
+(* ::Subsection::Closed:: *)
+(*Detecting Products of Symmetric Groups*)
 
 
 (* ::Input::Initialization:: *)
@@ -202,6 +214,18 @@ GroupStabilizer[group,Complement[Flatten@orbits,#]]&/@orbits
 )==(Factorial/@Length/@orbits)
 ]
 
+
+
+(* ::Input:: *)
+(*GroupForGraph[Graph[{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}, {Null, {{1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}, {1, 7}, {1, 8}, {1, 9}, {1, 10}, {1, 11}, {1, 12}, {12, 13}, {12, 14}, {12, 15}, {12, 16}, {12, 17}}}, {FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {17 -> RGBColor[1, 0, 0]}}],16]*)
+(*ProductOfSymmetricGroupsQ@%*)
+(*GroupOrbits@%%*)
+(**)
+
+
+(* ::Input:: *)
+(*GroupForGraph[Graph[{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, {Null, {{1, 2}, {1, 3}, {1, 4}, {2, 5}, {2, 6}, {2, 7}, {3, 8}, {3, 9}, {3, 10}, {4, 11}, {4, 12}, {4, 13}, {1, 14}}}, {FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {14 -> RGBColor[1, 0, 0]}}],13]*)
+(*ProductOfSymmetricGroupsQ@%*)
 
 
 (* ::Input::Initialization:: *)
@@ -231,6 +255,14 @@ VertexLabels->"Index"
 ]
 
 
+(* ::Input:: *)
+(*CanonicalizeByOrbits[Graph[{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}, {Null, {{1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}, {1, 7}, {1, 8}, {1, 9}, {1, 10}, {1, 11}, {1, 12}, {12, 13}, {12, 14}, {12, 15}, {12, 16}, {12, 17}}}, {FormatType -> TraditionalForm, ImageSize -> {373., Automatic}, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {"Index"}, VertexSize -> {0.2}, VertexStyle -> {17 -> RGBColor[1, 0, 0]}}],16]*)
+
+
+(* ::Subsection::Closed:: *)
+(*Detecting Multiple Hairs per Orbit*)
+
+
 (* ::Input::Initialization:: *)
 Clear[OrbitsHaveMultipleHairsQ]
 OrbitsHaveMultipleHairsQ[group_PermutationGroup,g_Graph,kSys_Integer]:=Module[{
@@ -243,8 +275,22 @@ Intersection[#,hairNeighbourIndices]&/@GroupOrbits[group]//AnyTrue[#,Length@##>1
 ]
 
 
+(* ::Input:: *)
+(*Graph[{1, 2, 3, 4}, {Null, {{1, 2}, {1, 3}, {2, 4}}}, {FormatType -> TraditionalForm, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {"Index"}, VertexSize -> {0.2}, VertexStyle -> {3 -> RGBColor[1, 0, 0], 4 -> RGBColor[1, 0, 0]}}]*)
+(*RestrictGroup[GroupForGraph[%,2],2]*)
+(*OrbitsHaveMultipleHairsQ[%,%%,2]*)
+
+
+(* ::Section:: *)
+(*CoffeeCode Link [See individual sections for tests]*)
+
+
 (* ::Input::Initialization:: *)
 CCCUSTOMINSTANCEFILE="cc-instance-custom.h";
+
+
+(* ::Subsection:: *)
+(*Exporting MM symbols*)
 
 
 (* ::Input::Initialization:: *)
@@ -257,27 +303,6 @@ StringJoin[ToString/@Avec]
 
 
 (* ::Input::Initialization:: *)
-Clear[SGSTransversalMMForm]
-SGSTransversalMMForm[list_List,kSys_Integer]:=list/.{
-Rule[{idx_Integer},PermutationGroup[cycles_List]]:>Module[{
-permutationIndices=If[Length@cycles>0,
-PermutationList[#,kSys]&/@cycles,
-{Range@kSys}
-]
-},
-
-(* the pivot point is the first index for which the SGSGenerator acts nontrivially on (so one point past the points that are stabilized).
-If the pivot point for the SGSGenerator is 2, that means we want to check indices 0 and 1 in C++; in MM this would correspond to indices {1, 2}, which is what \[LeftDoubleBracket];;2\[RightDoubleBracket] truncates to.
-Therefore we validly don't subtract 1 from the pivot point, but do subtract 1 from all other indices *)
-StringRiffle[Flatten@{
-"\tSGSGenerator<"<>ToString@(#1)<>", Group<",
-StringRiffle[("\t\tPermutation<"<>StringRiffle[ToString/@(##-1),","]<>">")&/@#2,",\n"],
-"\t>>"
-},"\n"]&@@{idx,permutationIndices}
-
-]
-}//Flatten//("using sgs = SGSTransversal<\n"<>StringRiffle[#,",\n"]<>"\n>;")&
-
 (* for the trivial transversal we simply pass an orbit, sort the graph canonically etc *)
 Clear[TrivialSGSTransversalMMForm]
 TrivialSGSTransversalMMForm[list_List,kSys_Integer]:=With[{
@@ -297,6 +322,11 @@ StringRiffle[(
 ]//("using sgs = TrivialSGSTransversal<"<>ToString[kSys]<>",\n"<>#<>"\n>;")&
 ]
 ]
+
+
+(* ::Input:: *)
+(*RestrictGroup[GroupForGraph[Graph[{1, 2, 3, 4}, {Null, {{1, 2}, {1, 3}, {2, 4}}}, {FormatType -> TraditionalForm, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {"Index"}, VertexSize -> {0.2}, VertexStyle -> {3 -> RGBColor[1, 0, 0], 4 -> RGBColor[1, 0, 0]}}],2],2]*)
+(*TrivialSGSTransversalMMForm[GroupOrbits@%,2]*)
 
 
 (* ::Input::Initialization:: *)
@@ -325,23 +355,39 @@ TrivialSGSTransversalMMForm[orbits,kSys]<>"\n"<>
 ]
 ,
 (* write SGSGenerators as expected for Nauty *)
-With[{
-sgs=SGSTransversal@group
-},
-
-If[Length@sgs==0,Echo["WARN: symmetry group is 0. Not a valid symmetric problem instance."];
-Throw["invalid instance"]
-];
+With[{},
 Echo["Nested symmetry group or multiple hairs per orbit detected. CanonicalImage=nauty."];
 
 "struct "<>name<>" {\n"<>
-SGSTransversalMMForm[sgs,kSys]<>"\n"<>
 "constexpr static size_t k_sys = "<>ToString[kSys]<>", k_env = "<>ToString[kTot-kSys]<>";\n"<>
 "constexpr static AdjacencyMatrixT<"<>ToString[kTot]<>"> adjacency_matrix{"<>ToString[Normal@AdjacencyMatrix@graph]<>"};\n"<>
 "};"
 ]
 ]
 ]
+
+
+(* ::Input:: *)
+(*g=Graph[ConcatGraph[StarGraph[10],StarGraph[5],{2,3},1],VertexLabels->"Index"]*)
+(*ExportSymmetricCCInstance[g,VertexCount@g]*)
+
+
+(* ::Input:: *)
+(*(* can enforce to use the non-nauty symmetric solver by flagging certain vertices as not symmetric *)ExportSymmetricCCInstance[Graph[{1, 2, 3, 4, 5, 6, 7, 8}, {Null, {{1, 2}, {2, 3}, {2, 4}, {1, 5}, {5, 6}, {5, 7}, {1, 8}}}, {FormatType -> TraditionalForm, ImageSize -> {100, 100}, AlignmentPoint -> Center, GraphLayout -> {"Dimension" -> 2}, ImageSize -> {100, 100}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {8 -> RGBColor[1, 0, 0]}}],7,{2}]*)
+
+
+(* ::Input:: *)
+(*(* even though MM gives a compressed SGS, it skips the very last term in the transversal; SGSTransversal puts that back in by hand if it is missing, so the last traversal group could be the identity group, as for the following graph. That is on purpose and goes along with the French paper. *)*)
+(*ExportSymmetricCCInstance[Graph[{1, 2, 3, 4, 5}, {Null, {{1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 1}}}, {FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {5 -> RGBColor[1, 0, 0]}}],4]*)
+
+
+(* ::Input:: *)
+(*(* while the following would be a product symmetry, there is two hairs for the same system orbit, which we cannot handle with the trivial canonical image solver. *)*)
+(*ExportSymmetricCCInstance[Graph[{2, 3, 1, 4}, {Null, {{3, 1}, {1, 2}, {2, 4}}}, {FormatType -> TraditionalForm, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {1 -> RGBColor[1, 0, 0], 4 -> RGBColor[1, 0, 0]}}],2]*)
+
+
+(* ::Subsection:: *)
+(*Build Interface*)
 
 
 (* ::Input::Initialization:: *)
@@ -369,6 +415,14 @@ MakeCC[kSys,VertexCount@graph-kSys]
 ]
 
 
+(* ::Input:: *)
+(*(* this fails if the folder is not already existent MakeCC[9,1] *)*)
+
+
+(* ::Input:: *)
+(*MakeCC[Graph[{1, 2, 3, 4, 5, 6, 7, 8}, {Null, {{1, 2}, {2, 3}, {2, 4}, {1, 5}, {5, 6}, {5, 7}, {1, 8}}}, {FormatType -> TraditionalForm, ImageSize -> {100, 100}, AlignmentPoint -> Center, GraphLayout -> {"Dimension" -> 2}, ImageSize -> {100, 100}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {8 -> RGBColor[1, 0, 0]}}],7]*)
+
+
 (* ::Input::Initialization:: *)
 Clear[RunCC]
 RunCC[graph_Graph,kSys_Integer,extraStabilizedVertices:_List:{}]:=With[{},
@@ -382,6 +436,14 @@ If[ccResult["ExitCode"]!=0\[Or]ccResult["StandardError"]!="",Echo[ccResult];Thro
 ImportString[ccResult["StandardOutput"],"RawJSON"]
 ]
 ]
+
+
+(* ::Input:: *)
+(*RunCC[Graph[{1, 2, 3, 4, 5, 6, 7, 8}, {Null, {{1, 2}, {2, 3}, {2, 4}, {1, 5}, {5, 6}, {5, 7}, {1, 8}}}, {FormatType -> TraditionalForm, ImageSize -> {100, 100}, AlignmentPoint -> Center, GraphLayout -> {"Dimension" -> 2}, ImageSize -> {100, 100}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {8 -> RGBColor[1, 0, 0]}}],7,{2}]*)
+
+
+(* ::Subsection:: *)
+(*Full Solver Interface*)
 
 
 (* ::Input::Initialization:: *)
@@ -410,6 +472,14 @@ ImportString[ccResult["StandardOutput"],"RawJSON"]
 ]
 
 
+(* ::Input:: *)
+(*RunCC[Graph[{1, 2, 3, 4, 5, 6, 7}, {Null, {{1, 2}, {1, 3}, {2, 4}, {2, 5}, {3, 6}, {4, 7}}}, {FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {7 -> RGBColor[1, 0, 0]}}],6,"Full"]*)
+
+
+(* ::Subsection:: *)
+(*Importing JSON format*)
+
+
 (* ::Input::Initialization:: *)
 Clear[CoeffArrayToPoly,MultArrayToPoly]
 CoeffArrayToPoly[{q1_,__},{coeffs__Integer}]:=Sum[{coeffs}[[i]] q1^(i-1),{i,1,Length@{coeffs}}]
@@ -418,6 +488,13 @@ MultArrayToPoly[{q0_,qs__}]:=Function[{mult,list},{
 mult,
 q0 CoeffArrayToPoly[{qs},list]//Simplify
 }]
+
+
+(* ::Input:: *)
+(*MultArrayToPoly[{q0,q1,q2,q3}]@@@{*)
+(*{8000,{{1,{1,1,1}},{2,{2,1,1}},{11,{0,0,0}},{3,{15,2,2}}}},*)
+(*{1300,{{1,{1,1,1}},{2,{2,1,1}},{11,{0,0,0}},{3,{15,2,2}}}}*)
+(*}*)
 
 
 (* ::Input::Initialization:: *)
@@ -455,6 +532,18 @@ Thread/@Thread[{\[Lambda],\[Lambda]a/2^(kTot-kSys)}->{\[Lambda]m,\[Lambda]ma}]
 ]
 
 
+(* ::Input:: *)
+(*PauliActionCC[Graph[{1, 2, 3, 4}, {Null, {{1, 2}, {2, 3}, {2, 4}}}, {FormatType -> TraditionalForm, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {"Index"}, VertexSize -> {0.2}, VertexStyle -> {4 -> RGBColor[1, 0, 0]}}],3,p]*)
+
+
+(* ::Chapter:: *)
+(*User Interface*)
+
+
+(* ::Section:: *)
+(*Entropy and CI*)
+
+
 (* ::Input::Initialization:: *)
 (* presets for important channels *)
 CHANNELGENERIC={q0,q1,q2,q3};
@@ -483,7 +572,7 @@ FindRoot[targetFunction[p],
 Method->"Secant",
 AccuracyGoal->9,
 MaxIterations->1000,
-WorkingPrecision->$MachinePrecision
+WorkingPrecision->MachinePrecision
 ]
 ]
 
@@ -492,6 +581,133 @@ pa=PauliActionCC[g,kSys,p,symmetricSolver,extraStabilizedVertices]
 },
 CIThreshold[pa,p]
 ]
+
+
+(* ::Input:: *)
+(*ConcatGraph[StarGraph[15],StarGraph[15],{2},1]*)
+(*CIThreshold[%,VertexCount@%-1,p]*)
+
+
+(* ::Section::Closed:: *)
+(*Interface Tutorial*)
+
+
+(* ::Subsection:: *)
+(*Manual Export*)
+
+
+(* ::Subsubsection:: *)
+(*Create graphs by hand*)
+
+
+(* ::Text:: *)
+(*To create graphs by hand, look up the following functions:*)
+
+
+(* ::Input:: *)
+(*AdjacencyGraph*)
+(*SparseArray*)
+(*PathGraph*)
+
+
+(* ::Text:: *)
+(*Or directly use MM's Graph object, where edges are entered with ESC ue ESC*)
+
+
+(* ::Input:: *)
+(*Graph[{1\[UndirectedEdge]2,3\[UndirectedEdge]4,3\[UndirectedEdge]5,1\[UndirectedEdge]3}]*)
+
+
+(* ::Subsubsection:: *)
+(*Create a random graph, add a hair, and plot.*)
+
+
+(* ::Input:: *)
+(*CompleteGraph[10];*)
+(*HairGraph[%,{10,9}];*)
+(*graph=EnvironmentPlot[%,10]*)
+
+
+(* ::Subsubsection:: *)
+(*Export instance*)
+
+
+(* ::Text:: *)
+(*Just adjacency matrix for Full Solver*)
+
+
+(* ::Input:: *)
+(*ExportAdjacencyMatrix[Graph[{1, 2, 3, 4}, {Null, {{1, 2}, {2, 3}, {2, 4}}}, {FormatType -> TraditionalForm, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {"Index"}, VertexSize -> {0.2}, VertexStyle -> {4 -> RGBColor[1, 0, 0]}}]]*)
+
+
+(* ::Text:: *)
+(*SGS for Symmetric Solver*)
+
+
+(* ::Input:: *)
+(*ExportSymmetricCCInstance[Graph[{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}, {Null, {{1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}, {1, 7}, {1, 8}, {1, 9}, {1, 10}, {1, 11}, {1, 12}, {12, 13}, {12, 14}, {12, 15}, {12, 16}, {12, 17}}}, {FormatType -> TraditionalForm, ImageSize -> {373., Automatic}, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {"Index"}, VertexSize -> {0.2}, VertexStyle -> {17 -> RGBColor[1, 0, 0]}}],16]*)
+
+
+(* ::Subsection:: *)
+(*Automatic Export, Build and Import*)
+
+
+(* ::Subsubsection:: *)
+(*Get CI for a Graph*)
+
+
+(* ::Text:: *)
+(*Remove the semicolon to see full analytic expression. If you give "p", that corresponds to giving CHANNELDEPOLARIZING where all the terms are equal; alternatively you can specify an array of four individual Pauli coefficients, e.g. {1-3p^2,p^2,p^2,p^2}, or use a predefined block (see section "Entropy and CI" above).*)
+
+
+(* ::Input:: *)
+(*CIMult@@PauliActionCC[Graph[{1, 2, 3, 4}, {Null, {{1, 2}, {2, 3}, {2, 4}}}, {FormatType -> TraditionalForm, FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {"Index"}, VertexSize -> {0.2}, VertexStyle -> {4 -> RGBColor[1, 0, 0]}}],3,p];*)
+
+
+(* ::Text:: *)
+(*For plotting, use e.g.*)
+
+
+(* ::Input:: *)
+(*CIMult@@PauliActionCC[Graph[{1, 2, 3, 4, 5, 6, 7, 8}, {Null, {{1, 2}, {2, 3}, {2, 4}, {1, 5}, {5, 6}, {5, 7}, {1, 8}}}, {FormatType -> TraditionalForm, ImageSize -> {100, 100}, AlignmentPoint -> Center, GraphLayout -> {"Dimension" -> 2}, ImageSize -> {100, 100}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {8 -> RGBColor[1, 0, 0]}}],7,p];*)
+(*Plot[%,{p,0,1}]*)
+
+
+(* ::Text:: *)
+(*The same graph is small enough to be faster with the full solver:*)
+
+
+(* ::Input:: *)
+(*CIMult@@PauliActionCC[Graph[{1, 2, 3, 4, 5, 6, 7, 8}, {Null, {{1, 2}, {2, 3}, {2, 4}, {1, 5}, {5, 6}, {5, 7}, {1, 8}}}, {FormatType -> TraditionalForm, ImageSize -> {100, 100}, AlignmentPoint -> Center, GraphLayout -> {"Dimension" -> 2}, ImageSize -> {100, 100}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {8 -> RGBColor[1, 0, 0]}}],7,p,False];*)
+(*Plot[%,{p,0,1}]*)
+
+
+(* ::Text:: *)
+(*If the symmetry group is 0, we cannot solve with the symmetric solvers; an error is thrown that you can catch.*)
+
+
+(* ::Input:: *)
+(*Catch@CIThreshold[Graph[{1, 2, 3, 4, 5, 6, 7}, {Null, {{1, 2}, {1, 3}, {2, 4}, {2, 5}, {3, 6}, {4, 7}}}, {FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {7 -> RGBColor[1, 0, 0]}}],6,p]*)
+
+
+(* ::Text:: *)
+(*Solving fully still works.*)
+
+
+(* ::Input:: *)
+(*Catch@CIThreshold[Graph[{1, 2, 3, 4, 5, 6, 7}, {Null, {{1, 2}, {1, 3}, {2, 4}, {2, 5}, {3, 6}, {4, 7}}}, {FormatType -> TraditionalForm, GraphLayout -> {"Dimension" -> 2}, VertexLabels -> {None}, VertexSize -> {0.2}, VertexStyle -> {7 -> RGBColor[1, 0, 0]}}],6,p,False]*)
+
+
+(* ::Chapter:: *)
+(*Optimization Runs*)
+
+
+(* ::Text:: *)
+(*Everything below can be safely deleted and is not necessary for the CoffeeCode interface. It contains some helpers for graph generation.*)
+
+
+(* ::Subsection::Closed:: *)
+(*Rooted Graph Product/Concatenated Codes*)
 
 
 (* ::Input::Initialization:: *)
@@ -510,6 +726,14 @@ GraphUnion[g1,Graph[vmap/@vertices2,Map[vmap,edges2,{2}]]]
 
 ConcatGraph[g1_Graph,g2_Graph,v1_List,v2_Integer]:=
 Fold[f,{g1,g2,v2},v1]//.f[{gg1_,gg2_,vv2_},vv1_]:>{ConcatGraph[gg1,gg2,vv1,vv2],gg2,vv2}//First
+
+
+(* ::Section:: *)
+(*Two-Level Tree Graphs*)
+
+
+(* ::Subsection:: *)
+(*Graph Generation*)
 
 
 (* ::Input::Initialization:: *)
@@ -537,4 +761,29 @@ Clear[GraphHash]
 GraphHash[g_Graph,kSys_Integer]:=StringTrim@ExportString[ExportString[CanonicalizeByOrbits[g,kSys],"Graph6"],"Base64"]//StringReplace[#,{"/"->"-"}]&
 
 
+(* ::Subsection:: *)
+(*Weird Symmetry Case*)
 
+
+(* ::Input:: *)
+(*edges={{1,2},{1,3},{2,3},{4,5},{4,6},{5,6},{7,8},{7,9},{8,9},{10,11},{10,12},{11,12},{1,4},{1,7},{1,10},{2,5},{2,8},{2,11},{3,6},{3,9},{3,12}};*)
+(*H=Graph[edges,VertexLabels->"Index"]*)
+
+
+(* ::Input:: *)
+(*CIThreshold[H,9,p,False]*)
+
+
+(* ::Input:: *)
+(*CIThreshold[H,9,p,True]*)
+
+
+(* ::Input:: *)
+(*ConcatGraph[StarGraph[5],StarGraph[5],Range@5,1];*)
+(*With[{*)
+(*g=HairGraph[%,{1}],*)
+(*kSys=VertexCount@%*)
+(*},*)
+(*EnvironmentPlot[g,kSys]//Echo;*)
+(*AbsoluteTiming[CIThreshold[g,kSys,p,True]]*)
+(*]*)

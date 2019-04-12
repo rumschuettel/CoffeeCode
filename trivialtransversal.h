@@ -232,11 +232,18 @@ namespace CoffeeCode {
 
 			// callback-based generator
 			template<size_t Colors>
-			inline void Colorings(const CosetGeneratorCallbackType<Colors>& callback)
+			inline void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback)
 			{
 				size_t ctr = 0;
-				for (const auto& [tuple, mult] : TupleCosets<Colors>())
-					callback(tuple, mult, ctr++);
+				for (const auto&[tuple, mult] : TupleCosets<Colors>()) {
+					ctr++;
+
+					// skip all but every k * CallbackStride+CallbackOFfset'th element
+					if (CallbackStride > 1)
+						if (ctr % CallbackStride != CallbackOffset) continue;
+
+					callback(tuple, mult, ctr);
+				}
 			}
 
             inline static auto CanonicalColoring(const ColoringRawT coloring)

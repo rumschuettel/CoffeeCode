@@ -35,12 +35,8 @@ namespace CoffeeCode::NautyLink {
 		// group order
 		// this is calling legacy C code so we allow a global variable
 		using OrbitSizeT = CoffeeCode::OrbitType;
-	#ifdef PARALLELIZE
-		static TLS_ATTR OrbitSizeT __grouporder;
-	#else
-		OrbitSizeT __grouporder;
-	#endif
-		//static OrbitSizeT __grouporder;
+		static __declspec(thread) OrbitSizeT __grouporder;
+
 
 		void UserLevelProc_GroupOrder(int*, int*, int, int*, statsblk*, int, int index, int, int, int, int)
 		{
@@ -139,9 +135,15 @@ namespace CoffeeCode::NautyLink {
 
 
 		template<size_t Colors>
-		void Colorings(const CosetGeneratorCallbackType<Colors>& callback)
+		void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback)
 		{
 			vcolg([&](const int* cols, size_t counter) -> void {
+				// skip callback for all elements but
+				// Offset, Stride+Offset, 2*Stride+Offset, ...
+				if (CallbackStride > 1)
+					if (counter % CallbackStride != CallbackOffset) return;
+
+				// get multiplicity of coloring
 				PartialColoringT system_coloring;
 				for (size_t i = 0; i < K_SYS; i++)
 					system_coloring[i] = checked_cast<Color>(cols[i]);

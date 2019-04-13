@@ -186,10 +186,10 @@ int SymmetricSolver() {
 	// so that the i'th thread only handles the i'th, THREAD_COUNT + i'th, 2*THREAD_COUNT + i'th, ...
 	#pragma omp for nowait
 	for (int i = 0; i < (int)THREAD_COUNT; i++)
-	group.Colorings<4>(THREAD_COUNT, THREAD_ID, [&](const auto& tuple, size_t orbitSize4, size_t) -> void {
+	group.Colorings<4>(THREAD_COUNT, THREAD_ID, [&](const auto& tuple, const auto orbitSize4, const size_t) -> void {
 		counter_channel_++;
 #else
-	group.Colorings<4>(1, 0, [&](const auto& tuple, size_t orbitSize4, size_t) -> void{
+	group.Colorings<4>(1, 0, [&](const auto& tuple, const auto orbitSize4, const size_t) -> void{
 		counter_channel++;
 #endif
 
@@ -286,7 +286,7 @@ int SymmetricSolver() {
 	instance::LambdaT lambda_a;
 
 	auto time_ptrace_start = now();
-	group.Colorings<2>(1, 0, [&](const auto& tuple, size_t, size_t) -> void {
+	group.Colorings<2>(1, 0, [&](const auto& tuple, const auto, const size_t) -> void {
 		counter_ptrace++;
 
 		// TupleT to SubsetT and HashT because that one can be different

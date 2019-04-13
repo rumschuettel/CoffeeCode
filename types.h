@@ -83,6 +83,6 @@ namespace CoffeeCode {
 
 	///////////////////
 	template<size_t Colors>
-	using CosetGeneratorCallbackType = std::function<void(const SystemColoringType<Colors>&, size_t, size_t)>;
+	using CosetGeneratorCallbackType = std::function<void(const SystemColoringType<Colors>&, const MultiplicityType<Colors>, const size_t)>;
 
 }

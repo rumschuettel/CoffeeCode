@@ -158,14 +158,14 @@ int SymmetricSolver() {
 
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
-	auto time_total_start = now();
-	decltype(now()) time_temp;
+	const auto time_total_start = now();
+	const decltype(now()) time_temp;
 	MEASURE_FILTER1((decltype(now() - now()) time_nauty_CCA, time_nauty_CCB, time_nauty_CCC, time_nauty_CCD;))
 	size_t counter_channel = 0;
 	size_t counter_ptrace = 0;
 
 	// CHANNEL ACTION
-	auto time_channel_start = now();
+	const auto time_channel_start = now();
 
 	// fill lambdas
 	instance::LambdaT lambda, lambda_pre;
@@ -173,7 +173,12 @@ int SymmetricSolver() {
 
 	// iterate over colorings of graph
 #ifdef PARALLELIZE
-	#pragma omp parallel default(none) firstprivate(group) shared(lambda, lambda_pre, counter_channel, std::cout)
+#ifdef _MSC_VER
+#define OMP_SHAREDEFAULT shared
+#else
+#define OMP_SHAREDEFAULT none
+#endif
+	#pragma omp parallel default(OMP_SHAREDEFAULT) firstprivate(group) shared(lambda, lambda_pre, counter_channel, std::cout)
 	{
 	const size_t THREAD_COUNT = omp_get_num_threads();
 	const size_t THREAD_ID = omp_get_thread_num();
@@ -185,7 +190,7 @@ int SymmetricSolver() {
 	// since the bottleneck for this loop is generally not the coloring iterator, we simply have every thread loop
 	// so that the i'th thread only handles the i'th, THREAD_COUNT + i'th, 2*THREAD_COUNT + i'th, ...
 	#pragma omp for nowait
-	for (int i = 0; i < (int)THREAD_COUNT; i++)
+	for (int i = 0; i < checked_cast<int>(THREAD_COUNT); i++)
 	group.Colorings<4>(THREAD_COUNT, THREAD_ID, [&](const auto& tuple, const auto orbitSize4, const size_t) -> void {
 		counter_channel_++;
 #else
@@ -277,7 +282,7 @@ int SymmetricSolver() {
 	} // #pragma omp parallel
 #endif
 
-	auto time_channel = now() - time_channel_start;
+	const auto time_channel = now() - time_channel_start;
 
 
 	// PARTIAL TRACE
@@ -285,7 +290,7 @@ int SymmetricSolver() {
 	using SubsetAT = decltype(instance::MAB)::ColumnVectorT::StoreT;
 	instance::LambdaT lambda_a;
 
-	auto time_ptrace_start = now();
+	const auto time_ptrace_start = now();
 	group.Colorings<2>(1, 0, [&](const auto& tuple, const auto, const size_t) -> void {
 		counter_ptrace++;
 
@@ -321,14 +326,14 @@ int SymmetricSolver() {
 
 		MEASURE_FILTER1((time_nauty_CCD += (now() - time_temp) / CoffeeCode::BaseKSubsets<2, instance::K_ENV>::count;))
 	});
-	auto time_ptrace = now() - time_ptrace_start;
+	const auto time_ptrace = now() - time_ptrace_start;
 
 	
 
 	// EXPORT AS JSON
 	// some statistics
 	auto duration = [](auto t) { return std::chrono::duration<double, std::milli>(t).count(); };
-	auto print_time = [&](auto what, auto t) { std::cout << "\"" << what << "\": " << duration(t) << ",\n"; };
+	auto const print_time = [&](auto what, auto t) { std::cout << "\"" << what << "\": " << duration(t) << ",\n"; };
 	std::cout << "{\n";
 	std::cout << "\"channel\": " << counter_channel << ",\n";
 	std::cout << "\"ptrace\": " << counter_ptrace << ",\n";

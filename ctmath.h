@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ctlookup.h"
+#include "utility.h"
 
 #include <cstddef>
 #include <stdint.h>
@@ -26,7 +27,7 @@ namespace LibPopcount {
 
 namespace CoffeeCode {
 	// bit fiddling
-	inline size_t Popcount(const uint64_t& s)
+	inline size_t Popcount(const uint64_t& s) noexcept
 	{
 		return LibPopcount::popcount64(s);
 	}
@@ -122,7 +123,7 @@ namespace CoffeeCode {
 	// or use built-in lookup table for small types
 #define BINOMIAL_LUT(TYPE)\
 	template<>\
-	inline TYPE Binomial<TYPE>(const size_t n, const size_t k)\
+	inline TYPE Binomial<TYPE>(const size_t n, const size_t k) noexcept\
 	{\
 		constexpr auto& lut = LUTs::BinomialCoefficient<TYPE>::lut;\
 \
@@ -151,6 +152,6 @@ namespace CoffeeCode {
 		}
 
 		// otherwise approximate
-		return boost::math::binomial_coefficient<double>(n, k);
+		return boost::math::binomial_coefficient<double>(checked_cast<unsigned int>(n), checked_cast<unsigned int>(k));
 	}
 }

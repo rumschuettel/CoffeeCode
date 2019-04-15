@@ -29,12 +29,12 @@ namespace CoffeeCode {
 		using CoefficientArrayT = typename std::array<CoefficientT, MaxExponent + 1>;
 
 		template<typename T>
-		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3)
+		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3) noexcept
 		{
 			return checked_cast<ExponentT>(u1 + u2 + u3);
 		}
 
-		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs)
+		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs) noexcept
 		{
 			for (size_t i = 0; i < lhs.size(); i++)
 				lhs[i] += rhs[i];
@@ -211,12 +211,14 @@ namespace CoffeeCode {
 
 		Polynomial() = default; // zero-initializes coefficients
 
-		void Add(const ExponentT exponent, const CoefficientT coefficient = 1) {
+		void Add(const ExponentT exponent, const CoefficientT coefficient = 1) noexcept
+		{
 			coefficients[exponent] += coefficient;
 		}
 
 		// addition of monomials
-		inline Polynomial& operator+=(const ExponentT& rhs) {
+		inline Polynomial& operator+=(const ExponentT& rhs) noexcept
+		{
 			coefficients[rhs] += 1;
 			return *this;
 		}
@@ -235,7 +237,7 @@ namespace CoffeeCode {
 		// FOR USE IN REDUCE_LAMBDA compressed output
 		struct Hash
 		{
-			inline std::size_t operator()(Polynomial const &poly) const noexcept
+			inline std::size_t operator()(Polynomial const &poly) const
 			{
 				return MonomialT::HashCoefficientArray(poly.coefficients);
 			}

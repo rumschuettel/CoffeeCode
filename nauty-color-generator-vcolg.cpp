@@ -14,7 +14,8 @@
 
 #include <array>
 
-static const TLS_ATTR CoffeeCode::NautyLink::VColGCallbackType *outproc;
+static const TLS_ATTR CoffeeCode::NautyLink::VColGCallbackType *__outproc;
+static TLS_ATTR size_t __CallbackStride, __CallbackOffset;
 
 static TLS_ATTR nauty_counter vc_nout;
 
@@ -109,8 +110,8 @@ trythisone(grouprec *group, graph*, boolean, int, int n)
 	if (accept)
 	{
 		++vc_nout;
-
-		(*outproc)(col, vc_nout);
+		if (vc_nout % __CallbackStride == __CallbackOffset)
+			(*__outproc)(col, vc_nout);
 
 		return n - 1;
 	}
@@ -277,9 +278,11 @@ colourgraph(graph *g, int nfixed, long minedges, long maxedges,
 namespace CoffeeCode::NautyLink {
 
 	// cast graph pointer type
-	void vcolg(const VColGCallbackType& callback, void *g, size_t numcols)
+	void vcolg(const VColGCallbackType& callback, void *g, const size_t numcols, const size_t CallbackStride, const size_t CallbackOffset)
 	{
-		outproc = &callback;
-		colourgraph(reinterpret_cast<graph*>(g), K_SYS, 0, NOLIMIT, numcols, MAXM, MAXN);
+		__outproc = &callback;
+		__CallbackStride = CallbackStride;
+		__CallbackOffset = CallbackOffset;
+		colourgraph(static_cast<graph*>(g), K_SYS, 0, NOLIMIT, numcols, MAXM, MAXN);
 	}
 }

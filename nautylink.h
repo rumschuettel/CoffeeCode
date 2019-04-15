@@ -86,7 +86,7 @@ namespace CoffeeCode::NautyLink {
 
 		// map integer values from CoffeeCode to graph colors in Nauty
 		template<typename NumberT>
-		static inline Color ToColor(NumberT nc)
+		static inline Color ToColor(NumberT nc) noexcept
 		{
 			// 4 colors
 			assert(0 <= nc && nc <= 3);
@@ -113,7 +113,7 @@ namespace CoffeeCode::NautyLink {
 			static_assert(MatrixT::k_sys == K_SYS && MatrixT::k_env == K_ENV);
 
 			// verify linked nauty has correct parameters
-			nauty_check(WORDSIZE, static_cast<int>(K_TOT_SETWORDS), static_cast<int>(K_TOT), NAUTYVERSIONID);
+			nauty_check(WORDSIZE, checked_cast<int>(K_TOT_SETWORDS), checked_cast<int>(K_TOT), NAUTYVERSIONID);
 
 			// copy CoffeeCode matrix to nauty matrix
 			// since we anticipate only doing this once, we go for portability instead of memcpy-ing the bits
@@ -138,11 +138,6 @@ namespace CoffeeCode::NautyLink {
 		void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback)
 		{
 			vcolg([&](const int* cols, size_t counter) -> void {
-				// skip callback for all elements but
-				// Offset, Stride+Offset, 2*Stride+Offset, ...
-				if (CallbackStride > 1)
-					if (counter % CallbackStride != CallbackOffset) return;
-
 				// get multiplicity of coloring
 				PartialColoringT system_coloring;
 				for (size_t i = 0; i < K_SYS; i++)
@@ -150,11 +145,11 @@ namespace CoffeeCode::NautyLink {
 
 				SetColoring(system_coloring);
 				callback(system_coloring, ColoringMultiplicity<Colors>(), counter);
-			}, G, Colors);
+			}, G, Colors, CallbackStride, CallbackOffset);
 		}
 
 
-		auto inline GroupOrder()
+		auto inline GroupOrder() noexcept
 		{
 			// default options
 			static DEFAULTOPTIONS_GRAPH(options);
@@ -162,7 +157,7 @@ namespace CoffeeCode::NautyLink {
 			options.userlevelproc = ImplDetails::UserLevelProc_GroupOrder;
 			options.defaultptn = false;
 
-			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, NULL);
+			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, nullptr);
 
 			return ImplDetails::__grouporder;
 		}
@@ -188,7 +183,7 @@ namespace CoffeeCode::NautyLink {
 
 			// hash for this type
 			struct Hash {
-				inline std::size_t operator()(CanonicalImage const& image) const noexcept
+				inline std::size_t operator()(CanonicalImage const& image) const
 				{
 					std::size_t h = boost::hash_range(std::begin(image.G_canon), std::end(image.G_canon));
 					std::size_t h2 = boost::hash_range(std::begin(image.vertexColorCounts), std::end(image.vertexColorCounts));
@@ -269,7 +264,7 @@ namespace CoffeeCode::NautyLink {
 				const auto color = coloring[i];
 
 				// put vertex in right bucket and increment index for that color
-				lab_bucket[color][bucket_idx[color]] = static_cast<LabEntryT>(i);
+				lab_bucket[color][bucket_idx[color]] = checked_cast<LabEntryT>(i);
 				bucket_idx[color]++;
 			}
 

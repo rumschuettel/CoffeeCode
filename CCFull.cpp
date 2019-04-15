@@ -63,7 +63,7 @@ int FullSolver()
 
 	const auto M = CoffeeCode::AdjacencyMatrix<K_SYS, K_ENV>::FromString(input);
 
-	auto start = std::chrono::steady_clock::now();
+	const auto start = std::chrono::steady_clock::now();
 
 	// Calculate lambda and lambda_pre
 	std::vector<Polynomial> lambda(ipow(2, K_TOT)), lambda_pre(ipow(2, K_SYS));
@@ -110,7 +110,7 @@ int FullSolver()
 	// EXPORT AS JSON
 	// some statistics
 	std::cout << "{\n\"tuples\": " << BaseKSubsets<4, K_SYS>::count << ",\n\"time\": ";
-	auto end = std::chrono::steady_clock::now();
+	const auto end = std::chrono::steady_clock::now();
 	std::cout << std::chrono::duration <double, std::milli> (end-start).count() << ",\n";
 
 	// lambda

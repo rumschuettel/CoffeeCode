@@ -22,13 +22,8 @@ void print(const T& vec)
 // checked integer conversion conversion
 #ifdef DEBUG
 
-template<typename B, typename A>
-inline B checked_cast(const A a)
-{
-	B b = static_cast<B>(a);
-	if (a != b) throw new std::exception();
-	return b;
-}
+#include <boost/numeric/conversion/cast.hpp>
+#define checked_cast boost::numeric_cast
 
 #else
 

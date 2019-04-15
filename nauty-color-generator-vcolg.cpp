@@ -218,10 +218,14 @@ colourgraph(graph *g, int nfixed, long minedges, long maxedges,
 			{
 				prev[i] = j;
 				// disable false positive
+				#ifdef __INTEL_COMPILER
 				#pragma warning push
 				#pragma warning disable 3656
+				#endif
 				weight[i] = weight[j] + 1;
+				#ifdef __INTEL_COMPILER
 				#pragma warning pop
+				#endif
 			}
 			else
 			{

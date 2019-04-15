@@ -22,7 +22,7 @@ using boost::multiprecision::uint512_t;
 
 
 namespace LibPopcount {
-	#include "libpopcnt.h"
+	#include "ext/libpopcnt.h"
 }
 
 namespace CoffeeCode {

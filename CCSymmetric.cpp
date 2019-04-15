@@ -3,7 +3,6 @@
 #include "CoffeeCode.h"
 #include "utility.h"
 
-#include <unordered_map>
 #include <unordered_set>
 #include <chrono>
 
@@ -52,8 +51,7 @@ namespace CoffeeCode {
 		using CanonicalImageHashT = typename SymmetryProvider::CanonicalImageHashT;
 
 		// lambdas as hashmaps
-		// TODO: replace with https://github.com/greg7mdp/sparsepp
-		using LambdaT = std::unordered_map<
+		using LambdaT = unordered_map<
 			CanonicalImageT,
 			std::pair<
 				CoffeeCode::Std::Polynomial,
@@ -153,9 +151,6 @@ int SymmetricSolver() {
 	using SubsetT = typename VectorT::StoreT;
 	using CoefficientT = typename Polynomial::CoefficientT;
 
-	auto group = instance::GroupLink();
-
-
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
 	const auto time_total_start = now();
@@ -170,10 +165,12 @@ int SymmetricSolver() {
 	// fill lambdas
 	instance::LambdaT lambda, lambda_pre;
 
+	// graph group functions
+	auto group = instance::GroupLink();
 
 	// iterate over colorings of graph
 #ifdef PARALLELIZE
-#ifdef _MSC_VER
+#ifdef _MSC_VER || __INTEL_COMPILER
 #define OMP_SHAREDEFAULT shared
 #else
 #define OMP_SHAREDEFAULT none

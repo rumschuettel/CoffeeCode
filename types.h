@@ -5,7 +5,14 @@
 
 #include <array>
 
+// fast hashtable
+// TODO: benchmark against https://github.com/greg7mdp/sparsepp
+//#include "ext/unordered_map.hpp"
+#include <unordered_map>
+
 namespace CoffeeCode {
+	template<typename... Args>
+	using unordered_map = std::unordered_map<Args...>;
 
 	// automatic selection of smallest-possible integer
 	template<bool raise = true>

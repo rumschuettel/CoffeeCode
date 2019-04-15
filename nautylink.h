@@ -169,6 +169,8 @@ namespace CoffeeCode::NautyLink {
 		}
 
 		struct CanonicalImage {
+			CanonicalImage() = default;
+			CanonicalImage(const CanonicalImage&) = default;
 			CanonicalImage(const decltype(G_canon)& in, const ColoringT& coloring) noexcept
 				: vertexColorCounts{ 0 }
 			{
@@ -205,11 +207,17 @@ namespace CoffeeCode::NautyLink {
 
 		// reorders to get canonical image of the partial coloring given
 		// also returns the group order
-		auto CanonicalColoring(const ColoringRawT raw_coloring) noexcept
+		using CanonicalColoringReturnT = std::pair<CanonicalImage, MultiplicityType<2>>;
+		CanonicalColoringReturnT CanonicalColoring(const ColoringRawT raw_coloring) noexcept
 		{
+			// memoization
+			thread_local unordered_map<ColoringRawT, CanonicalColoringReturnT> memo;
+			typename decltype(memo)::const_iterator p = memo.find(raw_coloring);
+			if (p != memo.end()) return p->second;
+
+			// get canonical coloring
 			const auto coloring = SetColoring(raw_coloring);
 
-			// default options
 			static DEFAULTOPTIONS_GRAPH(options);
 			ImplDetails::__grouporder = 1;
 			options.userlevelproc = ImplDetails::UserLevelProc_GroupOrder;
@@ -218,12 +226,15 @@ namespace CoffeeCode::NautyLink {
 
 			densenauty(G, lab, ptn, orbits, &options, &stats, K_TOT_SETWORDS, K_TOT, G_canon);
 
-			// rely on return value optimization
+			// build canonical image type, memoize
 			CanonicalImage out(G_canon, coloring);
-			return std::make_pair(
+
+			const CanonicalColoringReturnT ret = std::make_pair(
 				out,
 				static_cast<MultiplicityType<2>>(FULL_GROUP_ORDER / ImplDetails::__grouporder)
 			);
+			memo[raw_coloring] = ret;
+			return ret;
 		}
 
 		auto inline SetColoring(const ColoringRawT partial) noexcept
@@ -231,7 +242,7 @@ namespace CoffeeCode::NautyLink {
 			ColoringT coloring;
 			// careful: coloring[0] is the first vertex, which corresponds to the rightmost bit of the partial
 			for (size_t i = 0; i < K_TOT; i++) 
-				coloring[i] = ToColor((partial & (0b01 << i)) >> i);
+				coloring[i] = ToColor((partial & (static_cast<ColoringRawT>(0b01) << i)) >> i);
 
 			// mark environment colors
 			for (size_t i = K_SYS; i < K_TOT; i++)

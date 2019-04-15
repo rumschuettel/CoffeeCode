@@ -31,7 +31,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-    add_compile_options(-diag-disable=all -prof-use)
+    add_compile_options(-diag-disable=all)
 endif()
 
 

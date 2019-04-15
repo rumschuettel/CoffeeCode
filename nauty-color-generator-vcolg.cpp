@@ -34,7 +34,7 @@ static TLS_ATTR int fail_level;
 /**************************************************************************/
 
 static int
-ismax(int *p, int n)
+ismax(int *p, int n) noexcept
 /* test if col^p <= col */
 {
 	int i, k;
@@ -60,7 +60,7 @@ ismax(int *p, int n)
 /**************************************************************************/
 
 static void
-testmax(int *p, int n, int *abort)
+testmax(int *p, int n, int *abort) noexcept
 /* Called by allgroup2. */
 {
 	int i;
@@ -82,7 +82,7 @@ testmax(int *p, int n, int *abort)
 /**************************************************************************/
 
 static int
-trythisone(grouprec *group, graph*, boolean, int, int n)
+trythisone(grouprec *group, graph*, boolean, int, int n) noexcept
 /* Try one solution, accept if maximal. */
 /* Return value is level to return to. */
 {
@@ -123,7 +123,7 @@ trythisone(grouprec *group, graph*, boolean, int, int n)
 
 static int
 scan(int level, graph *g, boolean digraph, int *prev, long minedges, long maxedges,
-	long sofar, long numcols, grouprec *group, int m, int n)
+	long sofar, long numcols, grouprec *group, int m, int n) noexcept
 	/* Recursive scan for default case */
 	/* Returned value is level to return to. */
 {
@@ -155,7 +155,7 @@ scan(int level, graph *g, boolean digraph, int *prev, long minedges, long maxedg
 
 static void
 colourgraph(graph *g, int nfixed, long minedges, long maxedges,
-	long numcols, int m, int n)
+	long numcols, int m, int n) noexcept
 {
 	static DEFAULTOPTIONS_GRAPH(options);
 	statsblk stats;
@@ -217,7 +217,11 @@ colourgraph(graph *g, int nfixed, long minedges, long maxedges,
 			if (j >= start)
 			{
 				prev[i] = j;
+				// disable false positive
+				#pragma warning push
+				#pragma warning disable 3656
 				weight[i] = weight[j] + 1;
+				#pragma warning pop
 			}
 			else
 			{
@@ -278,7 +282,7 @@ colourgraph(graph *g, int nfixed, long minedges, long maxedges,
 namespace CoffeeCode::NautyLink {
 
 	// cast graph pointer type
-	void vcolg(const VColGCallbackType& callback, void *g, const size_t numcols, const size_t CallbackStride, const size_t CallbackOffset)
+	void vcolg(const VColGCallbackType& callback, void *g, const size_t numcols, const size_t CallbackStride, const size_t CallbackOffset) noexcept
 	{
 		__outproc = &callback;
 		__CallbackStride = CallbackStride;

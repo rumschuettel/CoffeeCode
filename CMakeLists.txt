@@ -19,13 +19,22 @@ if (SYMMETRIC_SOLVER)
     set(PATH_BOOST "/home/jkrb2/programming/libs/boost/boost_1_69_0/" CACHE PATH "Boost 1.69 path")
 endif()
 
-set(CMAKE_CXX_COMPILER "/home/jkrb2/opt/anaconda5/envs/gcc8/bin/x86_64-conda_cos6-linux-gnu-g++" CACHE FILE "cxx compiler")
+# empty odd defaults
+set(CMAKE_CXX_FLAGS "")
+set(CMAKE_C_FLAGS "")
+
+add_compile_options(-march=native -fmax-errors=5)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
-add_compile_options(-march=native -mtune=generic -fmax-errors=5)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CC_COMPILER "/home/jkrb2/opt/anaconda5/envs/gcc8/bin/x86_64-conda_cos6-linux-gnu-cc" CACHE FILE "c compiler")
- 
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    add_compile_options(-diag-disable=all -prof-use)
+endif()
+
+
 ##### Build Targets
 ###################
 

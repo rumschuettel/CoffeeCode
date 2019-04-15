@@ -98,7 +98,8 @@
 #endif
 
 #if defined(HAVE_CPUID) && \
-    GNUC_PREREQ(5, 0)
+    GNUC_PREREQ(5, 0) && \
+    defined(__AVX512BW__)
   #define HAVE_AVX512
 #endif
 

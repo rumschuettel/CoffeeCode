@@ -49,7 +49,7 @@ namespace CoffeeCode {
 			}
 		}
 
-		inline static auto HashCoefficientArray(const CoefficientArrayT& coefficients)
+		inline static auto HashCoefficientArray(const CoefficientArrayT& coefficients) noexcept
 		{
 			return boost::hash_range(std::begin(coefficients), std::end(coefficients));
 		}
@@ -70,7 +70,7 @@ namespace CoffeeCode {
 		using CoefficientArrayT = typename std::map<ExponentT, CoefficientT>;
 
 		template<typename T>
-		inline static ExponentT MakeExponent(const T& u1, const T& u2, const T& u3)
+		inline static ExponentT MakeExponent(const T& u1, const T& u2, const T& u3) noexcept
 		{
 			return ExponentT{
 				checked_cast<SingleExponentT>(u1),
@@ -79,7 +79,7 @@ namespace CoffeeCode {
 			};
 		}
 
-		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs)
+		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs) noexcept
 		{
 			for (const auto& [exponents, coeff] : rhs)
 				lhs[exponents] += coeff;
@@ -142,11 +142,11 @@ namespace CoffeeCode {
 			struct AdditionProxy {
 				const ExponentT& exponent;
 				CoefficientT& value;
-				AdditionProxy(const ExponentT& exponent, CoefficientT& value) 
+				AdditionProxy(const ExponentT& exponent, CoefficientT& value) noexcept
 					: exponent(exponent), value(value)
 				{}
 
-				inline void operator+=(const CoefficientT& coeff)
+				inline void operator+=(const CoefficientT& coeff) noexcept
 				{
 					CoefficientT to_add = coeff;
 					for (size_t i = 0; i < VariableCount; i ++)
@@ -154,18 +154,18 @@ namespace CoffeeCode {
 					value += to_add;
 				}
 			};
-			inline AdditionProxy operator[](const ExponentT& exponent)
+			inline AdditionProxy operator[](const ExponentT& exponent) noexcept
 			{
 				return AdditionProxy(exponent, value);
 			}
-			inline bool operator==(const IndexProxy& rhs) const
+			inline bool operator==(const IndexProxy& rhs) const noexcept
 			{
 				return value == rhs.value;
 			}
 		};
 
 		template<typename T>
-		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3)
+		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3) noexcept
 		{
 			if constexpr (VariableCount == 1)
 				return ExponentT{ checked_cast<SingleExponentT>(u1 + u2 + u3) };
@@ -177,7 +177,7 @@ namespace CoffeeCode {
 				};
 		}
 
-		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs)
+		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs) noexcept
 		{
 			lhs.value += rhs.value;
 		}
@@ -190,7 +190,7 @@ namespace CoffeeCode {
 		// hashing float values is generally a bad idea
 		// since this is just used to compress the output,
 		// we don't really care.
-		inline static size_t HashCoefficientArray(const CoefficientArrayT& value)
+		inline static size_t HashCoefficientArray(const CoefficientArrayT& value) noexcept
 		{
 			// no data race if only using the const interface
 			static std::hash<FloatT> hasher;
@@ -223,7 +223,8 @@ namespace CoffeeCode {
 			return *this;
 		}
 		// addition of polynomials
-		inline Polynomial& operator+=(const Polynomial& rhs) {
+		inline Polynomial& operator+=(const Polynomial& rhs) noexcept
+		{
 			MonomialT::AddCoefficientArrays(coefficients, rhs.coefficients);
 			return *this;
 		}
@@ -237,13 +238,13 @@ namespace CoffeeCode {
 		// FOR USE IN REDUCE_LAMBDA compressed output
 		struct Hash
 		{
-			inline std::size_t operator()(Polynomial const &poly) const
+			inline std::size_t operator()(Polynomial const &poly) const noexcept
 			{
 				return MonomialT::HashCoefficientArray(poly.coefficients);
 			}
 		};
 
-		inline bool operator==(const Polynomial& rhs) const
+		inline bool operator==(const Polynomial& rhs) const noexcept
 		{
 			return coefficients == rhs.coefficients;
 		}

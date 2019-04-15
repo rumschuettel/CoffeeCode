@@ -135,7 +135,7 @@ namespace CoffeeCode::NautyLink {
 
 
 		template<size_t Colors>
-		void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback)
+		void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback) noexcept
 		{
 			vcolg([&](const int* cols, size_t counter) -> void {
 				// get multiplicity of coloring
@@ -163,13 +163,13 @@ namespace CoffeeCode::NautyLink {
 		}
 
 		template<size_t ColorCount>
-		auto inline ColoringMultiplicity()
+		auto inline ColoringMultiplicity() noexcept
 		{
 			return static_cast<MultiplicityType<ColorCount>>(FULL_GROUP_ORDER / GroupOrder());
 		}
 
 		struct CanonicalImage {
-			CanonicalImage(const decltype(G_canon)& in, const ColoringT& coloring)
+			CanonicalImage(const decltype(G_canon)& in, const ColoringT& coloring) noexcept
 				: vertexColorCounts{ 0 }
 			{
 				std::copy(std::begin(in), std::end(in), std::begin(G_canon));
@@ -183,7 +183,7 @@ namespace CoffeeCode::NautyLink {
 
 			// hash for this type
 			struct Hash {
-				inline std::size_t operator()(CanonicalImage const& image) const
+				inline std::size_t operator()(CanonicalImage const& image) const noexcept
 				{
 					std::size_t h = boost::hash_range(std::begin(image.G_canon), std::end(image.G_canon));
 					std::size_t h2 = boost::hash_range(std::begin(image.vertexColorCounts), std::end(image.vertexColorCounts));
@@ -192,7 +192,7 @@ namespace CoffeeCode::NautyLink {
 				}
 			};
 			// comparison for this type
-			bool operator==(const CanonicalImage& rhs) const
+			bool operator==(const CanonicalImage& rhs) const noexcept
 			{
 				return (vertexColorCounts == rhs.vertexColorCounts) && std::equal(std::begin(G_canon), std::end(G_canon), std::begin(rhs.G_canon));
 			}
@@ -205,7 +205,7 @@ namespace CoffeeCode::NautyLink {
 
 		// reorders to get canonical image of the partial coloring given
 		// also returns the group order
-		auto CanonicalColoring(const ColoringRawT raw_coloring)
+		auto CanonicalColoring(const ColoringRawT raw_coloring) noexcept
 		{
 			const auto coloring = SetColoring(raw_coloring);
 
@@ -226,7 +226,7 @@ namespace CoffeeCode::NautyLink {
 			);
 		}
 
-		auto inline SetColoring(const ColoringRawT partial)
+		auto inline SetColoring(const ColoringRawT partial) noexcept
 		{
 			ColoringT coloring;
 			// careful: coloring[0] is the first vertex, which corresponds to the rightmost bit of the partial
@@ -240,7 +240,7 @@ namespace CoffeeCode::NautyLink {
 		}
 
 		// set coloring given as an array for all system vertices, by converting to internal color type
-		auto inline SetColoring(const PartialColoringT partial)
+		auto inline SetColoring(const PartialColoringT partial) noexcept
 		{
             // set default coloring such that environment qubits have an extra flagged color
 			ColoringT coloring;
@@ -252,7 +252,7 @@ namespace CoffeeCode::NautyLink {
 		}
 
 		// set coloring given as a full array
-		auto inline SetColoring(const ColoringT& coloring)
+		auto inline SetColoring(const ColoringT& coloring) noexcept
 		{
 			using LabEntryT = int;
 

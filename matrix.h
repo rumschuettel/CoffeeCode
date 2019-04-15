@@ -27,23 +27,24 @@ namespace CoffeeCode {
 		// for compile-time construction we want explicit numbers
 	private:
 		template<size_t... Idx>
-		constexpr Matrix(const std::array<std::array<BitT, column_count>, row_count>& entries, const std::index_sequence<Idx...>)
+		constexpr Matrix(const std::array<std::array<BitT, column_count>, row_count>& entries, const std::index_sequence<Idx...>) noexcept
 			: rows{ RowVectorT(entries[Idx])... }
 		{
 		}
 	public:
-		constexpr Matrix(const std::array<std::array<BitT, column_count>, row_count>& entries)
+		constexpr Matrix(const std::array<std::array<BitT, column_count>, row_count>& entries) noexcept
 			: Matrix(entries, std::make_index_sequence<row_count>{})
 		{
 		}
-		constexpr Matrix(const std::array<RowVectorT, row_count>& rows)
+		constexpr Matrix(const std::array<RowVectorT, row_count>& rows) noexcept
 			: rows{ rows }
 		{
 		}
 
 		// dot product
 		// pass by value
-		inline ColumnVectorT operator*(const RowVectorT rhs) const {
+		inline ColumnVectorT operator*(const RowVectorT rhs) const noexcept
+		{
 			ColumnVectorT out;
 			using ColumnVectorStoreT = typename ColumnVectorT::StoreT;
 			size_t i = 0;
@@ -72,7 +73,6 @@ namespace CoffeeCode {
 
 		using BaseT = Matrix<k_sys + k_env, k_sys + k_env>;
 		using BitT = typename BaseT::BitT;
-		using BaseT::Matrix;
 		using AdjacencyMatrixT = AdjacencyMatrix<k_sys, k_env>;
 		using ABBlockT = Matrix<k_sys, k_env>;
 
@@ -107,7 +107,7 @@ namespace CoffeeCode {
 
 	private:
 		template<size_t... IdxRow>
-		constexpr ABBlockT ABImpl(const std::index_sequence<IdxRow...>) const
+		constexpr ABBlockT ABImpl(const std::index_sequence<IdxRow...>) const noexcept
 		{
 			static_assert(sizeof...(IdxRow) == k_sys);
 

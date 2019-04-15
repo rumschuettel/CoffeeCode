@@ -55,6 +55,8 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, co
 
 
 // print helper for accumulated lambdas
+#include <unordered_map>
+
 template<typename PolynomialT>
 using ReducedLambdaT = std::unordered_map<
 	PolynomialT,

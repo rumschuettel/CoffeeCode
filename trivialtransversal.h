@@ -80,7 +80,7 @@ namespace CoffeeCode {
             constexpr static auto MaxRemainder = ipow<BaseCounterT>(Base, N_remaining);
 
             enum StepResult { NoCarry, Carry };
-			StepResult Step(IndexTupleT& indices, const size_t OrbitLength)
+			StepResult Step(IndexTupleT& indices, const size_t OrbitLength) noexcept
 			{
 				// if this was the first item and we are saturated,
 				// this means all indices are at the rhs, so we are done
@@ -123,11 +123,11 @@ namespace CoffeeCode {
             bool done;
 
 		public:
-			OrbitProductIterator() : indices{ 0 }, remainder{ 0 }, done{ false }
+			OrbitProductIterator() noexcept : indices{ 0 }, remainder{ 0 }, done{ false }
 			{
 			}
 
-			OrbitProductIterator& operator++()
+			OrbitProductIterator& operator++() noexcept
 			{
                 // we treat all the individual orbit counters as
                 // digits and implement a standard mixed base counter here
@@ -155,14 +155,14 @@ namespace CoffeeCode {
 			// comparison operator is only ever invoked for end-of-loop-checking
 			// so return the state of our internal "done" variable and ignore the argument
             using DoneT = IteratorT;
-			bool operator!=(const DoneT&) const
+			inline bool operator!=(const DoneT&) const noexcept
 			{
 				return !done;
 			}
 
 
 			// dereference
-			const std::pair<TupleT, MultiplicityT> operator*() const
+			inline const std::pair<TupleT, MultiplicityT> operator*() const noexcept
 			{
 				// this is always the same
 				static const OrbitType orbit_enumerator{ (Factorial<OrbitType>(Orbits::Length) * ...) };
@@ -212,7 +212,7 @@ namespace CoffeeCode {
 
 		// range-based for loop iterator for tuples over Base
 		template<size_t Base>
-		inline static StatefulIteratorProxy<OrbitProductIterator<Base>> TupleCosets()
+		inline static StatefulIteratorProxy<OrbitProductIterator<Base>> TupleCosets() noexcept
 		{
 			return StatefulIteratorProxy<OrbitProductIterator<Base>>();
 		}
@@ -232,7 +232,7 @@ namespace CoffeeCode {
 
 			// callback-based generator
 			template<size_t Colors>
-			inline void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback)
+			inline void Colorings(const size_t CallbackStride, const size_t CallbackOffset, const CosetGeneratorCallbackType<Colors>& callback) noexcept
 			{
 				size_t ctr = 0;
 				for (const auto&[tuple, mult] : TupleCosets<Colors>()) {
@@ -246,7 +246,7 @@ namespace CoffeeCode {
 				}
 			}
 
-            inline static auto CanonicalColoring(const ColoringRawT coloring)
+            inline static auto CanonicalColoring(const ColoringRawT coloring) noexcept
             {
                 ColoringRawT out = coloring;
 				MultiplicityT mult = 1;
@@ -263,7 +263,7 @@ namespace CoffeeCode {
             // sort and return multiplicity, which is simply
             // Orbit::Length choose #1s
             template<typename Orbit>
-            inline static void SortBitSubset(ColoringRawT& src, MultiplicityT& mult)
+            inline static void SortBitSubset(ColoringRawT& src, MultiplicityT& mult) noexcept
             {
                 // bitmask with 1s between orbit start and end
                 constexpr ColoringRawT mask = Orbit::template Mask<ColoringRawT>::value;

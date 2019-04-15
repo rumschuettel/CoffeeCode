@@ -32,7 +32,7 @@ namespace CoffeeCode {
 		return LibPopcount::popcount64(s);
 	}
 	template<typename T>
-	inline size_t Popcount(const boost::multiprecision::number<T>& s)
+	inline size_t Popcount(const boost::multiprecision::number<T>& s) noexcept
 	{
 		const auto* limbs = s.backend().limbs();
 		const size_t limb_count = s.backend().size();
@@ -40,24 +40,27 @@ namespace CoffeeCode {
 	}
 
 	template<typename StoreT>
-	constexpr inline void OrBit(StoreT& s, const bool bit, const size_t i)
+	constexpr inline void OrBit(StoreT& s, const bool bit, const size_t i) noexcept
 	{
 		s |= static_cast<StoreT>(bit) << i;
 	}
 
 	// compile-time ceil(log2)
-    constexpr size_t ilog2(const size_t n) {
+    constexpr size_t ilog2(const size_t n) noexcept
+	{
         return n <= 1 ? 0 : 1 + ilog2((n + 1) / 2);
     }
 
 	// approximate ceil(log2(n!))
-	constexpr size_t ilog2factorial(const size_t n) {
+	constexpr size_t ilog2factorial(const size_t n) noexcept
+	{
 		return n <= 1 ? 1 : ((n + 1)*ilog2(n) - n);
     }
 
 	// compile time integer exponent
 	template<typename IntegerT>
-	constexpr IntegerT ipow(const IntegerT base, const IntegerT exp, const IntegerT result = 1) {
+	constexpr IntegerT ipow(const IntegerT base, const IntegerT exp, const IntegerT result = 1) noexcept
+	{
 		return exp < 1 ?
 			result :
 			ipow(base*base, exp / 2, (exp % 2) ? result*base : result);
@@ -83,7 +86,8 @@ namespace CoffeeCode {
 
 	// n choose k
 	template<typename SizeT>
-	constexpr inline SizeT nCHk(size_t n, size_t k) {
+	constexpr inline SizeT nCHk(size_t n, size_t k) noexcept
+	{
 		if (k == 0) return 1;
 		return n * nCHk<SizeT>(n - 1, k - 1) / k;
 	}
@@ -91,7 +95,7 @@ namespace CoffeeCode {
 
 	// factorial function using lookup tables
 	template<typename SizeT>
-	constexpr inline SizeT Factorial(size_t n)
+	constexpr inline SizeT Factorial(size_t n) noexcept
 	{
 		assert(n < sizeof(LUTs::Factorial<SizeT>::lut));
 		return LUTs::Factorial<SizeT>::lut[n];
@@ -100,7 +104,7 @@ namespace CoffeeCode {
 	// binomial function using lookup tables
 	// precalculate on startup
 	template<typename SizeT>
-	inline SizeT Binomial(const size_t n, const size_t k)
+	inline SizeT Binomial(const size_t n, const size_t k) noexcept
 	{
 		constexpr size_t LUTSize = std::numeric_limits<SizeT>::digits;
 		static SizeT lut[LUTSize][LUTSize];
@@ -141,7 +145,7 @@ namespace CoffeeCode {
 #undef BINOMIAL_LUT
 
 	template<>
-	inline double Binomial<double>(const size_t n, const size_t k)
+	inline double Binomial<double>(const size_t n, const size_t k) noexcept
 	{
 		constexpr auto& lut = LUTs::BinomialCoefficient<double>::lut;
 		

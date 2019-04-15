@@ -117,7 +117,7 @@ namespace {
 	// extract tuple and multiplicity from iterator;
 	// if not provided will call appropriate group functions automatically
 	template<typename GroupT, typename IteratorT>
-	auto TupleAndStabMult(GroupT& group, const IteratorT& it) 
+	auto TupleAndStabMult(GroupT& group, const IteratorT& it) noexcept
 	{
 		if constexpr( is_pair<std::decay_t<IteratorT>> ) {
 			// iterator returns tuple and multiplicity; just pass along

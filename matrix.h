@@ -72,6 +72,7 @@ namespace CoffeeCode {
 		constexpr static auto k_env = _k_env;
 
 		using BaseT = Matrix<k_sys + k_env, k_sys + k_env>;
+		using BaseT::BaseT;
 		using BitT = typename BaseT::BitT;
 		using AdjacencyMatrixT = AdjacencyMatrix<k_sys, k_env>;
 		using ABBlockT = Matrix<k_sys, k_env>;

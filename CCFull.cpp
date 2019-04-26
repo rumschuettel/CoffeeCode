@@ -66,7 +66,7 @@ int FullSolver()
 	const auto start = std::chrono::steady_clock::now();
 
 	// Calculate lambda and lambda_pre
-	std::vector<Polynomial> lambda(ipow(2, K_TOT)), lambda_pre(ipow(2, K_SYS));
+	std::vector<Polynomial> lambda(ipow<size_t>(2, K_TOT)), lambda_pre(ipow<size_t>(2, K_SYS));
 
 	// iterate over all U1, U2 and U3 subsets
 	using VectorT = typename decltype(M)::RowVectorT;
@@ -90,7 +90,7 @@ int FullSolver()
 	}
 
 	// Calculate lambda_a
-	std::vector<Polynomial> lambda_a(ipow(2, K_SYS));
+	std::vector<Polynomial> lambda_a(ipow<size_t>(2, K_SYS));
 
 	// build Ulookup
 	const auto MAB = M.AB();

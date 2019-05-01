@@ -170,7 +170,7 @@ int SymmetricSolver() {
 
 	// iterate over colorings of graph
 #ifdef PARALLELIZE
-#ifdef _MSC_VER || __INTEL_COMPILER
+#if (_MSC_VER || __INTEL_COMPILER)
 #define OMP_SHAREDEFAULT shared
 #else
 #define OMP_SHAREDEFAULT none

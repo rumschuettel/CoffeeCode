@@ -27,7 +27,7 @@ pa
 If[FileExistsQ[filename],Echo["skipping "<>filename];Return[Module]];
 Echo["running "<>filename];
 
-pa=Catch@PauliActionCC[G,kSys,p,False(*symmetric solver*)];
+pa=Catch@PauliActionCC[G,kSys,p,True(*symmetric solver*)];
 Echo["done PA for "<>filename];
 If[StringQ[pa],Echo[pa];Return[]]; (* handle errors *)
 

@@ -249,13 +249,4 @@ namespace CoffeeCode {
 			return coefficients == rhs.coefficients;
 		}
 	};
-
-	namespace Std {
-	// choose right specialization based on compiler flags
-	#ifdef OPTIMIZE_FOR_DEPOLARIZING
-		using Polynomial = typename CoffeeCode::Polynomial<UnivariateMonomial>;
-	#else
-		using Polynomial = typename CoffeeCode::Polynomial<MultivariateMonomial<3>>;
-	#endif
-	}
 }

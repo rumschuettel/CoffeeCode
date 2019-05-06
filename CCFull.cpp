@@ -8,8 +8,11 @@
 using std::cout;
 using std::endl;
 
-
-using namespace CoffeeCode::Std;
+#ifdef OPTIMIZE_FOR_DEPOLARIZING
+using Polynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::UnivariateMonomial>;
+#else
+using Polynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::MultivariateMonomial<3>>;
+#endif
 
 
 namespace {
@@ -75,7 +78,7 @@ int FullSolver()
 	// could overflow the type, hence we put the break condition at end
 	for (SubsetT subsetX = 0; ; subsetX++) {
 		for (SubsetT subsetY = 0; ; subsetY++) {
-			const auto term = ChannelAction(subsetX, subsetY, M);
+			const auto term = ChannelAction<Polynomial>(subsetX, subsetY, M);
 			// extract system vertices; they're stored rightmost
 			const SubsetT UAidx = term.Uidx & Bitmask<SubsetT, K_SYS>::mask0111;
 

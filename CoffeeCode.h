@@ -7,18 +7,15 @@
 #include "utility.h"
 
 
-using namespace CoffeeCode::Std;
-
-
-template<typename IndexT>
+template<typename IndexT, typename PolynomialT>
 struct MonomialAndIndex {
-	using ExponentT = typename Polynomial::ExponentT;
+	using ExponentT = typename PolynomialT::ExponentT;
 
 	ExponentT exponent;
 	IndexT Uidx;
 };
 
-template<typename MatrixT>
+template<typename PolynomialT, typename MatrixT>
 inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT XwoY, const typename MatrixT::RowVectorT::StoreT YwoX, const typename MatrixT::RowVectorT::StoreT XnY, const MatrixT& M)
 {
 	using VectorT = typename MatrixT::RowVectorT;
@@ -34,12 +31,12 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT XwoY, const
 
 	const typename VectorT::StoreT Uidx = (M * (XwoYvec + YwoXvec) + (YwoXvec + XnYvec)).vec;
 
-	return MonomialAndIndex<typename VectorT::StoreT>{
-		Polynomial::MonomialT::MakeExponent(u1, u2, u3),
+	return MonomialAndIndex<typename VectorT::StoreT, PolynomialT>{
+		PolynomialT::MonomialT::MakeExponent(u1, u2, u3),
 		Uidx
 	};
 }
-template<typename MatrixT>
+template<typename PolynomialT, typename MatrixT>
 inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, const typename MatrixT::RowVectorT::StoreT subsetY, const MatrixT& M)
 {
 	using StoreT = typename MatrixT::RowVectorT::StoreT;
@@ -50,7 +47,7 @@ inline auto ChannelAction(const typename MatrixT::RowVectorT::StoreT subsetX, co
 	const auto YwoX = checked_cast<StoreT>(subsetY & ~subsetX);
 	const auto XnY = checked_cast<StoreT>(subsetX & subsetY);
 
-	return ChannelAction(XwoY, YwoX, XnY, M);
+	return ChannelAction<PolynomialT>(XwoY, YwoX, XnY, M);
 }
 
 

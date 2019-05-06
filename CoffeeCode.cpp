@@ -14,6 +14,18 @@
 #endif
 #endif
 
+#ifdef PARALLELIZE
+#ifndef SYMMETRIC_SOLVER
+#error "PARALLELIZE only makes sense for SYMMETRIC_SOLVER"
+#endif
+#endif
+
+#ifdef SYMMETRIC_SOLVER
+#ifdef OPTIMIZE_FOR_DEPOLARIZING
+#error "SYMMETRIC_SOLVER and OPTIMIZE_FOR_DEPOLARIZING are incompatible. Polynomial type is specified in cc-instance-custom.h."
+#endif
+#endif
+
 
 #ifdef SYMMETRIC_SOLVER
 int SymmetricSolver();

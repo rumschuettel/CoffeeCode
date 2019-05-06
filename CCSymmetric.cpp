@@ -30,6 +30,7 @@ namespace CoffeeCode {
 
 		// types
 		using RowVectorT = typename MatrixT::RowVectorT;
+		using PolynomialT = typename T::Polynomial;
 
 		// group functionality provider
 	private:
@@ -54,7 +55,7 @@ namespace CoffeeCode {
 		using LambdaT = unordered_map<
 			CanonicalImageT,
 			std::pair<
-				CoffeeCode::Std::Polynomial,
+				typename T::Polynomial,
 				MultiplicityType<2>
 			>,
 			CanonicalImageHashT
@@ -69,8 +70,6 @@ namespace {
 		RET_WRONG_INPUT = 1
 	};
 
-	using namespace CoffeeCode::Std;
-
 	using CoffeeCode::AdjacencyMatrix;
 	using CoffeeCode::TrivialSGSTransversal;
 	using CoffeeCode::TrivialSGSOrbit;
@@ -78,22 +77,35 @@ namespace {
 	template<size_t S>
 	using AdjacencyMatrixT = std::array<std::array<CoffeeCode::BitType, S>, S>;
 
+	using UnivariatePolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::UnivariateMonomial>;
+	using MultivariatePolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::MultivariateMonomial<3>>;
+	template<auto Base, auto... Vals>
+	using NumericalPolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::NumericalMonomialSinglePoint<double, Base, Vals...>>;
 	#include "cc-instance.h"
 
 	using instance = CoffeeCode::SymmetricInstance<graphstate_instance>;
+	using PolynomialT = instance::PolynomialT;
 
+
+	// for numerical polynomial types, we don't want to reduce the lambdas
+	// since hashing is generally a bad idea for floats.
+#ifdef REDUCE_LAMBDA_IF_POSSIBLE
+	constexpr bool REDUCE_LAMBDA = std::is_same_v<PolynomialT, UnivariatePolynomial> || std::is_same_v<PolynomialT, MultivariatePolynomial>;
+#else
+	constexpr bool REDUCE_LAMBDA = false;
+#endif	
 
 	// map reduce for lambdas
 	// should match this format for use with CoffeeCode::PrintLambda
 	template<typename LambdaT>
 	auto ReduceLambda(const LambdaT& lambda)
 	{
-		ReducedLambdaT<Polynomial> out;
+		ReducedLambdaT<PolynomialT> out;
 
 		// aggregate
 		for (const auto& [key, value] : lambda) {
 			const auto& [poly, mult] = value;
-			out[poly] += checked_cast<typename Polynomial::CoefficientT>(mult);
+			out[poly] += checked_cast<typename PolynomialT::CoefficientT>(mult);
 		}
 		
 		return out;
@@ -129,7 +141,6 @@ namespace {
 	}
 }
 
-
 // group library
 #include "utility.h"
 
@@ -149,7 +160,7 @@ namespace {
 int SymmetricSolver() {
 	using VectorT = typename instance::RowVectorT;
 	using SubsetT = typename VectorT::StoreT;
-	using CoefficientT = typename Polynomial::CoefficientT;
+	using CoefficientT = typename PolynomialT::CoefficientT;
 
 	// PERFORMANCE MEASURE
 	auto now = std::chrono::high_resolution_clock::now;
@@ -209,7 +220,7 @@ int SymmetricSolver() {
 		}
 
 		// apply channel
-		const auto term = ChannelAction(subsetX, subsetY, instance::M);
+		const auto term = ChannelAction<PolynomialT>(subsetX, subsetY, instance::M);
 		
 		//// A: Add to lambda
 		{
@@ -348,19 +359,17 @@ int SymmetricSolver() {
 
 	// lambda
 	std::cout << "\"lambda\": [\n";
-#ifdef REDUCE_LAMBDA
-	PrintLambda(ReduceLambda(lambda));
-#else
-	PrintLambda(lambda);
-#endif
+	if constexpr (REDUCE_LAMBDA)
+		PrintLambda(ReduceLambda(lambda));
+	else
+		PrintLambda(lambda);
 	std::cout << "],\n";
 	// lambda_a
 	std::cout << "\"lambda_a\": [\n";
-#ifdef REDUCE_LAMBDA
-	PrintLambda(ReduceLambda(lambda_a));
-#else
-	PrintLambda(lambda_a);
-#endif
+	if constexpr (REDUCE_LAMBDA)
+		PrintLambda(ReduceLambda(lambda_a));
+	else
+		PrintLambda(lambda_a);
 	std::cout << "]\n}\n";
 
 	return RET_OK;

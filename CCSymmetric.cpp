@@ -79,8 +79,12 @@ namespace {
 
 	using UnivariatePolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::UnivariateMonomial>;
 	using MultivariatePolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::MultivariateMonomial<3>>;
-	template<auto Base, auto... Vals>
-	using NumericalPolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::NumericalMonomialSinglePoint<double, Base, Vals...>>;
+	template<auto& SamplePoints>
+	using SampledPolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::SampledPolynomial<SamplePoints>>;
+	template<size_t N>
+	using UnivariateSamples = std::array<std::array<double, N>, 1>;
+	template<size_t N>
+	using MultivariateSamples = std::array<std::array<double, N>, 3>;
 	#include "cc-instance.h"
 
 	using instance = CoffeeCode::SymmetricInstance<graphstate_instance>;
@@ -89,10 +93,16 @@ namespace {
 
 	// for numerical polynomial types, we don't want to reduce the lambdas
 	// since hashing is generally a bad idea for floats.
+	enum {
+		REDUCE_IDENTITY,
+		REDUCE_SIMPLIFY,
+		REDUCE_CALCULATE
+	};
 #ifdef REDUCE_LAMBDA_IF_POSSIBLE
-	constexpr bool REDUCE_LAMBDA = std::is_same_v<PolynomialT, UnivariatePolynomial> || std::is_same_v<PolynomialT, MultivariatePolynomial>;
+	constexpr auto REDUCE_LAMBDA = (std::is_same_v<PolynomialT, UnivariatePolynomial> || std::is_same_v<PolynomialT, MultivariatePolynomial>) ?
+		REDUCE_SIMPLIFY : REDUCE_CALCULATE;
 #else
-	constexpr bool REDUCE_LAMBDA = false;
+	constexpr auto REDUCE_LAMBDA = REDUCE_IDENTITY;
 #endif	
 
 	// map reduce for lambdas
@@ -100,14 +110,12 @@ namespace {
 	template<typename LambdaT>
 	auto ReduceLambda(const LambdaT& lambda)
 	{
-		ReducedLambdaT<PolynomialT> out;
-
 		// aggregate
-		for (const auto& [key, value] : lambda) {
-			const auto& [poly, mult] = value;
+		ReducedLambdaT<PolynomialT> out;
+		for (const auto&[key, value] : lambda) {
+			const auto&[poly, mult] = value;
 			out[poly] += checked_cast<typename PolynomialT::CoefficientT>(mult);
 		}
-		
 		return out;
 	}
 	
@@ -122,6 +130,29 @@ namespace {
 			if (--i) std::cout << ",";
 			std::cout << "\n";
 		}
+	}
+
+	// calculate Shannon entropy for lambda
+	template<typename LambdaT>
+	void PrintShannonEntropy(const LambdaT& lambda)
+	{
+		decltype(PolynomialT::CoefficientArrayT::value) aggregate = { 0 };
+
+		// aggregate Shannon entropy
+		for (const auto&[key, value] : lambda) {
+			const auto&[poly, mult] = value;
+			const auto& values = poly.coefficients.value;
+			for (size_t s = 0; s < values.size(); s ++)
+				aggregate[s] -= mult * values[s] * log2(values[s]);
+		}
+
+		// print as comma-separated list
+		size_t i = aggregate.size();
+		for (const auto val : aggregate) {
+			std::cout << val;
+			if (--i) std::cout << ",";
+		}
+		std::cout << "\n";
 	}
 
 	// extract tuple and multiplicity from iterator;
@@ -359,15 +390,19 @@ int SymmetricSolver() {
 
 	// lambda
 	std::cout << "\"lambda\": [\n";
-	if constexpr (REDUCE_LAMBDA)
+	if constexpr (REDUCE_LAMBDA == REDUCE_SIMPLIFY)
 		PrintLambda(ReduceLambda(lambda));
+	else if constexpr (REDUCE_LAMBDA == REDUCE_CALCULATE)
+		PrintShannonEntropy(lambda);
 	else
 		PrintLambda(lambda);
 	std::cout << "],\n";
 	// lambda_a
 	std::cout << "\"lambda_a\": [\n";
-	if constexpr (REDUCE_LAMBDA)
+	if constexpr (REDUCE_LAMBDA == REDUCE_SIMPLIFY)
 		PrintLambda(ReduceLambda(lambda_a));
+	else if constexpr (REDUCE_LAMBDA == REDUCE_CALCULATE)
+		PrintShannonEntropy(lambda_a);
 	else
 		PrintLambda(lambda_a);
 	std::cout << "]\n}\n";

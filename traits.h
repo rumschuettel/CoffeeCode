@@ -20,6 +20,11 @@ constexpr bool is_pair = false;
 template<typename... Ts>
 constexpr bool is_pair<std::pair<Ts...>> = true;
 
+
+// check whether first element of parameter pack is integer
+template<auto T, auto... Ts>
+constexpr bool pack_first_is_integral = std::is_integral_v<T>;
+
 // compile time MSVC sum bug workaround
 template<auto... Args>
 constexpr auto sum = (Args + ...);

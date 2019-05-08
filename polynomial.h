@@ -9,7 +9,6 @@
 #include <map>
 
 #include <assert.h>
-// TODO: implement sparse polynomial with larger coefficients
 
 namespace CoffeeCode {
 	// monomial types
@@ -113,45 +112,52 @@ namespace CoffeeCode {
 		}
 	};
 
-	// numerical monomial with values
-	// Vals[1]/Base, Vals[2]/Base, ...
-	template<typename FloatT, auto Base, auto... Vals>
-	struct NumericalMonomialSinglePoint {
-		static constexpr size_t K_TOT = K_SYS + K_ENV;
-		static constexpr size_t VariableCount = sizeof...(Vals);
-		 // only implemented for 1 or 3 variables
-		static_assert(VariableCount == 1 || VariableCount == 3);
 
-		// precompute Vals[1]/Base, ...
-		static constexpr std::array<FloatT, VariableCount> FloatVals = {
-			(cdiv<FloatT, Vals, Base>) ...
-		};
+	// numerical polynomial with sample points given as reference to array
+	template<auto& SamplePoints>
+	struct SampledPolynomial {
+		static constexpr size_t K_TOT = K_SYS + K_ENV;
+		static constexpr size_t VariableCount = SamplePoints.size();
+		// only implemented for 1 or 3 variables
+		static_assert(VariableCount == 1 || VariableCount == 3);
+		static constexpr size_t SampleCount = SamplePoints[0].size();
+
+		// stores sample points
+		using FloatT = double;
+		using FloatArrayT = std::array<FloatT, SampleCount>;
+		static constexpr std::array<FloatArrayT, VariableCount> FloatVals = SamplePoints;
 
 		using SingleExponentT = SizeStorageType<K_TOT>;
 		static constexpr SingleExponentT MaxExponent = K_TOT;
 		using ExponentT = std::array<SingleExponentT, VariableCount>;
 
-		using CoefficientT = FloatT;
+		using ValueT = FloatArrayT;
+		using CoefficientT = MultiplicityType<4>;
 
 		// encapsulate a value, such that the following proxying takes place:
 		// Type[exponent]{value} += coefficient
 		// AdditionProxy{exponent, value} += coefficient
 		// value += coefficient*FloatVals[exponent]
 		using CoefficientArrayT = struct IndexProxy {
-			CoefficientT value;
+			ValueT value;
 			struct AdditionProxy {
 				const ExponentT& exponent;
-				CoefficientT& value;
-				AdditionProxy(const ExponentT& exponent, CoefficientT& value) noexcept
+				ValueT& value;
+				AdditionProxy(const ExponentT& exponent, ValueT& value) noexcept
 					: exponent(exponent), value(value)
 				{}
 
 				inline void operator+=(const CoefficientT& coeff) noexcept
 				{
-					CoefficientT to_add = coeff;
+					ValueT to_add;
+					to_add.fill(static_cast<FloatT>(coeff));
+
 					for (size_t i = 0; i < VariableCount; i ++)
-						to_add *= pow(FloatVals[i], exponent[i]);
-					value += to_add;
+						for (size_t s = 0; s < SampleCount; s ++)
+							to_add[s] *= pow(FloatVals[i][s], exponent[i]);
+
+					for (size_t s = 0; s < SampleCount; s ++)
+						value[s] += to_add[s];
 				}
 			};
 			inline AdditionProxy operator[](const ExponentT& exponent) noexcept
@@ -179,22 +185,23 @@ namespace CoffeeCode {
 
 		inline static void AddCoefficientArrays(CoefficientArrayT& lhs, const CoefficientArrayT& rhs) noexcept
 		{
-			lhs.value += rhs.value;
+			for (size_t s = 0; s < SampleCount; s++)
+				lhs.value[s] += rhs.value[s];
 		}
 
 		inline static void PrintCoefficientArray(std::ostream& stream, const CoefficientArrayT& value)
-		{			
-			stream << value.value;
+		{
+			for (size_t s = 0; s < SampleCount; s++)
+				stream << value.value[s];
 		}
 
 		// hashing float values is generally a bad idea
 		// since this is just used to compress the output,
-		// we don't really care.
+		// this is not implemented
 		inline static size_t HashCoefficientArray(const CoefficientArrayT& value) noexcept
 		{
-			// no data race if only using the const interface
-			static std::hash<FloatT> hasher;
-			return hasher(value.value);
+			assert("hashing not implemented for SampledPolynomial");
+			return 0;
 		}
 	};
 

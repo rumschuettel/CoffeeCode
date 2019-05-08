@@ -191,14 +191,16 @@ namespace CoffeeCode {
 
 		inline static void PrintCoefficientArray(std::ostream& stream, const CoefficientArrayT& value)
 		{
-			for (size_t s = 0; s < SampleCount; s++)
+			for (size_t s = 0; s < SampleCount; s++) {
 				stream << value.value[s];
+				if (s < SampleCount-1) stream << ",";
+			}
 		}
 
 		// hashing float values is generally a bad idea
 		// since this is just used to compress the output,
 		// this is not implemented
-		inline static size_t HashCoefficientArray(const CoefficientArrayT& value) noexcept
+		inline static size_t HashCoefficientArray(const CoefficientArrayT&) noexcept
 		{
 			assert("hashing not implemented for SampledPolynomial");
 			return 0;

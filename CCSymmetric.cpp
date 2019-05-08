@@ -103,7 +103,7 @@ namespace {
 		REDUCE_SIMPLIFY : REDUCE_CALCULATE;
 #else
 	constexpr auto REDUCE_LAMBDA = REDUCE_IDENTITY;
-#endif	
+#endif
 
 	// map reduce for lambdas
 	// should match this format for use with CoffeeCode::PrintLambda
@@ -133,10 +133,11 @@ namespace {
 	}
 
 	// calculate Shannon entropy for lambda
-	template<typename LambdaT>
-	void PrintShannonEntropy(const LambdaT& lambda)
+	// need the indirection because ::value might not exist
+	template<typename LambdaT, typename Q>
+	void PrintShannonEntropyProxy(const LambdaT& lambda)
 	{
-		decltype(PolynomialT::CoefficientArrayT::value) aggregate = { 0 };
+		decltype(Q::value) aggregate = { 0 };
 
 		// aggregate Shannon entropy
 		for (const auto&[key, value] : lambda) {
@@ -153,6 +154,11 @@ namespace {
 			if (--i) std::cout << ",";
 		}
 		std::cout << "\n";
+	}
+	template<typename LambdaT>
+	void PrintShannonEntropy(const LambdaT& lambda)
+	{
+		PrintShannonEntropyProxy<LambdaT, PolynomialT::CoefficientArrayT>(lambda);
 	}
 
 	// extract tuple and multiplicity from iterator;

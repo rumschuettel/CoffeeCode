@@ -82,9 +82,9 @@ namespace {
 	template<auto& SamplePoints>
 	using SampledPolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::SampledPolynomial<SamplePoints>>;
 	template<size_t N>
-	using UnivariateSamples = std::array<std::array<double, N>, 1>;
+	using UnivariateSamples = std::array<std::array<double, 1>, N>;
 	template<size_t N>
-	using MultivariateSamples = std::array<std::array<double, N>, 3>;
+	using MultivariateSamples = std::array<std::array<double, 3>, N>;
 	#include "cc-instance.h"
 
 	using instance = CoffeeCode::SymmetricInstance<graphstate_instance>;
@@ -103,7 +103,7 @@ namespace {
 		REDUCE_SIMPLIFY : REDUCE_CALCULATE;
 #else
 	constexpr auto REDUCE_LAMBDA = REDUCE_IDENTITY;
-#endif	
+#endif
 
 	// map reduce for lambdas
 	// should match this format for use with CoffeeCode::PrintLambda
@@ -133,26 +133,37 @@ namespace {
 	}
 
 	// calculate Shannon entropy for lambda
-	template<typename LambdaT>
-	void PrintShannonEntropy(const LambdaT& lambda)
+	// need the indirection because ::value might not exist
+	template<typename LambdaT, typename Q>
+	void PrintShannonEntropyProxy(const LambdaT& lambda, const double divisor)
 	{
-		decltype(PolynomialT::CoefficientArrayT::value) aggregate = { 0 };
+		decltype(Q::value) aggregate = { 0 };
+		CoffeeCode::MultiplicityType<2> total_multiplicity = 0;
 
 		// aggregate Shannon entropy
 		for (const auto&[key, value] : lambda) {
 			const auto&[poly, mult] = value;
 			const auto& values = poly.coefficients.value;
+
+			total_multiplicity += mult;
 			for (size_t s = 0; s < values.size(); s ++)
-				aggregate[s] -= mult * values[s] * log2(values[s]);
+				if (values[s] != 0.)
+					aggregate[s] -= mult * values[s] * divisor * log2(values[s] * divisor);
 		}
 
+		std::cout << total_multiplicity << ", [";
 		// print as comma-separated list
 		size_t i = aggregate.size();
 		for (const auto val : aggregate) {
 			std::cout << val;
 			if (--i) std::cout << ",";
 		}
-		std::cout << "\n";
+		std::cout << "]\n";
+	}
+	template<typename LambdaT>
+	void PrintShannonEntropy(const LambdaT& lambda, const double divisor = 1.)
+	{
+		PrintShannonEntropyProxy<LambdaT, PolynomialT::CoefficientArrayT>(lambda, divisor);
 	}
 
 	// extract tuple and multiplicity from iterator;
@@ -402,7 +413,7 @@ int SymmetricSolver() {
 	if constexpr (REDUCE_LAMBDA == REDUCE_SIMPLIFY)
 		PrintLambda(ReduceLambda(lambda_a));
 	else if constexpr (REDUCE_LAMBDA == REDUCE_CALCULATE)
-		PrintShannonEntropy(lambda_a);
+		PrintShannonEntropy(lambda_a, 1./pow(2., K_ENV));
 	else
 		PrintLambda(lambda_a);
 	std::cout << "]\n}\n";

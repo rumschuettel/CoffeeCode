@@ -10,7 +10,7 @@ The cxx compiler must be installed, boost and nauty extracted to some folders, r
 For nauty, go to the extracted source folder and run `./configure`.
 Note down these directories for the build instructions below.
 
-I recommend building both the symmetric and full solver in two separate directories (e.g. under `build/release_symm` and `build/release_full`); the paths can then be set in the Mathematica interface which then calls the symmetric or full solver accordingly.
+I recommend building both the symmetric and full solver in two separate directories (e.g. under `build/release_symm` and `build/release_full`, and one full variant for arbitrary channels under `build/release_full_arbch`); the paths can then be set in the Mathematica interface which then calls the symmetric or full solver accordingly.
 
 Due to design decisions, the symmetric solver has to be built _once per problem instance_. This is such that static polymorphism can be exploited in full within the compiler to speed up the program's execution; this goes under the assumption that for large graphs, compiling the code once adds negligible time overhead.
 
@@ -32,19 +32,22 @@ Open a terminal and `cd` into this directory. Run the following commands:
 The list of available commands is shown at the bottom of the screen.
 Press **[c]**, and set the following variables by first selecting the field, pressing **[enter]**, editing, then pressing **[enter]** again.
 
-| Option                         | Value to enter, or comment.                               |
-|--------------------------------|-----------------------------------------------------------|
-| `CMAKE_BUILD_TYPE`             | `Release`                                                 |
-| `PATH_BOOST`                   | Path to boost source directory. Must contain `boost/`.    |
-| `PATH_NAUTY`                   | Path to nauty source directory. Must contain `nauty.c`    |
-| `PATH_CUSTOM_CC_INSTANCE`      | Path to custom symmetric instance. Set in Mathematica.    |
-| `SYMMETRIC_SOLVER`             | `ON` or `OFF`.                                            |
-| `REDUCE_LAMBDA`                | `ON` or `OFF`.                                            |
-| `PARALLELIZE`                  | `ON` or `OFF`. Run `nauty/configure --enable-tls` first.  |
-| `FLOATING_POINT_MULTIPLICITY`  | `ON` or `OFF`. Experimental.                              |
+| Option                         | Value to enter, or comment.                                     |
+|--------------------------------|-----------------------------------------------------------------|
+| `CMAKE_BUILD_TYPE`             | `Release`                                                       |
+| `PATH_BOOST`                   | Path to boost source directory. Must contain `boost/`.          |
+| `PATH_NAUTY`                   | Path to nauty source directory. Must contain `nauty.c`          |
+| `PATH_CUSTOM_CC_INSTANCE`      | Path to custom symmetric instance. Set in Mathematica.          |
+| `SYMMETRIC_SOLVER`             | `ON` or `OFF`.                                                  |
+| `REDUCE_LAMBDA_IF_POSSIBLE`    | `ON` or `OFF`. Simplifies lambdas or calculates Shannon entropy.|
+| `PARALLELIZE`                  | `ON` or `OFF`. Run `nauty/configure --enable-tls` first.        |
+| `FLOATING_POINT_MULTIPLICITY`  | `ON` or `OFF`. Experimental, fast when used with numerical poly.|
+| `OPTIMIZE_FOR_DEPOLARIZING`    | `ON` or `OFF`. Only for full solver.                            |
+
+Certain combinations of these parameters will not compile; e.g. `REDUCE_LAMBDA_IF_POSSIBLE` with an exact polynomial but `FLOATING_POINT_MULTIPLICITY` turned on, which does not make sense as one cannot hash floating point values safely, or `PARALLELIZE` without `SYMMETRIC_SOLVER` which would not scale well due to race conditions.
 
 If `SYMMETRIC_SOLVER` is `OFF`, the nauty directory is irrelevant.
-`REDUCE_LAMBDA` does polynomial simplification within C++, which is faster than doing this externally and reduces the output size.
+`REDUCE_LAMBDA_IF_POSSIBLE` does polynomial simplification within C++, which is faster than doing this externally and reduces the output size.
 `FLOATING_POINT_MULTIPLICITY` uses fast floating point arithmetic instead of keeping track of orbit sizes exactly. Might result in slightly wrong output.
 `PARALLELIZE` invokes the canonical image solvers in parallel, using OpenMP. The BFS traversal is not yet parallelized. Specifying a thread number can be done with the environment variable `OMP_NUM_THREADS`, otherwise one per virtual core is spawned. The program will crash if nauty is not set up for thread local storage as specified above; this should not be done if `PARALLELIZE=OFF`, as it slows the program down slightly.
 

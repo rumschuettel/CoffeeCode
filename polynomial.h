@@ -117,27 +117,28 @@ namespace CoffeeCode {
 	template<auto& SamplePoints>
 	struct SampledPolynomial {
 		static constexpr size_t K_TOT = K_SYS + K_ENV;
-		static constexpr size_t VariableCount = SamplePoints.size();
-		// only implemented for 1 or 3 variables
+		static constexpr size_t SampleCount = SamplePoints.size();
+		static_assert(SampleCount >= 1);
+		static constexpr size_t VariableCount = SamplePoints[0].size();
 		static_assert(VariableCount == 1 || VariableCount == 3);
-		static constexpr size_t SampleCount = SamplePoints[0].size();
 
 		// stores sample points
 		using FloatT = double;
-		using FloatArrayT = std::array<FloatT, SampleCount>;
-		static constexpr std::array<FloatArrayT, VariableCount> FloatVals = SamplePoints;
+		// holds one or more tuples for the parameters where the polynomial is to be sampled
+		using SampleT = std::array<FloatT, VariableCount>;
+		// holds one or more function values where the polynomial is sampled
+		using ValueT = std::array<FloatT, SampleCount>;
 
 		using SingleExponentT = SizeStorageType<K_TOT>;
 		static constexpr SingleExponentT MaxExponent = K_TOT;
 		using ExponentT = std::array<SingleExponentT, VariableCount>;
-
-		using ValueT = FloatArrayT;
 		using CoefficientT = MultiplicityType<4>;
+
 
 		// encapsulate a value, such that the following proxying takes place:
 		// Type[exponent]{value} += coefficient
 		// AdditionProxy{exponent, value} += coefficient
-		// value += coefficient*FloatVals[exponent]
+		// value += coefficient*SamplePoints[exponent]
 		using CoefficientArrayT = struct IndexProxy {
 			ValueT value;
 			struct AdditionProxy {
@@ -154,7 +155,7 @@ namespace CoffeeCode {
 
 					for (size_t i = 0; i < VariableCount; i ++)
 						for (size_t s = 0; s < SampleCount; s ++)
-							to_add[s] *= pow(FloatVals[i][s], exponent[i]);
+							to_add[s] *= pow(SamplePoints[s][i], exponent[i]);
 
 					for (size_t s = 0; s < SampleCount; s ++)
 						value[s] += to_add[s];

@@ -82,9 +82,9 @@ namespace {
 	template<auto& SamplePoints>
 	using SampledPolynomial = typename CoffeeCode::Polynomial<typename CoffeeCode::SampledPolynomial<SamplePoints>>;
 	template<size_t N>
-	using UnivariateSamples = std::array<std::array<double, N>, 1>;
+	using UnivariateSamples = std::array<std::array<double, 1>, N>;
 	template<size_t N>
-	using MultivariateSamples = std::array<std::array<double, N>, 3>;
+	using MultivariateSamples = std::array<std::array<double, 3>, N>;
 	#include "cc-instance.h"
 
 	using instance = CoffeeCode::SymmetricInstance<graphstate_instance>;
@@ -147,7 +147,8 @@ namespace {
 
 			total_multiplicity += mult;
 			for (size_t s = 0; s < values.size(); s ++)
-				aggregate[s] -= mult * values[s] * log2(values[s] * divisor) * divisor;
+				if (values[s] != 0.)
+					aggregate[s] -= mult * values[s] * divisor * log2(values[s] * divisor);
 		}
 
 		std::cout << total_multiplicity << ", [";

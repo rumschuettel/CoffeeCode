@@ -685,9 +685,12 @@ v=SplitBy[u,First];
 
 (* ::Input::Initialization:: *)
 Clear[CIThreshold]
-CIThreshold[pa_List,p_,compile_:False]:=Module[{
-targetFunction
+CIThreshold[pa_List,q_Exact,compile_:False]:=Module[{
+targetFunction,
+var=First@q
 },
+Assert[Length@q==1\[And]var==p];
+
 If[!compile,
 targetFunction=Function[p,CIMult@pa] (* this scope conflict is intended *)
 ];
@@ -710,7 +713,7 @@ crossings
 
 crossings=ZeroCrossings[data];
 
-Between[{First@pts[[#1]],First@pts[[#2]]}]&@@@crossings
+Between[{pts[[#1]],pts[[#2]]}]&@@@crossings
 ]
 
 CIThreshold[g_Graph,kSys_Integer,p_,symmetricSolver_:True,extraStabilizedVertices_List:{}]:=With[{
@@ -721,9 +724,9 @@ CIThreshold[pa,p]
 
 
 (* ::Input:: *)
-(*ConcatGraph[StarGraph[15],StarGraph[15],{2},1]*)
+(*RootedGraphProduct[StarGraph[2],StarGraph[2],{2},1]*)
 (*(* for numeric input, the threshold is just a list of points where the function value crosses *)*)
-(*CIThreshold[%,VertexCount@%-1,Numeric@@({Range@50/100}//N//Transpose)]*)
+(*CIThreshold[%,VertexCount@%-1,Exact[p],False]*)
 
 
 (* ::Section::Closed:: *)
@@ -974,8 +977,7 @@ legs=StarGraph[##+1,VertexLabels->"Index"]&/@Rest@#
 
 
 (* ::Input:: *)
-(**)
-(*Range[10,10]//Scan[Function[n,With[{*)
+(*Range[10,20]//Scan[Function[n,With[{*)
 (*graphs=All2LevelGraphs[n]*)
 (*},*)
 (*Echo["all 2 level graphs with less than "<>ToString[n]<>" vertices: "<>ToString@Length[graphs]];*)

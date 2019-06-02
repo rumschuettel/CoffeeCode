@@ -337,11 +337,15 @@ Throw["import error"]
 (* ::Input::Initialization:: *)
 Clear[CoeffArrayToPoly,MultArrayToPoly]
 CoeffArrayToPoly[{q1_,__},{coeffs__Integer}]:=Sum[{coeffs}[[i]] q1^(i-1),{i,1,Length@{coeffs}}]
-CoeffArrayToPoly[{q1_,q2_,q3_},{coeffs__List}]:=(#1 q1^#2[[1]] q2^#2[[2]] q3^#2[[3]])&@@@{coeffs}//Total
-MultArrayToPoly[{q0_,qs__}]:=Function[{mult,list},{
+CoeffArrayToPoly[{q1_,q2_,q3_},{coeffs__List}]:=If[MatchQ[q1,0]\[Or]MatchQ[q2,0]\[Or]MatchQ[q3,0],Module[{qq1,qq2,qq3},
+Limit[(#1 qq1^#2[[1]] qq2^#2[[2]] qq3^#2[[3]]),{qq1->q1,qq2->q2,qq3->q3}]
+],
+(#1 q1^#2[[1]] q2^#2[[2]] q3^#2[[3]])
+]&@@@{coeffs}//Total
+MultArrayToPoly[{q0_,qs__}]:=Function[{mult,list},If[Length@list==0,Nothing,{
 mult,
 q0 CoeffArrayToPoly[{qs},list]//Simplify
-}]
+}]]
 
 
 (* ::Input::Initialization:: *)

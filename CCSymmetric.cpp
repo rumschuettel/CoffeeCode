@@ -156,7 +156,7 @@ namespace {
 		// print as comma-separated list
 		size_t i = aggregate.size();
 		auto oldprec = std::cout.precision();
-		std::cout.precision(std::numeric_limits<decltype(Q::value)::value_type>::digits10 + 1);
+		std::cout.precision(std::numeric_limits<typename decltype(Q::value)::value_type>::digits10 + 1);
 		std::cout << std::scientific;
 		for (const auto val : aggregate) {
 			std::cout << std::setprecision(15) << val;

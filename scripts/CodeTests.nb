@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     43130,       1169]
-NotebookOptionsPosition[     40900,       1130]
-NotebookOutlinePosition[     41256,       1146]
-CellTagsIndexPosition[     41213,       1143]
+NotebookDataLength[     44152,       1184]
+NotebookOptionsPosition[     41921,       1145]
+NotebookOutlinePosition[     42277,       1161]
+CellTagsIndexPosition[     42234,       1158]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -48,15 +48,15 @@ Cell[BoxData[{
    RowBox[{
     RowBox[{"{", 
      RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "4"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"1", "\[UndirectedEdge]", "6"}], ",", 
-      RowBox[{"2", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"2", "\[UndirectedEdge]", "4"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "4"}]}], "}"}], ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+      RowBox[{"3", "\[UndirectedEdge]", "6"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "6"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.347414311487909"}], ";"}], "\[IndentingNewLine]", 
@@ -100,7 +100,7 @@ Cell[BoxData[{
         "]"}], ",", "True"}], "]"}]}], "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"ciML", "=", 
-   RowBox[{"-", "0.405218214302711"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{"-", "0.396753331338638"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"errors", "=", 
    RowBox[{
@@ -119,9 +119,11 @@ Cell[BoxData[{
   3.768568061077918*^9, 3.7685680641145687`*^9}, {3.768568124180694*^9, 
   3.768568143826819*^9}, {3.768568383590253*^9, 3.768568387125654*^9}, {
   3.768568458981325*^9, 3.7685684757490273`*^9}, {3.768568549461228*^9, 
-  3.768568556409986*^9}, {3.768568747831873*^9, 3.768568776742825*^9}},
+  3.768568556409986*^9}, {3.768568747831873*^9, 3.768568776742825*^9}, {
+  3.7686464405845737`*^9, 3.7686464411920567`*^9}, {3.768646721568964*^9, 
+  3.768646789258*^9}},
  CellLabel->
-  "In[221]:=",ExpressionUUID->"2257a60e-4f43-4338-ab00-96b62d5d3ffd"],
+  "In[106]:=",ExpressionUUID->"2257a60e-4f43-4338-ab00-96b62d5d3ffd"],
 
 Cell[BoxData[{
  RowBox[{"G", "=", 
@@ -129,15 +131,15 @@ Cell[BoxData[{
    RowBox[{
     RowBox[{"{", 
      RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "4"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"1", "\[UndirectedEdge]", "6"}], ",", 
-      RowBox[{"2", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"2", "\[UndirectedEdge]", "4"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "4"}]}], "}"}], ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+      RowBox[{"3", "\[UndirectedEdge]", "6"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "6"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.347414311487909"}], ";"}], "\[IndentingNewLine]", 
@@ -181,7 +183,7 @@ Cell[BoxData[{
         "]"}], ",", "True"}], "]"}]}], "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"ciML", "=", 
-   RowBox[{"-", "0.173150882079536"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{"-", "0.184517114007574"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"errors", "=", 
    RowBox[{
@@ -196,9 +198,10 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.768568782359675*^9, 3.768568810710987*^9}, {
   3.768570121489382*^9, 3.768570122543076*^9}, {3.768570215348607*^9, 
-  3.768570216239974*^9}},
+  3.768570216239974*^9}, {3.768646443400622*^9, 3.768646444103891*^9}, {
+  3.7686468305379467`*^9, 3.768646848093367*^9}},
  CellLabel->
-  "In[334]:=",ExpressionUUID->"977b5438-c1b1-411f-a80b-1010ca8e4381"],
+  "In[115]:=",ExpressionUUID->"977b5438-c1b1-411f-a80b-1010ca8e4381"],
 
 Cell[BoxData[{
  RowBox[{"G", "=", 
@@ -206,15 +209,15 @@ Cell[BoxData[{
    RowBox[{
     RowBox[{"{", 
      RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "4"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"1", "\[UndirectedEdge]", "6"}], ",", 
-      RowBox[{"2", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"2", "\[UndirectedEdge]", "4"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "4"}]}], "}"}], ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+      RowBox[{"3", "\[UndirectedEdge]", "6"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "6"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.347414311487909"}], ";"}], "\[IndentingNewLine]", 
@@ -253,7 +256,7 @@ Cell[BoxData[{
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"ciML", "=", 
-   RowBox[{"-", "0.292517018307745"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{"-", "0.290242639749646"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"errors", "=", 
    RowBox[{
@@ -267,9 +270,11 @@ Cell[BoxData[{
   RowBox[{"\"\<Deviation from MATLAB result: \>\"", ",", "errors"}], 
   "]"}]}], "Input",
  CellChangeTimes->{{3.76856880202768*^9, 3.768568828215227*^9}, {
-  3.768570218996311*^9, 
-  3.7685702195676317`*^9}},ExpressionUUID->"534bb79a-7d48-4f1b-ac10-\
-02944fb10cb7"],
+   3.768570218996311*^9, 3.7685702195676317`*^9}, {3.7686464463439713`*^9, 
+   3.7686464469037657`*^9}, 3.768646850331893*^9, {3.768646935626111*^9, 
+   3.768646938394431*^9}},
+ CellLabel->
+  "In[124]:=",ExpressionUUID->"534bb79a-7d48-4f1b-ac10-02944fb10cb7"],
 
 Cell[BoxData[{
  RowBox[{"G", "=", 
@@ -277,15 +282,15 @@ Cell[BoxData[{
    RowBox[{
     RowBox[{"{", 
      RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "4"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"1", "\[UndirectedEdge]", "6"}], ",", 
-      RowBox[{"2", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"2", "\[UndirectedEdge]", "4"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "4"}]}], "}"}], ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+      RowBox[{"3", "\[UndirectedEdge]", "6"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "6"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.347414311487909"}], ";"}], "\[IndentingNewLine]", 
@@ -324,7 +329,7 @@ Cell[BoxData[{
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"ciML", "=", 
-   RowBox[{"-", "0.121318278216666"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{"-", "0.134993094020872"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"errors", "=", 
    RowBox[{
@@ -338,9 +343,11 @@ Cell[BoxData[{
   RowBox[{"\"\<Deviation from MATLAB result: \>\"", ",", "errors"}], 
   "]"}]}], "Input",
  CellChangeTimes->{{3.76856880736791*^9, 3.7685688454629602`*^9}, {
-  3.768570225299741*^9, 
-  3.7685702263039837`*^9}},ExpressionUUID->"d05ecb63-04b5-4fc2-b147-\
-4c0c626c45f2"],
+   3.768570225299741*^9, 3.7685702263039837`*^9}, {3.768646448776001*^9, 
+   3.7686464493517017`*^9}, 3.768646852397241*^9, {3.76864695470579*^9, 
+   3.7686469574021997`*^9}},
+ CellLabel->
+  "In[133]:=",ExpressionUUID->"d05ecb63-04b5-4fc2-b147-4c0c626c45f2"],
 
 Cell[BoxData[{
  RowBox[{"G", "=", 
@@ -348,18 +355,16 @@ Cell[BoxData[{
    RowBox[{
     RowBox[{"{", 
      RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "4"}], ",", 
       RowBox[{"1", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"1", "\[UndirectedEdge]", "6"}], ",", 
-      RowBox[{"2", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
       RowBox[{"2", "\[UndirectedEdge]", "4"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "5"}], ",", 
-      RowBox[{"3", "\[UndirectedEdge]", "4"}]}], "}"}], ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+      RowBox[{"3", "\[UndirectedEdge]", "6"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "6"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"pp", "=", "0.347414311487909"}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"Print", "[", "\"\<Arbitrary noise, 4 system vertices:\>\"", "]"}], 
   ";"}], "\[IndentingNewLine]", 
@@ -423,7 +428,7 @@ Cell[BoxData[{
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"ciML", "=", 
-   RowBox[{"-", "0.476552237250470"}]}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{"-", "0.475936756370379"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"errors", "=", 
    RowBox[{
@@ -437,9 +442,12 @@ Cell[BoxData[{
   RowBox[{"\"\<Deviation from MATLAB result: \>\"", ",", "errors"}], 
   "]"}]}], "Input",
  CellChangeTimes->{{3.768568847671443*^9, 3.7685688569513702`*^9}, {
-  3.768569471274971*^9, 3.7685694894540777`*^9}, {3.768570229171919*^9, 
-  3.768570229839884*^9}},ExpressionUUID->"ac401556-c404-41d1-8272-\
-ee7ad856e728"]
+   3.768569471274971*^9, 3.7685694894540777`*^9}, {3.768570229171919*^9, 
+   3.768570229839884*^9}, {3.768646452024136*^9, 3.768646452823793*^9}, 
+   3.768646855149396*^9, {3.768646964458638*^9, 3.768646964970604*^9}, {
+   3.768647028127342*^9, 3.7686470310828667`*^9}},
+ CellLabel->
+  "In[142]:=",ExpressionUUID->"ac401556-c404-41d1-8272-ee7ad856e728"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -453,7 +461,7 @@ Cell[BoxData[{
  RowBox[{"G", " ", "=", " ", 
   RowBox[{"StarGraph", "[", 
    RowBox[{"5", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.1135"}], ";"}], "\[IndentingNewLine]", 
@@ -511,15 +519,15 @@ Cell[BoxData[{
   RowBox[{"\"\<Deviation from MATLAB result: \>\"", ",", "errors"}], 
   "]"}]}], "Input",
  CellChangeTimes->{{3.768506193732419*^9, 3.768506213585484*^9}, {
-  3.768568872759557*^9, 3.768568955338098*^9}},
- CellLabel->
-  "In[258]:=",ExpressionUUID->"f59c02d9-8fec-4c99-a2a1-f62c0c196e64"],
+  3.768568872759557*^9, 3.768568955338098*^9}, {3.76864645596073*^9, 
+  3.768646456488071*^9}},ExpressionUUID->"f59c02d9-8fec-4c99-a2a1-\
+f62c0c196e64"],
 
 Cell[BoxData[{
  RowBox[{"G", " ", "=", " ", 
   RowBox[{"StarGraph", "[", 
    RowBox[{"5", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.1135"}], ";"}], "\[IndentingNewLine]", 
@@ -581,15 +589,16 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.7685065677194357`*^9, 3.768506570031046*^9}, {
   3.768514746281374*^9, 3.768514750448687*^9}, {3.7685689889054947`*^9, 
-  3.768569035418097*^9}, {3.768570236739862*^9, 
-  3.7685702373760433`*^9}},ExpressionUUID->"d17a9f0c-76d8-400c-9ee1-\
+  3.768569035418097*^9}, {3.768570236739862*^9, 3.7685702373760433`*^9}, {
+  3.7686464582478933`*^9, 
+  3.76864645882371*^9}},ExpressionUUID->"d17a9f0c-76d8-400c-9ee1-\
 933f78bf7efc"],
 
 Cell[BoxData[{
  RowBox[{"G", " ", "=", " ", 
   RowBox[{"StarGraph", "[", 
    RowBox[{"5", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.1135"}], ";"}], "\[IndentingNewLine]", 
@@ -641,15 +650,16 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.768514639656981*^9, 3.768514642316299*^9}, {
   3.768514697447791*^9, 3.768514705702565*^9}, {3.768569061946837*^9, 
-  3.7685690968274603`*^9}, {3.768570239699144*^9, 
-  3.7685702402402678`*^9}},ExpressionUUID->"1e699898-78d2-4165-bc7f-\
+  3.7685690968274603`*^9}, {3.768570239699144*^9, 3.7685702402402678`*^9}, {
+  3.768646460951805*^9, 
+  3.768646461495953*^9}},ExpressionUUID->"1e699898-78d2-4165-bc7f-\
 8cbf242d235b"],
 
 Cell[BoxData[{
  RowBox[{"G", " ", "=", " ", 
   RowBox[{"StarGraph", "[", 
    RowBox[{"5", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.1135"}], ";"}], "\[IndentingNewLine]", 
@@ -701,7 +711,8 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.768514820004076*^9, 3.768514822456018*^9}, {
   3.768569103866938*^9, 3.76856913437993*^9}, {3.768570243027178*^9, 
-  3.768570243391963*^9}},ExpressionUUID->"66a62693-9263-4329-9bf6-\
+  3.768570243391963*^9}, {3.768646463544095*^9, 
+  3.7686464641040382`*^9}},ExpressionUUID->"66a62693-9263-4329-9bf6-\
 2e4ef8f28afc"]
 }, Open  ]],
 
@@ -737,7 +748,7 @@ Cell[BoxData[{
  RowBox[{"G", "=", 
   RowBox[{"AdjacencyGraph", "[", 
    RowBox[{"adjG", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.15"}], ";"}], "\[IndentingNewLine]", 
@@ -790,9 +801,9 @@ Cell[BoxData[{
  CellChangeTimes->{{3.768515028031002*^9, 3.768515035626739*^9}, {
    3.768515139858837*^9, 3.768515289930393*^9}, 3.768515328852826*^9, {
    3.768515401454674*^9, 3.7685154449287033`*^9}, {3.768569168969776*^9, 
-   3.768569238665813*^9}},
- CellLabel->
-  "In[288]:=",ExpressionUUID->"a814a82e-301b-4524-9ad6-b28ca52ce569"],
+   3.768569238665813*^9}, {3.7686464670803823`*^9, 
+   3.768646467624052*^9}},ExpressionUUID->"a814a82e-301b-4524-9ad6-\
+b28ca52ce569"],
 
 Cell[BoxData[{
  RowBox[{
@@ -811,7 +822,7 @@ Cell[BoxData[{
  RowBox[{"G", "=", 
   RowBox[{"AdjacencyGraph", "[", 
    RowBox[{"adjG", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.15"}], ";"}], "\[IndentingNewLine]", 
@@ -863,7 +874,8 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.768515635681006*^9, 3.7685156380026083`*^9}, {
   3.7685692415140057`*^9, 3.768569281324457*^9}, {3.7685702503081913`*^9, 
-  3.768570275152544*^9}},ExpressionUUID->"b10e5047-8bc9-4ccb-90cc-\
+  3.768570275152544*^9}, {3.7686464701201057`*^9, 
+  3.768646470920011*^9}},ExpressionUUID->"b10e5047-8bc9-4ccb-90cc-\
 5c8547204f29"],
 
 Cell[BoxData[{
@@ -883,7 +895,7 @@ Cell[BoxData[{
  RowBox[{"G", "=", 
   RowBox[{"AdjacencyGraph", "[", 
    RowBox[{"adjG", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.15"}], ";"}], "\[IndentingNewLine]", 
@@ -942,7 +954,8 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.76851570979734*^9, 3.768515711940301*^9}, {
   3.768569292268754*^9, 3.7685693223651457`*^9}, {3.768570255187187*^9, 
-  3.7685702782886267`*^9}},ExpressionUUID->"4f5b6c10-7ef7-49da-94cf-\
+  3.7685702782886267`*^9}, {3.768646473608103*^9, 
+  3.768646474215963*^9}},ExpressionUUID->"4f5b6c10-7ef7-49da-94cf-\
 f6b533f58e9c"],
 
 Cell[BoxData[{
@@ -962,7 +975,7 @@ Cell[BoxData[{
  RowBox[{"G", "=", 
   RowBox[{"AdjacencyGraph", "[", 
    RowBox[{"adjG", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.15"}], ";"}], "\[IndentingNewLine]", 
@@ -1021,7 +1034,8 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.768515768662344*^9, 3.7685157710382347`*^9}, {
   3.768569334908491*^9, 3.76856937466966*^9}, {3.768570258431088*^9, 
-  3.7685702811525173`*^9}},ExpressionUUID->"329e623b-09f8-45bb-90a8-\
+  3.7685702811525173`*^9}, {3.7686464769040956`*^9, 
+  3.76864647746415*^9}},ExpressionUUID->"329e623b-09f8-45bb-90a8-\
 10981eab3cb7"],
 
 Cell[BoxData[{
@@ -1041,7 +1055,7 @@ Cell[BoxData[{
  RowBox[{"G", "=", 
   RowBox[{"AdjacencyGraph", "[", 
    RowBox[{"adjG", ",", 
-    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}]}], 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Index\>\""}]}], 
    "]"}]}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pp", "=", "0.15"}], ";"}], "\[IndentingNewLine]", 
@@ -1123,13 +1137,14 @@ Cell[BoxData[{
   "]"}]}], "Input",
  CellChangeTimes->{{3.768515871035527*^9, 3.768515904756328*^9}, {
   3.768569379002672*^9, 3.768569456523039*^9}, {3.768569498683214*^9, 
-  3.768569517678844*^9}, {3.768570265299388*^9, 
-  3.7685702843847218`*^9}},ExpressionUUID->"8f554732-c6dd-45b8-b190-\
+  3.768569517678844*^9}, {3.768570265299388*^9, 3.7685702843847218`*^9}, {
+  3.768646479992239*^9, 
+  3.7686464805681887`*^9}},ExpressionUUID->"8f554732-c6dd-45b8-b190-\
 f026833b59fe"]
 }, Open  ]]
 },
 WindowSize->{1535, 920},
-WindowMargins->{{Automatic, 139}, {Automatic, 58}},
+WindowMargins->{{Automatic, 168}, {Automatic, 56}},
 PrintPrecision->16,
 FrontEndVersion->"11.3 for Linux x86 (64-bit) (March 6, 2018)",
 StyleDefinitions->"Default.nb"
@@ -1149,27 +1164,27 @@ Cell[558, 20, 318, 7, 31, "Input",ExpressionUUID->"8bdeac59-06a1-4a32-9803-a13f9
 Cell[879, 29, 312, 6, 29, "Input",ExpressionUUID->"604e2d8b-0c1f-40f2-9db4-bf801ad1baa8"],
 Cell[CellGroupData[{
 Cell[1216, 39, 160, 3, 68, "Section",ExpressionUUID->"0d4b5267-6a93-427d-8964-6a3a4be74576"],
-Cell[1379, 44, 3110, 79, 216, "Input",ExpressionUUID->"2257a60e-4f43-4338-ab00-96b62d5d3ffd"],
-Cell[4492, 125, 2771, 75, 216, "Input",ExpressionUUID->"977b5438-c1b1-411f-a80b-1010ca8e4381"],
-Cell[7266, 202, 2544, 69, 216, "Input",ExpressionUUID->"534bb79a-7d48-4f1b-ac10-02944fb10cb7"],
-Cell[9813, 273, 2546, 69, 216, "Input",ExpressionUUID->"d05ecb63-04b5-4fc2-b147-4c0c626c45f2"],
-Cell[12362, 344, 3502, 97, 239, "Input",ExpressionUUID->"ac401556-c404-41d1-8272-ee7ad856e728"]
+Cell[1379, 44, 3210, 81, 216, "Input",ExpressionUUID->"2257a60e-4f43-4338-ab00-96b62d5d3ffd"],
+Cell[4592, 127, 2869, 76, 216, "Input",ExpressionUUID->"977b5438-c1b1-411f-a80b-1010ca8e4381"],
+Cell[7464, 205, 2695, 71, 216, "Input",ExpressionUUID->"534bb79a-7d48-4f1b-ac10-02944fb10cb7"],
+Cell[10162, 278, 2696, 71, 216, "Input",ExpressionUUID->"d05ecb63-04b5-4fc2-b147-4c0c626c45f2"],
+Cell[12861, 351, 3616, 98, 216, "Input",ExpressionUUID->"ac401556-c404-41d1-8272-ee7ad856e728"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[15901, 446, 161, 3, 68, "Section",ExpressionUUID->"cc19ae76-ceb3-4761-a330-d166bc83076d"],
-Cell[16065, 451, 2271, 64, 216, "Input",ExpressionUUID->"f59c02d9-8fec-4c99-a2a1-f62c0c196e64"],
-Cell[18339, 517, 2426, 68, 216, "Input",ExpressionUUID->"d17a9f0c-76d8-400c-9ee1-933f78bf7efc"],
-Cell[20768, 587, 2165, 58, 216, "Input",ExpressionUUID->"1e699898-78d2-4165-bc7f-8cbf242d235b"],
-Cell[22936, 647, 2111, 57, 216, "Input",ExpressionUUID->"66a62693-9263-4329-9bf6-2e4ef8f28afc"]
+Cell[16514, 454, 161, 3, 68, "Section",ExpressionUUID->"cc19ae76-ceb3-4761-a330-d166bc83076d"],
+Cell[16678, 459, 2294, 64, 216, "Input",ExpressionUUID->"f59c02d9-8fec-4c99-a2a1-f62c0c196e64"],
+Cell[18975, 525, 2477, 69, 216, "Input",ExpressionUUID->"d17a9f0c-76d8-400c-9ee1-933f78bf7efc"],
+Cell[21455, 596, 2215, 59, 216, "Input",ExpressionUUID->"1e699898-78d2-4165-bc7f-8cbf242d235b"],
+Cell[23673, 657, 2163, 58, 216, "Input",ExpressionUUID->"66a62693-9263-4329-9bf6-2e4ef8f28afc"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[25084, 709, 160, 3, 68, "Section",ExpressionUUID->"2a824405-c29d-4aca-9da5-0dbccc1708b5"],
-Cell[25247, 714, 355, 6, 37, "Text",ExpressionUUID->"228d61d1-0d7f-4371-9938-6c68a2fd90ac"],
-Cell[25605, 722, 2863, 72, 413, "Input",ExpressionUUID->"a814a82e-301b-4524-9ad6-b28ca52ce569"],
-Cell[28471, 796, 2767, 70, 413, "Input",ExpressionUUID->"b10e5047-8bc9-4ccb-90cc-5c8547204f29"],
-Cell[31241, 868, 2942, 77, 413, "Input",ExpressionUUID->"4f5b6c10-7ef7-49da-94cf-f6b533f58e9c"],
-Cell[34186, 947, 2942, 77, 413, "Input",ExpressionUUID->"329e623b-09f8-45bb-90a8-10981eab3cb7"],
-Cell[37131, 1026, 3753, 101, 436, "Input",ExpressionUUID->"8f554732-c6dd-45b8-b190-f026833b59fe"]
+Cell[25873, 720, 160, 3, 68, "Section",ExpressionUUID->"2a824405-c29d-4aca-9da5-0dbccc1708b5"],
+Cell[26036, 725, 355, 6, 37, "Text",ExpressionUUID->"228d61d1-0d7f-4371-9938-6c68a2fd90ac"],
+Cell[26394, 733, 2890, 72, 413, "Input",ExpressionUUID->"a814a82e-301b-4524-9ad6-b28ca52ce569"],
+Cell[29287, 807, 2819, 71, 413, "Input",ExpressionUUID->"b10e5047-8bc9-4ccb-90cc-5c8547204f29"],
+Cell[32109, 880, 2992, 78, 413, "Input",ExpressionUUID->"4f5b6c10-7ef7-49da-94cf-f6b533f58e9c"],
+Cell[35104, 960, 2993, 78, 413, "Input",ExpressionUUID->"329e623b-09f8-45bb-90a8-10981eab3cb7"],
+Cell[38100, 1040, 3805, 102, 436, "Input",ExpressionUUID->"8f554732-c6dd-45b8-b190-f026833b59fe"]
 }, Open  ]]
 }
 ]

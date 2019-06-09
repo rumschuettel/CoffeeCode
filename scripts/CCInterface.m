@@ -398,7 +398,7 @@ pType,
 If[kEnv>kSys\[Or]kSys<1\[Or]kTot<2,Throw["invalid params"]];
 pType=If[MatchQ[p,_Numeric],
 Numeric@@(({#[[2]]/#[[1]],#[[3]]/#[[1]],#[[4]]/#[[1]]})&/@pp),
-If[Length@First@p==1,"Mono","Multi"] (* this at the moment always evaluates to Multi *)
+If[Length@p==1,"Mono","Multi"] 
 ];
 
 (* get lambda and lambda_a *)

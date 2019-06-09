@@ -9,7 +9,7 @@ Quiet@Needs["CCInterface`",CurrentDir<>"CCInterface.m"]
 RESULTSPATHLOCAL=RESULTSPATH<>"polys/";
 FILEPREFIX="polys-";
 Print["Saving output to "<>RESULTSPATHLOCAL<>FILEPREFIX<>"..."]
-inputGraph=StarGraph[10];(*Import[InputString[],"Graph6"];*)
+inputGraph=ImportString[InputString[],"Graph6"];
 kSys=VertexCount@inputGraph;
 Print["read from STDIN: "<>ToString@inputGraph];
 
@@ -18,7 +18,7 @@ graphlist=AllHairGraphs[inputGraph]
 Print[ToString[Length@graphlist]<>" graphs precomputed"];
 
 
-graphlist//Map@Apply[Function[G, Module[{
+graphlist//Map[Function[G, Module[{
 filename=RESULTSPATHLOCAL<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToString[kSys],
 prettyG=EnvironmentPlot[G,kSys],
 pExact=Exact[q0,q1,q2,q3],
@@ -34,7 +34,7 @@ If[StringQ[pa],Echo[pa];Return[]]; (* display errors *)
  <|
 "graph"->G,
 "kSys"->kSys,
-"pauli action"->pa,
+(*"pauli action"->pa,*)
 "CI"->CIMult[pa]
 |>//Put[#,filename]&;
 

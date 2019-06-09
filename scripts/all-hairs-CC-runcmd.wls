@@ -19,9 +19,9 @@ Print[ToString[Length@graphlist]<>" graphs precomputed"];
 
 
 graphlist//Map[Function[G, Module[{
-mat=ExportAdjacencyMatrix[G],
-filename=RESULTSPATHLOCAL<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToString[kSys];
+mat=ToString@ExportAdjacencyMatrix[G],
+filename=RESULTSPATHLOCAL<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToString[kSys]
 },
 If[FileExistsQ[filename],Echo["skipping "<>filename];Return[0,Module]];
-Print[CCRELEASEPATHFULLSOLVERARBCH<>"CoffeeCode."<>ToString@kSys<>"."<>ToString[VertexCount@G-kSys]<>" < "<>mat<>" > "<>fn];
+Print[CCRELEASEPATHFULLSOLVERARBCH<>"CoffeeCode."<>ToString[kSys]<>"."<>ToString[VertexCount@G-kSys]<>" <<< "<>mat<>" > "<>filename];
 ]]];

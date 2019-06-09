@@ -7,7 +7,7 @@ Quiet@Needs["CCInterface`",CurrentDir<>"CCInterface.m"]
 
 
 RESULTSPATHLOCAL=RESULTSPATH<>"polys/";
-FILEPREFIX="polys-";
+FILEPREFIX="polys-ccout-";
 Print["Saving output to "<>RESULTSPATHLOCAL<>FILEPREFIX<>"..."]
 inputGraph=ImportString[InputString[],"Graph6"];
 kSys=VertexCount@inputGraph;
@@ -19,7 +19,9 @@ Print[ToString[Length@graphlist]<>" graphs precomputed"];
 
 
 graphlist//Map[Function[G, Module[{
-mat=ExportAdjacencyMatrix[G]
+mat=ExportAdjacencyMatrix[G],
+filename=RESULTSPATHLOCAL<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToString[kSys];
 },
-Print[CCRELEASEPATHFULLSOLVERARBCH<>"CoffeeCode."<>ToString@kSys<>"."<>ToString[VertexCount@G-kSys]<>" "<>mat];
+If[FileExistsQ[filename],Echo["skipping "<>filename];Return[0,Module]];
+Print[CCRELEASEPATHFULLSOLVERARBCH<>"CoffeeCode."<>ToString@kSys<>"."<>ToString[VertexCount@G-kSys]<>" < "<>mat<>" > "<>fn];
 ]]];

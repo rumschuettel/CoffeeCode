@@ -5,17 +5,20 @@ CurrentDir:=If[$InputFileName!="",DirectoryName[$InputFileName],NotebookDirector
 Quiet@Needs["CCInterface`",CurrentDir<>"CCInterface.m"]
 
 
+LaunchKernels[16];
+
+
 (* ::Input::Initialization:: *)
 Clear[AllGraphs,AllColorings]
 AllGraphs[kSys_,kEnv_]:=With[{
-cmd="/home/jkrb2/programming/libs/nauty27rc2/geng -qc "<>ToString[kSys]
+cmd="~/nauty27rc2/geng -qc "<>ToString[kSys]
 },
 Print[cmd];
 Import["!"<>cmd,"List"]
 ]
 
 AllColorings[graphStr_String,kEnv_]:=With[{
-cmd="/home/jkrb2/programming/libs/nauty27rc2/vcolg -Tq -m"<>ToString[kEnv+1]
+cmd="~/nauty27rc2/vcolg -Tq -m"<>ToString[kEnv+1]
 },
 Print[cmd];
 Import["!echo "<>graphStr<>" | "<>cmd, "Table"]
@@ -29,16 +32,21 @@ graphs=AllGraphs[kSys,kEnv]
 
 Print["found "<>ToString@Length@graphs<>" graphs for kSys="<>ToString[kSys]];
 
-graphs//Scan[Function[graphStr,Module[{
-allColorings=AllColorings[graphStr,kEnv],
-pruned
+graphs//ParallelMap[Function[graphStr,Module[{
+allColorings,
+pruned,
+graph=ImportString[graphStr,"Graph6"],
+fn
 },
 
+fn=RESULTSPATH<>"/all-env/all-env-"<>GraphHash[graph,kSys]<>"."<>ToString@kSys<>".adjm";
+If[FileExistsQ[fn],
+Print["skipping "<>graphStr],
+allColorings=AllColorings[graphStr,kEnv];
 Print["found "<>ToString@Length@allColorings<>" colorings for "<>graphStr];
 
 
-
-pruned=allColorings//ParallelMap[Function[out,Module[{
+pruned=allColorings//Map[Function[out,Module[{
 nv=out[[1]],
 ne=out[[2]],
 coloring=out[[3;;3+kSys-1]],
@@ -71,18 +79,14 @@ Graph@EdgeList@CanonicalizeByOrbits[AdjacencyGraph@AdjacencyMatrix@g,kSys]
 
 Print["pruned to "<>ToString@Length@pruned<>" colorings for "<>graphStr];
 
-Module[{
-graph=ImportString[graphStr,"Graph6"],
-fn
-},
-fn=RESULTSPATH<>"/all-env/all-env-"<>GraphHash[graph,kSys]<>"."<>ToString@kSys<>".adjm";
-Print[fn];
-Export[fn, {StringTrim@ExportString[#,"Graph6"],ExportAdjacencyMatrix[#]}&/@pruned,"Table"];
-]
-]]]
+Print["exporting "<>fn];
+Export[fn, {kSys, VertexCount@#-kSys, StringTrim@ExportString[#,"Graph6"],ExportAdjacencyMatrix[#]}&/@pruned,"Table"];
+
+]; (* file existed *)
+]], #, Method->"FinestGrained"]&;
 
 ],
-{kSys,2,5},{kEnv,kSys,kSys}
+{kSys,2,8},{kEnv,kSys,kSys}
 ];
 
 Print["done"];

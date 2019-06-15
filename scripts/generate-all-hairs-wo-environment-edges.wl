@@ -8,17 +8,17 @@ Quiet@Needs["CCInterface`",CurrentDir<>"CCInterface.m"]
 (* ::Input::Initialization:: *)
 Clear[AllGraphs,AllColorings]
 AllGraphs[kSys_,kEnv_]:=With[{
-cmd="~/nauty27rc2/geng -qc "<>ToString[kSys]
+cmd="/home/jkrb2/programming/libs/nauty27rc2/geng -qc "<>ToString[kSys]
 },
 Print[cmd];
 Import["!"<>cmd,"List"]
 ]
 
 AllColorings[graphStr_String,kEnv_]:=With[{
-cmd="~/nauty27rc2/vcolg -qT -m"<>ToString[kEnv+1]
+cmd="/home/jkrb2/programming/libs/nauty27rc2/vcolg -Tq -m"<>ToString[kEnv+1]
 },
 Print[cmd];
-RunProcess["cmd",All,graphStr]["StandardOutput"]
+Import["!echo "<>graphStr<>" | "<>cmd, "Table"]
 ]
 
 
@@ -27,22 +27,27 @@ Table[Module[{
 graphs=AllGraphs[kSys,kEnv]
 },
 
-Print["running kSys="<>ToString[kSys]<>", kEnv="<>ToString[kEnv]];
+Print["found "<>ToString@Length@graphs<>" graphs for kSys="<>ToString[kSys]];
 
-graphs//Map[Function[graph,With[{
-allColorings=ImportString[
-AllColorings[graph,kEnv],
-"Table"
-]
+graphs//Scan[Function[graphStr,Module[{
+allColorings=AllColorings[graphStr,kEnv],
+pruned
 },
 
-allColorings//Map[Function[out,Module[{
+Print["found "<>ToString@Length@allColorings<>" colorings for "<>graphStr];
+
+
+
+pruned=allColorings//ParallelMap[Function[out,Module[{
 nv=out[[1]],
 ne=out[[2]],
 coloring=out[[3;;3+kSys-1]],
 edges=out[[3+kSys;;]],
-envEdges
+envEdges,
+g
 },
+
+If[Max[coloring]==0,Nothing,(* no environment vertex *)
 
 (* edges to env *)
 envEdges=MapIndexed[Function[{envTarget,idx},
@@ -52,20 +57,35 @@ If[envTarget==0,Nothing,
 ],coloring];
 
 
-ExportAdjacencyMatrix@CanonicalizeByOrbits[Graph[
-Range[0,kSys+kEnv-1],
+g=Graph[
 Join[
 UndirectedEdge@@@Partition[edges,2],
 envEdges
-]],
-kSys
+]];
+
+(* destroy any legacy information from graph, and canonicalize *)
+Graph@EdgeList@CanonicalizeByOrbits[AdjacencyGraph@AdjacencyMatrix@g,kSys]
+
 ]
-]]]//Union
+]],#]&//Union;
+
+Print["pruned to "<>ToString@Length@pruned<>" colorings for "<>graphStr];
+
+Module[{
+graph=ImportString[graphStr,"Graph6"],
+fn
+},
+fn=RESULTSPATH<>"/all-env/all-env-"<>GraphHash[graph,kSys]<>"."<>ToString@kSys<>".adjm";
+Print[fn];
+Export[fn, {StringTrim@ExportString[#,"Graph6"],ExportAdjacencyMatrix[#]}&/@pruned,"Table"];
+]
 ]]]
 
 ],
-{kSys,2,4},{kEnv,kSys,kSys}
-]
+{kSys,2,5},{kEnv,kSys,kSys}
+];
+
+Print["done"];
 
 
 

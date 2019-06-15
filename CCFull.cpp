@@ -118,7 +118,7 @@ int FullSolver()
 
 	// lambda
 	std::cout << "\"lambda\": [\n";
-#ifdef REDUCE_LAMBDA
+#ifdef REDUCE_LAMBDA_IF_POSSIBLE
 	PrintLambda(ReduceLambda(lambda));
 #else
 	PrintLambda(lambda);
@@ -126,7 +126,7 @@ int FullSolver()
 	std::cout << "],\n";
 	// lambda_a
 	std::cout << "\"lambda_a\": [\n";
-#ifdef REDUCE_LAMBDA
+#ifdef REDUCE_LAMBDA_IF_POSSIBLE
 	PrintLambda(ReduceLambda(lambda_a));
 #else
 	PrintLambda(lambda_a);

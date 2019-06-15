@@ -69,7 +69,7 @@ namespace CoffeeCode {
 		using CoefficientArrayT = typename std::map<ExponentT, CoefficientT>;
 
 		template<typename T>
-		inline static ExponentT MakeExponent(const T& u1, const T& u2, const T& u3) noexcept
+		inline static ExponentT MakeExponent(const T u1, const T u2, const T u3) noexcept
 		{
 			return ExponentT{
 				checked_cast<SingleExponentT>(u1),

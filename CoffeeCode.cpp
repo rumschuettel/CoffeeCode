@@ -7,9 +7,9 @@
 #endif
 
 #ifdef FLOATING_POINT_MULTIPLICITY
-#ifdef REDUCE_LAMBDA
+#ifdef REDUCE_LAMBDA_IF_POSSIBLE
 #if K_SYS > 16  // means MultiplicityType<4> = CoefficientType for polynomials will be a floating point number
-#error "REDUCE_LAMBDA does not play well with FLOATING_POINT_MULTIPLICITY, as coefficients need to be compared exactly."
+#error "REDUCE_LAMBDA_IF_POSSIBLE does not play well with FLOATING_POINT_MULTIPLICITY, as coefficients need to be compared exactly."
 #endif
 #endif
 #endif

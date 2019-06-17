@@ -11,7 +11,7 @@ FILEPREFIX="2level-";
 Print["Saving output to "<>RESULTSPATHLOCAL<>FILEPREFIX<>"..."]
 
 
-graphlist=Flatten@Table[All2LevelGraphs[i,Range[2,i]],{i,5,12}]//Map[Function[gd,Module[{
+graphlist=Flatten@Table[All2LevelGraphs[i,Range[2,i]],{i,5,32}]//Map[Function[gd,Module[{
 kSys=VertexCount@gd["graph"],
 graphs
 },

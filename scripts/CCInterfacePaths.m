@@ -12,7 +12,7 @@ CCRELEASEPATHFULLSOLVERARBCH=ParentDirectory[CurrentDir]<>"/build/release_full_a
 PARALLELBUILDPATH=ParentDirectory[CurrentDir]<>"/build/";
 PARALLELBUILDSETUPSCRIPT=CurrentDir<>"/make-build-dir.sh";
 
-RESULTSPATH=$HomeDirectory<>"/Desktop/GraphStateResults/";
+RESULTSPATH="/results/jo/";
 
 
 Print["Path to precompiled full solvers: "<>CCRELEASEPATHFULLSOLVER];

@@ -28,8 +28,7 @@ filename=RESULTSPATH<>"/concat_codes/"<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToSt
 Print["Computing "<>ToString[n1]<>"-in-"<>ToString[n2]<>" code..."];
 jsonString=RunCC[G,kSys,"Multi"];
 If[writeToFile,
-Export[filename,jsonString,"RawJSON"];,
-Return[jsonString];
+Export[filename,jsonString,"RawJSON","Compact"->True]
 ];
 ];
 
@@ -45,7 +44,7 @@ Export[filename,jsonString,"RawJSON","Compact"->True]
 ];
 
 
-singleReps=Table[{i,1},{i,2,60}];
+singleReps=Table[{1,i},{i,2,60}];
 concatPairs=Flatten[Table[{i,j},{i,2,7},{j,2,7}],1];
 Join[singleReps,concatPairs]//Map[collectDataRep];
 

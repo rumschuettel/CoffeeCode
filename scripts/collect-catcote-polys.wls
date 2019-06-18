@@ -40,15 +40,14 @@ filename=RESULTSPATH<>"/graph_codes/"<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToStr
 Print["Computing "<>ToString[kSys]<>"-graph code..."];
 jsonString=RunCC[G,kSys,"Multi"];
 If[writeToFile,
-Export[filename,jsonString,"RawJSON"];,
-Return[jsonString];
+Export[filename,jsonString,"RawJSON","Compact"->True]
 ];
 ];
 
 
-singleReps=Table[{i,1},{i,1,60}];
+singleReps=Table[{i,1},{i,2,60}];
 concatPairs=Flatten[Table[{i,j},{i,2,7},{j,2,7}],1];
-Join[singleReps,concatPairs]//Map[Function[pair,collectDataRep[pair];]];
+Join[singleReps,concatPairs]//Map[collectDataRep];
 
 
 G13=Graph[{1\[UndirectedEdge]2,2\[UndirectedEdge]3,2\[UndirectedEdge]4,1\[UndirectedEdge]5,5\[UndirectedEdge]6,5\[UndirectedEdge]7,1\[UndirectedEdge]8,8\[UndirectedEdge]9,8\[UndirectedEdge]10,1\[UndirectedEdge]11,1\[UndirectedEdge]12,1\[UndirectedEdge]13,1\[UndirectedEdge]14}];

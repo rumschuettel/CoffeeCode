@@ -26,7 +26,10 @@ G=concatRepCode[n1,n2];
 kSys=n1*n2;
 filename=RESULTSPATH<>"/concat_codes/"<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToString[n1]<>"-in-"<>ToString[n2];
 Print["Computing "<>ToString[n1]<>"-in-"<>ToString[n2]<>" code..."];
-jsonString=RunCC[G,kSys,"Multi"];
+jsonString=If[VertexCount@G<15,
+RunCC[G,kSys,"Multi","Full"],
+RunCC[G,kSys,"Multi"]
+];
 If[writeToFile,
 Export[filename,jsonString,"RawJSON","Compact"->True]
 ];
@@ -37,14 +40,17 @@ Clear[collectDataGraph]
 collectDataGraph[G_Graph,kSys_Integer,writeToFile_:True]:=Module[{FILEPREFIX="graphcodes.",filename,jsonString},
 filename=RESULTSPATH<>"/graph_codes/"<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToString[kSys];
 Print["Computing "<>ToString[kSys]<>"-graph code..."];
-jsonString=RunCC[G,kSys,"Multi"];
+jsonString=If[VertexCount@G<15,
+RunCC[G,kSys,"Multi","Full"],
+RunCC[G,kSys,"Multi"]
+];
 If[writeToFile,
 Export[filename,jsonString,"RawJSON","Compact"->True]
 ];
 ];
 
 
-singleReps=Table[{1,i},{i,2,60}];
+singleReps=Table[{1,i},{i,1,60}];
 concatPairs=Flatten[Table[{i,j},{i,2,7},{j,2,7}],1];
 Join[singleReps,concatPairs]//Map[collectDataRep];
 

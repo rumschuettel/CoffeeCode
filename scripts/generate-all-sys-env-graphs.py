@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+
 # needs networkx, igraph
-# as well as geng and vcolg from nauty27
+# as well as geng from nauty27
 
 ## GRAPH
 import networkx
@@ -55,12 +56,8 @@ def all_possible_environment_links(kSys, kEnv):
 
 
 ## IO
-import subprocess
 import os
-
-PATH_THISFILE = os.path.dirname(os.path.realpath(__file__))
-PATH_GENG = os.path.join(PATH_THISFILE, "bin/geng")
-PATH_SHORTG = os.path.join(PATH_THISFILE, "bin/shortg")
+import subprocess
 
 def pipe(cmd, *args, encoding="ascii", inputline=None):    
     proc = subprocess.Popen(
@@ -82,8 +79,14 @@ def pipe(cmd, *args, encoding="ascii", inputline=None):
 
     proc.wait()
 
-def run(cmd, *args):
-    subprocess.run([cmd, *args])
+
+## NAUTY LINKS
+PATH_THISFILE = os.path.dirname(os.path.realpath(__file__))
+PATH_GENG = os.path.join(PATH_THISFILE, "bin/geng")
+
+def generate_all_graphs(vertex_count):
+    for line in pipe(PATH_GENG, "-c", "-q", vertex_count):
+        yield line, from_graph6(line)
 
 
 ## POOR MAN'S FILE SYSTEM LOCKS
@@ -120,95 +123,91 @@ def filesystem_mark_done(graph6_str):
     donefile = filesystem_temp_fn(graph6_str, "done")
     open(donefile, "w").close()
 
-## NAUTY LINKS
-def generate_all_graphs(vertex_count):
-    for line in pipe(PATH_GENG, "-c", "-q", vertex_count):
-        yield line, from_graph6(line)
-
-def filter_graphs(filename, kSys):
-    run(PATH_SHORTG, "-f%s" % "a"*kSys, filename)
-
 
 ## PROGRAM
+import sys
 import multiprocessing.pool
 from functools import partial
 
 
 if __name__ == "__main__":
-    kSys = 5
-    max_kEnv = kSys
-    PATH_OUT = os.path.join(PATH_THISFILE, "out/")
+    import argparse
+    parser = argparse.ArgumentParser(description='Generate all sys/env graphs')
+    parser.add_argument('kSys', metavar='KSYS', type=int)
+    parser.add_argument('--kEnvMax', metavar='KENVMAX', type=int)
+    parser.add_argument("--threads", metavar="THREADS", type=int, default=multiprocessing.cpu_count())
+    parser.add_argument("--out", metavar="OUTDIR", type=str, default="out/")
+
+    args = parser.parse_args()
+
+    kSys = args.kSys
+    max_kEnv = kSys if args.kEnvMax == None else args.kEnvMax
+    THREADS = args.threads
+    PATH_OUT = os.path.join(PATH_THISFILE, args.out)
+
+    assert(kSys > 0)
+    assert(max_kEnv > 0)
+    assert(max_kEnv <= kSys)
+    assert(os.path.exists(PATH_OUT))
 
     def generate_all_nonisomorphic_environments(graph, graph6_str):
-        print("doing", graph6_str)
-        filename = filesystem_temp_fn(graph6_str, "redundant-graphs")
+        print("running", graph6_str)
+        sys.stdout.flush()
+
+        filename = os.path.join(
+            PATH_OUT,
+            "all-graphs-%s-kSys%d.adjm" % (filename_for_graph6(graph6_str), kSys)
+        )
 
         count_redundant = 0
-        with open(filename, "w", encoding="ascii") as f:
-            # add environment links and store as a flat file of the graphs
+        with open(filename, "w", encoding="ascii") as f_out:
             for links, kEnv in all_possible_environment_links(kSys, max_kEnv):
                 # create copy of graph with environment vertices added
                 copy = graph.copy()
                 copy.add_vertices(kEnv)
                 copy.add_edges(links)
 
-                f.write("%s\n" % to_graph6(copy))
+                f_out.write("%d %d %s %s\n" % (
+                    kSys,
+                    kEnv,
+                    to_graph6(copy),
+                    to_adjm(copy)
+                ))
+
                 count_redundant += 1
-
-        print("filtering", graph6_str)
-        # call nauty's shortg to prune graph list
-        filter_graphs(filename, kSys)
-
-        print("writing output for", graph6_str)
-        # read list back in line by line and write final output
-        count_unique = 0
-        with open(filename, "r", encoding="ascii") as f_in:
-            with open(os.path.join(PATH_OUT, filename_for_graph6(graph6_str) + ".adjm"), "w", encoding="ascii") as f_out:
-                for with_env_graph6_str in f_in:
-                    graph = from_graph6(with_env_graph6_str)
-                    kEnv = graph.vcount() - kSys
-
-                    f_out.write("%d %d %s %s" % (
-                        kSys,
-                        kEnv,
-                        with_env_graph6_str,
-                        to_adjm(graph)
-                    ))
-
-                    count_unique += 1
 
 
         # print some stats
-        print("done %s: pruned from %d to %d unique" % (graph6_str, count_redundant, count_unique))
+        print("done %s: %d graphs" % (graph6_str, count_redundant))
+        sys.stdout.flush()
 
-    def mark_done(graph6_str):
+
+    def mark_done(graph6_str, _):
         # mark graph as done and unlock
         filesystem_mark_done(graph6_str)
         filesystem_unlock(graph6_str)
 
-#    THREADS=1
-#    with multiprocessing.pool.Pool(processes=THREADS) as pool:
-    for graph6_str, graph in generate_all_graphs(kSys):
-        # did we already process this graph?
-        if filesystem_is_done(graph6_str):
-            continue
+    with multiprocessing.pool.Pool(processes=THREADS) as pool:
+        for graph6_str, graph in generate_all_graphs(kSys):
+            # did we already process this graph?
+            if filesystem_is_done(graph6_str):
+                print("skipping %s" % graph6_str)
+                continue
 
-        # try locking
-        if not filesystem_lock(graph6_str):
-            continue
+            # try locking
+            if not filesystem_lock(graph6_str):
+                print("locked %s" % graph6_str)
+                continue
 
-        generate_all_nonisomorphic_environments(graph, graph6_str)
-        mark_done(graph6_str)
-
-        # if successfully locked, run
-#        pool.apply_async(
-#            generate_all_nonisomorphic_environments,
-#            (graph, graph6_str),
-#            callback=partial(mark_done, graph6_str)
-#        )
+            # if successfully locked, run
+            pool.apply_async(
+                generate_all_nonisomorphic_environments,
+                (graph, graph6_str),
+                callback=partial(mark_done, graph6_str)
+            )
 
 
-#        pool.close()
-#        pool.join()
+        pool.close()
+        pool.join()
 
     

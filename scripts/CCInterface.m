@@ -509,7 +509,7 @@ CIThreshold[pa,p]
 
 (* ::Input::Initialization:: *)
 Clear[GraphHash]
-GraphHash[g_Graph,kSys_Integer]:=StringTrim@ExportString[ExportString[CanonicalizeByOrbits[g,kSys],"Graph6"],"Base64"]//StringReplace[#,{"/"->"-"}]&
+GraphHash[g_Graph,kSys_Integer]:=StringReplace[ExportString[ExportString[g,"Sparse6"],"Base64"],{WhitespaceCharacter..->"","/"->"-"}]
 
 
 (* ::Input::Initialization:: *)

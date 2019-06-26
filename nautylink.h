@@ -210,11 +210,6 @@ namespace CoffeeCode::NautyLink {
 		using CanonicalColoringReturnT = std::pair<CanonicalImage, MultiplicityType<2>>;
 		CanonicalColoringReturnT CanonicalColoring(const ColoringRawT raw_coloring) noexcept
 		{
-			// memoization
-			thread_local unordered_map<ColoringRawT, CanonicalColoringReturnT> memo;
-			typename decltype(memo)::const_iterator p = memo.find(raw_coloring);
-			if (p != memo.end()) return p->second;
-
 			// get canonical coloring
 			const auto coloring = SetColoring(raw_coloring);
 
@@ -233,14 +228,6 @@ namespace CoffeeCode::NautyLink {
 				out,
 				static_cast<MultiplicityType<2>>(FULL_GROUP_ORDER / ImplDetails::__grouporder)
 			);
-
-			// cache; if memory full, flush
-			try {
-				memo[raw_coloring] = ret;
-			} catch (std::bad_alloc&) {
-				memo.swap(decltype(memo){});
-				memo[raw_coloring] = ret;
-			}
 			return ret;
 		}
 

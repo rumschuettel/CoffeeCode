@@ -233,7 +233,14 @@ namespace CoffeeCode::NautyLink {
 				out,
 				static_cast<MultiplicityType<2>>(FULL_GROUP_ORDER / ImplDetails::__grouporder)
 			);
-			memo[raw_coloring] = ret;
+
+			// cache; if memory full, flush
+			try {
+				memo[raw_coloring] = ret;
+			} catch (std::bad_alloc&) {
+				memo.swap(decltype(memo){});
+				memo[raw_coloring] = ret;
+			}
 			return ret;
 		}
 

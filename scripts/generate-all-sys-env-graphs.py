@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
         filename = os.path.join(
             PATH_OUT,
-            "all-graphs-%s-kSys%d.adjm" % (filename_for_graph6(graph6_str), kSys)
+            "all-graphs-%s-kSys%d-kEnvMax%d.adjm" % (filename_for_graph6(graph6_str), kSys, max_kEnv)
         )
 
         count_redundant = 0

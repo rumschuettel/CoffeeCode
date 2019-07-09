@@ -3,8 +3,10 @@
 trap ctrl_c SIGINT
 
 
-INFILE=$1
-INFILEBASE=${INFILE##*/}
+INFILE="$1"
+INFILEWOPATH="${INFILE##*/}"
+INFILEBASE="${INFILEWOPATH%.*}"
+INTERMEDIATEDIR="./cc-runs/$INFILEBASE"
 OUTDIR="/results/jo/all-env-processed/$INFILEBASE"
 
 function ctrl_c() {
@@ -14,28 +16,63 @@ function ctrl_c() {
 }
 
 # skip if directory exists, otherwise create
-if [ -d "$OUTDIR" ]
+MATFILE=`find ./out-all-env-adjm -name "*$INFILEBASE*" -print`
+MATFILEWOPATH="${MATFILE##*/}"
+MATFILEBASE="${MATFILEWOPATH%.*}"
+OUTMATFILE="$OUTDIR/$MATFILEWOPATH.gz"
+if [ -f "$OUTMATFILE" ]
 then
-	echo "skipping $INFILE"
+	echo "skipping $INFILEBASE"
 	exit
 fi
-mkdir -p "$OUTDIR"
-echo "processing $INFILE"
+# check mat file exists
+if [ ! -f "$MATFILE" ]
+then
+	echo "adjm file missing for $INFILEBASE"
+	exit
+fi
+
+
+
+echo "processing $MATFILE"
+
+
+# create intermediate directory to store CC runs in
+# the subfolders are to circumvent a dir_index bug
+mkdir -p "$INTERMEDIATEDIR"
+cd "$INTERMEDIATEDIR"
+seq 10000 | xargs mkdir
+cd -
 
 rungraph() {
 	local kSys=$1
-	local kEnv=$2
+        local kEnv=$2
 	local adjmat=$3
-	local outfile=$4
 
-	../build/release_full_arbch/CoffeeCode.$kSys.$kEnv <<< $adjmat > $outfile
+	local rndfolder="$((1 + RANDOM % 10000))"
+	local outfile="$INTERMEDIATEDIR/$rndfolder/$adjmat.json.gz"
+	echo "../build/release_full_arbch/CoffeeCode.$kSys.$kEnv <<< $adjmat | gzip --best > $outfile"
 }
-export -f rungraph
 
-while read -r kSys kEnv graph adjmat; do
-	outfile="$OUTDIR/$adjmat"
-       	rungraph "$kSys" "$kEnv" "$adjmat" "$outfile"
-done < $INFILE 
+runall() {
+	while read kSys kEnv graph adjmat; do
+		rungraph $kSys $kEnv $adjmat
+	done < $MATFILE
+}
 
-echo "done $INFILE"
+runall | parallel -j 128 --pipe --block 250k bash
+
+
+# pack up everything and archive on persistent store
+mkdir -p "$OUTDIR"
+
+echo "zipping folder $INTERMEDIATEDIR/"
+tar -cf - "$INTERMEDIATEDIR/" | pigz --best > "$OUTDIR/$MATFILEBASE.lambdas.tar.gz"
+rm -r "$INTERMEDIATEDIR" &
+
+echo "zipping and moving $MATFILE"
+pigz -c "$MATFILE" > "$OUTMATFILE"
+rm "$MATFILE"
+
+echo "done $MATFILE"
 

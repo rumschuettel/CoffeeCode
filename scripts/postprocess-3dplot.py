@@ -89,7 +89,7 @@ if __name__ == "__main__":
         for q1 in np.arange(MIN, MAX+STEP, STEP):
             for q2 in np.arange(MIN, MAX+STEP, STEP):
                 for q3 in np.arange(MIN, MAX+STEP, STEP):
-                    if q1+q2+q3 > 1:
+                    if 1-q1-q2-q3 < 0:
                         continue
 
                     # antidegradability condition

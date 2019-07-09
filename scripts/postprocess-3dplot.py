@@ -6,29 +6,29 @@ import re, math
 import os, sys, multiprocessing
 from scipy.special import xlogy
 
+import torch
 
-LOG2INV = 1./np.log(2.0)
-FLOAT_TYPE = np.float64
+FLOAT_TYPE = torch.float64
 
 # calculate shannon entropy from a lambda vector
 # fac can be used to rescale the terms for lambda_a
 # qs is a np array with last dimension 4
 def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
-    entropy = np.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
+    entropy = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
     global_mult = 0.
 
     for mult, poly in lambda_list:
         if len(poly) == 0:
             continue
 
-        term = np.zeros(entropy.shape, dtype=FLOAT_TYPE)
+        term = torch.zeros_like(entropy)
         for [coeff, [e1, e2, e3]] in poly:
             term += (
-                fac * coeff * np.prod(qs ** (kSys - e1 - e2 - e3, e1, e2, e3), axis=-1)
+                fac * coeff * torch.prod(qs ** torch.tensor([kSys - e1 - e2 - e3, e1, e2, e3], dtype=FLOAT_TYPE), -1)
             )
 
         # xlogy calculates x log(y), thus allowing for 0. log(0.) to be evaluated correctly
-        entropy -= mult * xlogy(term, term) * LOG2INV
+        entropy -= mult * torch.where(term != 0, term * torch.log2(term), term)
 
         # accumulate multiplicity
         global_mult += mult
@@ -99,13 +99,13 @@ if __name__ == "__main__":
 
                     yield [1-q1-q2-q3, q1, q2, q3]
 
-    qs = np.array(list(qs_ref()))
+    qs = torch.tensor(list(qs_ref()), dtype=FLOAT_TYPE)
 
     # best CI
-    best_ci = np.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
-    best_ci.fill(-10**9)
+    best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
+    best_ci -= 10**9
     # best graph, we store the adjacency matrix
-    best_graph = np.zeros(best_ci.shape, dtype=np.uint16)
+    best_graph = torch.zeros(best_ci.shape, dtype=torch.int32)
 
 
     # iterate over files in INFILE
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
             # update best ci and best graph
             best_graph[best_ci < ci] = ADJM
-            best_ci = np.maximum(best_ci, ci)
+            best_ci = torch.max(best_ci, ci)
 
 
     # output best graph and best ci
@@ -151,6 +151,6 @@ if __name__ == "__main__":
         os.path.join(PATH_THISFILE, args.outfile) if args.outfile else f"{INFILE}-best.npz"
     )
     print(f"saving best ci and graphs in {OUTFILE}")
-    np.savez_compressed(OUTFILE, params=[MIN, MAX, STEP], ci=best_ci, graph=best_graph)
+    np.savez_compressed(OUTFILE, params=[MIN, MAX, STEP], ci=best_ci.numpy(), graph=best_graph.numpy())
 
     print("done")

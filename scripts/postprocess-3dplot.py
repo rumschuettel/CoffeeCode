@@ -66,6 +66,7 @@ if __name__ == "__main__":
 
     THREADS = args.threads
     assert THREADS > 0, "invalid thread count"
+    torch.set_num_threads(THREADS)
 
     PATH_THISFILE = os.path.dirname(os.path.realpath(__file__))
     INFILE = os.path.join(PATH_THISFILE, args.infile)

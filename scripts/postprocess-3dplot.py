@@ -100,7 +100,12 @@ if __name__ == "__main__":
 
                     yield [1-q1-q2-q3, q1, q2, q3]
 
-    qs = torch.tensor(list(qs_ref()), dtype=FLOAT_TYPE)
+    qs_cache_fn = f"./qs-cache-{MIN}-{MAX}-{STEP}.npy"
+    if os.path.exists(qs_cache_fn):
+        qs = torch.from_numpy(np.load(qs_cache_fn))
+    else:
+        qs = torch.tensor(list(qs_ref()), dtype=FLOAT_TYPE)
+        np.save(qs_cache_fn, qs.numpy())
 
     # best CI
     best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)

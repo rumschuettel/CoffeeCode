@@ -1,38 +1,39 @@
 #!/usr/bin/env python
 
 import numpy as np
-import numexpr as ne
 import tarfile, gzip, json
 import re, math
 import os, sys, multiprocessing
+from scipy.special import xlogy
 
 
 LOG2INV = 1./np.log(2.0)
 FLOAT_TYPE = np.float64
 
-# calculate shannon entropy numexpr
-def shannon_entropy_numexpr_from_lambda(lambda_list, kSys, fac, qs=["(1.-q1-q2-q3)","q1","q2","q3"]):
-    entropy = ""
-    global_mult = 0
+# calculate shannon entropy from a lambda vector
+# fac can be used to rescale the terms for lambda_a
+# qs is a np array with last dimension 4
+def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
+    entropy = np.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
+    global_mult = 0.
 
     for mult, poly in lambda_list:
         if len(poly) == 0:
             continue
 
-        term = []
+        term = np.zeros(entropy.shape, dtype=FLOAT_TYPE)
         for [coeff, [e1, e2, e3]] in poly:
-            term.append(f"{fac} * {coeff} * ({qs[0]}**{(kSys - e1 - e2 - e3)}) * ({qs[1]}**{e1}) * ({qs[2]}**{e2}) * ({qs[3]}**{e3})")
+            term += (
+                fac * coeff * np.prod(qs ** (kSys - e1 - e2 - e3, e1, e2, e3), axis=-1)
+            )
 
-        term = "(" + "+".join(term) + ")"
-
-        # numexpr optimizes this call to remove double-evaluation
-        entropy += f"-{mult} * where({term}==0,0,{term}*log({term})*{LOG2INV})"
+        # xlogy calculates x log(y), thus allowing for 0. log(0.) to be evaluated correctly
+        entropy -= mult * xlogy(term, term) * LOG2INV
 
         # accumulate multiplicity
         global_mult += mult
 
     return entropy, global_mult
-
 
 
 if __name__ == "__main__":
@@ -96,15 +97,15 @@ if __name__ == "__main__":
                     if 2*((1-q1-q2)**2 + (q1-q2)**2 + (q1+q2)**2 + (1-q1-q2-2*q3)**2) - 16*math.sqrt(q1*q2*q3*(1-q1-q2-q3)) < 2:
                         continue
 
-                    yield [q1, q2, q3]
+                    yield [1-q1-q2-q3, q1, q2, q3]
 
-    q1,q2,q3 = np.transpose(np.array(list(qs_ref())))
+    qs = np.array(list(qs_ref()))
 
     # best CI
-    best_ci = np.zeros(q1.shape, dtype=FLOAT_TYPE)
+    best_ci = np.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
     best_ci.fill(-10**9)
     # best graph, we store the adjacency matrix
-    best_graph = np.zeros(q1.shape, dtype=np.uint16)
+    best_graph = np.zeros(best_ci.shape, dtype=np.uint16)
 
 
     # iterate over files in INFILE
@@ -132,20 +133,18 @@ if __name__ == "__main__":
             with archive.extractfile(file_meta) as file:
                 content = json.load(gzip.GzipFile(fileobj=file))
 
-            S_expr, mult = shannon_entropy_numexpr_from_lambda(
-                content["lambda"], KSYS, 1.0
+            S, mult = shannon_entropy_from_lambda(
+                content["lambda"], KSYS, 1.0, qs
             )
-            S_expr_a, mult_a = shannon_entropy_numexpr_from_lambda(
-                content["lambda_a"], KSYS, 2.0 ** -KENV
+            S_a, mult_a = shannon_entropy_from_lambda(
+                content["lambda_a"], KSYS, 2.0 ** -KENV, qs
             )
-
-            S = ne.evaluate(S_expr)
-            S_a = ne.evaluate(S_expr_a)
             ci = (S_a - S) * (1./np.log2(mult_a))
 
             # update best ci and best graph
             best_graph[best_ci < ci] = ADJM
             best_ci = np.maximum(best_ci, ci)
+
 
     # output best graph and best ci
     OUTFILE = (

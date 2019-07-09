@@ -5,7 +5,6 @@ import numexpr as ne
 import tarfile, gzip, json
 import re, math
 import os, sys, multiprocessing
-import inspect
 
 
 LOG2INV = 1./np.log(2.0)
@@ -153,6 +152,6 @@ if __name__ == "__main__":
         os.path.join(PATH_THISFILE, args.outfile) if args.outfile else f"{INFILE}-best.npz"
     )
     print(f"saving best ci and graphs in {OUTFILE}")
-    np.savez_compressed(OUTFILE, params=[MIN, MAX, STEP], qs_gen=inspect.getsource(qs_ref), ci=best_ci, graph=best_graph)
+    np.savez_compressed(OUTFILE, params=[MIN, MAX, STEP], ci=best_ci, graph=best_graph)
 
     print("done")

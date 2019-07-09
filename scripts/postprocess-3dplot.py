@@ -109,6 +109,7 @@ if __name__ == "__main__":
 
 
     # iterate over files in INFILE
+    adjm_ctr = 0
     with tarfile.open(INFILE, mode="r") as archive:
         for file_meta in archive:
             if file_meta.type != tarfile.REGTYPE:
@@ -124,7 +125,6 @@ if __name__ == "__main__":
             KTOT = int(KTOT)
             KENV = KTOT - KSYS
             assert KENV > 0 and KENV <= KSYS, "0 < kEnv <= kSys not satisfied"
-            ADJM = int(adjm_matches[0], 2)
 
             # only .gz.json files left
             print("processing", file_meta.name, f"with kSys={KSYS}, kEnv={KENV}")
@@ -142,7 +142,8 @@ if __name__ == "__main__":
             ci = (S_a - S) * (1./np.log2(mult_a))
 
             # update best ci and best graph
-            best_graph[best_ci < ci] = ADJM
+            adjm_ctr += 1
+            best_graph[best_ci < ci] = adjm_ctr
             best_ci = torch.max(best_ci, ci)
 
 

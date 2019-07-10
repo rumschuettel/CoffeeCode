@@ -7,6 +7,15 @@ import os, multiprocessing
 
 import torch
 
+
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
+
+print("running on device", DEVICE)
+
+
 FLOAT_TYPE = torch.float64
 FLOAT_TYPE_NP = np.float64
 
@@ -29,7 +38,7 @@ def multiplicity_from_lambda(lambda_list):
 # fac can be used to rescale the terms for lambda_a
 # qs is a np array with last dimension 4
 def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
-    entropy = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
+    entropy = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
 
     for mult, poly in lambda_list:
         if len(poly) == 0:
@@ -40,7 +49,7 @@ def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
             term += (
                 fac
                 * coeff
-                * torch.prod(qs ** torch.tensor([e1, e2, e3], dtype=FLOAT_TYPE), -1)
+                * torch.prod(qs ** torch.tensor([e1, e2, e3], dtype=FLOAT_TYPE, device=DEVICE), -1)
                 * (1 - torch.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
             )
 
@@ -153,15 +162,15 @@ if __name__ == "__main__":
 
         return np.stack((q1, q2, q3)).transpose()
 
-    qs = torch.from_numpy(qs_radial()).contiguous()
+    qs = torch.from_numpy(qs_radial()).contiguous().to(device=DEVICE)
 
     # best CI
-    best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE)
+    best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
     best_ci -= 10 ** 9
     # best qs
     best_qs = torch.zeros_like(qs)
     # best graph, we store the adjacency matrix
-    best_graph = torch.zeros(best_ci.shape, dtype=torch.int32)
+    best_graph = torch.zeros(best_ci.shape, dtype=torch.int32, device=DEVICE)
 
     # iterate over files in INFILE
     adjm_ctr = 0

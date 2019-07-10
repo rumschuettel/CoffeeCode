@@ -227,9 +227,9 @@ if __name__ == "__main__":
     np.savez_compressed(
         OUTFILE,
         params=[RADIUS, RESOLUTION],
-        ci=best_ci.numpy(),
-        qs=best_qs.numpy(),
-        graph=best_graph.numpy(),
+        ci=best_ci.cpu().numpy(),
+        qs=best_qs.cpu().numpy(),
+        graph=best_graph.cpu().numpy(),
     )
 
     print("done")

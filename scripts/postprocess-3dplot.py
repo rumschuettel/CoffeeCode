@@ -143,11 +143,16 @@ if __name__ == "__main__":
 
     # extract kSys from filename
     kSys_matches = re.findall(r"-kSys(\d+)-", args.infile)
-    assert (
-        len(kSys_matches) == 1
-    ), "invalid filename, must encode kSys in the form -kSys3-"
-    KSYS = int(kSys_matches[0])
-    print("KSYS", KSYS)
+    if len(kSys_matches) == 1:
+        KSYS = int(kSys_matches[0])
+        print("archive with adjacency matrices detected. KSYS", KSYS)
+    else:
+        a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)\.", args.infile)
+        assert (
+            len(a_in_b_matches) == 1
+        ), "invalid filename, must encode kSys in the form -kSys3- or .a-in-b."
+        KSYS = None
+        print("archive with catcodes detected. KSYS unset")
 
     # build q table on a spherical surface
     # todo: find a better spaced method
@@ -185,12 +190,17 @@ if __name__ == "__main__":
 
             # extract kEnv
             adjm_matches = re.findall(r"([0-1]+)\.json\.gz", file_meta.name)
-            assert (
-                len(adjm_matches) == 1
-            ), "invalid archived name, must encode adjm in 01 format as in 0110.json.gz"
-            KTOT = math.sqrt(len(adjm_matches[0]))
-            assert KTOT.is_integer(), "adjacency matrix not square"
-            KTOT = int(KTOT)
+            if len(adjm_matches) == 1:
+                KTOT = math.sqrt(len(adjm_matches[0]))
+                assert KTOT.is_integer(), "adjacency matrix not square"
+                KTOT = int(KTOT)
+            else:
+                a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)$", file_meta.name)
+                assert len(a_in_b_matches) == 1, "invalid archived name, must encode adjm in 01 format as in 0110.json.gz or a catcode with filename ending in .a-in-b"
+                # for catcodes we generally assume that KENV=1
+                KSYS = int(a_in_b_matches[0][0]) * int(a_in_b_matches[0][1])
+                KTOT = KSYS+1
+            
             KENV = KTOT - KSYS
             assert KENV > 0 and KENV <= KSYS, "0 < kEnv <= kSys not satisfied"
 

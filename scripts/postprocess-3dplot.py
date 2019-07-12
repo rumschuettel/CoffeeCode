@@ -117,6 +117,7 @@ if __name__ == "__main__":
         type=str,
         help="tar archive with CoffeCode multinomial outputs in .json.gz format",
     )
+    parser.add_argument("--kTotMax", metavar="KTOTMAX", type=int, default=10000)
 
     args = parser.parse_args()
 
@@ -136,6 +137,9 @@ if __name__ == "__main__":
     assert (
         BISECTIONS > 0 and BISECTIONS < 64
     ), "number of bisections has to be between 1 and 63"
+
+    KTOTMAX = args.kTotMax
+    assert KTOTMAX > 0, "kTotMax needs to be a postive number"
 
     # extract kSys from filename
     kSys_matches = re.findall(r"-kSys(\d+)-", args.infile)
@@ -189,6 +193,10 @@ if __name__ == "__main__":
             KTOT = int(KTOT)
             KENV = KTOT - KSYS
             assert KENV > 0 and KENV <= KSYS, "0 < kEnv <= kSys not satisfied"
+
+            if KTOT > KTOTMAX:
+                #print("skipping", file_meta.name, f"with kSys={KSYS}, kEnv={KENV}")
+                continue
 
             # only .gz.json files left
             print("processing", file_meta.name, f"with kSys={KSYS}, kEnv={KENV}")

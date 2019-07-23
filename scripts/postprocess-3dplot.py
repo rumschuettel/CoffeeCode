@@ -39,33 +39,35 @@ def multiplicity_from_lambda(lambda_list):
 # kahan summation to prevent floating point error buildup
 def kahan_sum(numbers, zero_ref):
     acc = torch.zeros_like(zero_ref)
-    comp = torch.zeros_like(zero_ref) 
+    comp = torch.zeros_like(zero_ref)
 
     for num in numbers:
-        y = num - comp 
+        y = num - comp
         t = acc + y
         comp = (t - acc) - y
         acc = t
 
     return acc
 
+
 # even better: neumaier sums, independent of size ordering
 def neumaier_sum(numbers, zero_ref):
     acc = torch.zeros_like(zero_ref)
-    comp = torch.zeros_like(zero_ref) 
+    comp = torch.zeros_like(zero_ref)
 
     for num in numbers:
         t = acc + num
         mask = (acc >= num).to(FLOAT_TYPE)
-        comp += mask * ((acc - t) + num) + (1-mask) * ((num - t) + acc)
+        comp += mask * ((acc - t) + num) + (1 - mask) * ((num - t) + acc)
         acc = t
 
     return acc + comp
 
+
 # calculate shannon entropy from a lambda vector
 # fac can be used to rescale the terms for lambda_a
 # qs is a np array with last dimension 4
-def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
+def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs, stable_summer=False):
     entropy = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
 
     def lambda_iterator():
@@ -78,16 +80,30 @@ def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
                     yield (
                         fac
                         * coeff
-                        * torch.prod(qs ** torch.tensor([e1, e2, e3], dtype=FLOAT_TYPE, device=DEVICE), -1)
+                        * torch.prod(
+                            qs
+                            ** torch.tensor(
+                                [e1, e2, e3], dtype=FLOAT_TYPE, device=DEVICE
+                            ),
+                            -1,
+                        )
                         * (1 - torch.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
                     )
 
-            term = neumaier_sum(poly_iterator(), entropy)
+            term = (
+                neumaier_sum(poly_iterator(), entropy)
+                if stable_summer
+                else sum(poly_iterator())
+            )
 
             # filter out zeros for x log x
             yield -mult * torch.where(term != 0, term * torch.log2(term), term)
 
-    entropy = neumaier_sum(lambda_iterator(), entropy)
+    entropy = (
+        neumaier_sum(lambda_iterator(), entropy)
+        if stable_summer
+        else sum(lambda_iterator())
+    )
 
     return entropy
 
@@ -144,6 +160,7 @@ if __name__ == "__main__":
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=.50)
     parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=100)
     parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=20)
+    parser.add_argument("--stable_sum", metavar="STABLE_SUM", type=bool, default=False)
     parser.add_argument(
         "infile",
         metavar="INFILE",
@@ -174,6 +191,8 @@ if __name__ == "__main__":
     KTOTMAX = args.kTotMax
     assert KTOTMAX > 0, "kTotMax needs to be a postive number"
 
+    STABLE_SUM = args.stable_sum
+
     # extract kSys from filename
     kSys_matches = re.findall(r"-kSys(\d+)-", args.infile)
     if len(kSys_matches) == 1:
@@ -186,6 +205,10 @@ if __name__ == "__main__":
         ), "invalid filename, must encode kSys in the form -kSys3- or .a-in-b."
         KSYS = None
         print("archive with catcodes detected. KSYS unset")
+
+    # print some info
+    if STABLE_SUM:
+        print("using Neumaier summation for floating point precision loss")
 
     # build q table on a spherical surface
     # todo: find a better spaced method
@@ -208,7 +231,7 @@ if __name__ == "__main__":
 
     # best CI
     best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
-    best_ci -= 10 ** 2 
+    best_ci -= 10 ** 2
     # best qs
     best_qs = torch.zeros_like(qs)
     # best graph, we store the adjacency matrix
@@ -229,16 +252,18 @@ if __name__ == "__main__":
                 KTOT = int(KTOT)
             else:
                 a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)\.gz", file_meta.name)
-                assert len(a_in_b_matches) == 1, "invalid archived name, must encode adjm in 01 format as in 0110.json.gz or a catcode with filename ending in .a-in-b"
+                assert (
+                    len(a_in_b_matches) == 1
+                ), "invalid archived name, must encode adjm in 01 format as in 0110.json.gz or a catcode with filename ending in .a-in-b"
                 # for catcodes we generally assume that KENV=1
                 KSYS = int(a_in_b_matches[0][0]) * int(a_in_b_matches[0][1])
-                KTOT = KSYS+1
-            
+                KTOT = KSYS + 1
+
             KENV = KTOT - KSYS
             assert KENV > 0 and KENV <= KSYS, "0 < kEnv <= kSys not satisfied"
 
             if KTOT > KTOTMAX:
-                #print("skipping", file_meta.name, f"with kSys={KSYS}, kEnv={KENV}")
+                # print("skipping", file_meta.name, f"with kSys={KSYS}, kEnv={KENV}")
                 continue
 
             # only .gz.json files left
@@ -258,14 +283,16 @@ if __name__ == "__main__":
                     poly.sort(key=lambda a: (-sum(a[1]), a[0]))
 
             def ci_fun(qqs):
-                S = shannon_entropy_from_lambda(content["lambda"], KSYS, 1.0, qqs)
+                S = shannon_entropy_from_lambda(
+                    content["lambda"], KSYS, 1.0, qqs, STABLE_SUM
+                )
                 S_a = shannon_entropy_from_lambda(
-                    content["lambda_a"], KSYS, 2.0 ** -KENV, qqs
+                    content["lambda_a"], KSYS, 2.0 ** -KENV, qqs, STABLE_SUM
                 )
                 mult_a = multiplicity_from_lambda(content["lambda_a"])
 
                 # the subtracted offset is to prevent numerical errors
-                return (S_a - S) * (1. / np.log2(mult_a)) - 1e-20
+                return (S_a - S) * (1. / np.log2(mult_a)) - 1e-50
 
             res = find_zero_passing_bisect(
                 f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs

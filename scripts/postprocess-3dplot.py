@@ -13,16 +13,18 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
+
 print("running on device", DEVICE)
 
 
 FLOAT_TYPE = torch.float64
 FLOAT_TYPE_NP = np.float64
 
+torch.set_default_tensor_type(torch.DoubleTensor)
 
 # get total multiplicity from lambda vectors
 def multiplicity_from_lambda(lambda_list):
-    global_mult = 0.
+    global_mult = 0
 
     for mult, poly in lambda_list:
         if len(poly) == 0:
@@ -34,27 +36,58 @@ def multiplicity_from_lambda(lambda_list):
     return global_mult
 
 
+# kahan summation to prevent floating point error buildup
+def kahan_sum(numbers, zero_ref):
+    acc = torch.zeros_like(zero_ref)
+    comp = torch.zeros_like(zero_ref) 
+
+    for num in numbers:
+        y = num - comp 
+        t = acc + y
+        comp = (t - acc) - y
+        acc = t
+
+    return acc
+
+# even better: neumaier sums, independent of size ordering
+def neumaier_sum(numbers, zero_ref):
+    acc = torch.zeros_like(zero_ref)
+    comp = torch.zeros_like(zero_ref) 
+
+    for num in numbers:
+        t = acc + num
+        mask = (acc >= num).to(FLOAT_TYPE)
+        comp += mask * ((acc - t) + num) + (1-mask) * ((num - t) + acc)
+        acc = t
+
+    return acc + comp
+
 # calculate shannon entropy from a lambda vector
 # fac can be used to rescale the terms for lambda_a
 # qs is a np array with last dimension 4
 def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
     entropy = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
 
-    for mult, poly in lambda_list:
-        if len(poly) == 0:
-            continue
+    def lambda_iterator():
+        for mult, poly in lambda_list:
+            if len(poly) == 0:
+                continue
 
-        term = torch.zeros_like(entropy)
-        for [coeff, [e1, e2, e3]] in poly:
-            term += (
-                fac
-                * coeff
-                * torch.prod(qs ** torch.tensor([e1, e2, e3], dtype=FLOAT_TYPE, device=DEVICE), -1)
-                * (1 - torch.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
-            )
+            def poly_iterator():
+                for [coeff, [e1, e2, e3]] in poly:
+                    yield (
+                        fac
+                        * coeff
+                        * torch.prod(qs ** torch.tensor([e1, e2, e3], dtype=FLOAT_TYPE, device=DEVICE), -1)
+                        * (1 - torch.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
+                    )
 
-        # filter out zeros for x log x
-        entropy -= mult * torch.where(term != 0, term * torch.log2(term), term)
+            term = neumaier_sum(poly_iterator(), entropy)
+
+            # filter out zeros for x log x
+            yield -mult * torch.where(term != 0, term * torch.log2(term), term)
+
+    entropy = neumaier_sum(lambda_iterator(), entropy)
 
     return entropy
 
@@ -135,8 +168,8 @@ if __name__ == "__main__":
 
     BISECTIONS = args.bisections
     assert (
-        BISECTIONS > 0 and BISECTIONS < 64
-    ), "number of bisections has to be between 1 and 63"
+        BISECTIONS >= 0 and BISECTIONS < 64
+    ), "number of bisections has to be between 0 and 63"
 
     KTOTMAX = args.kTotMax
     assert KTOTMAX > 0, "kTotMax needs to be a postive number"
@@ -175,7 +208,7 @@ if __name__ == "__main__":
 
     # best CI
     best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
-    best_ci -= 10 ** 9
+    best_ci -= 10 ** 2 
     # best qs
     best_qs = torch.zeros_like(qs)
     # best graph, we store the adjacency matrix
@@ -195,7 +228,7 @@ if __name__ == "__main__":
                 assert KTOT.is_integer(), "adjacency matrix not square"
                 KTOT = int(KTOT)
             else:
-                a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)$", file_meta.name)
+                a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)\.gz", file_meta.name)
                 assert len(a_in_b_matches) == 1, "invalid archived name, must encode adjm in 01 format as in 0110.json.gz or a catcode with filename ending in .a-in-b"
                 # for catcodes we generally assume that KENV=1
                 KSYS = int(a_in_b_matches[0][0]) * int(a_in_b_matches[0][1])
@@ -215,6 +248,15 @@ if __name__ == "__main__":
             with archive.extractfile(file_meta) as file:
                 content = json.load(gzip.GzipFile(fileobj=file))
 
+                # sort to avoid numerical errors
+                content["lambda"].sort()
+                content["lambda_a"].sort()
+
+                for _, poly in content["lambda"]:
+                    poly.sort(key=lambda a: (-sum(a[1]), a[0]))
+                for _, poly in content["lambda_a"]:
+                    poly.sort(key=lambda a: (-sum(a[1]), a[0]))
+
             def ci_fun(qqs):
                 S = shannon_entropy_from_lambda(content["lambda"], KSYS, 1.0, qqs)
                 S_a = shannon_entropy_from_lambda(
@@ -222,7 +264,8 @@ if __name__ == "__main__":
                 )
                 mult_a = multiplicity_from_lambda(content["lambda_a"])
 
-                return (S_a - S) * (1. / np.log2(mult_a))
+                # the subtracted offset is to prevent numerical errors
+                return (S_a - S) * (1. / np.log2(mult_a)) - 1e-20
 
             res = find_zero_passing_bisect(
                 f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs

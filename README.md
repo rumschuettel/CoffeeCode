@@ -2,9 +2,9 @@
 
 ## Requirements
 
-* gcc 8 or newer/msvc 2017 or newer
-* boost 1.69.0 source
-* nauty 2.7rc2
+* gcc 8 or newer/msvc 2017 or newer/ICC 19 or newer
+* boost 1.69.0 or newer
+* nauty 2.7rc2; might work with newer versions too.
 
 The cxx compiler must be installed, boost and nauty extracted to some folders, respectively.
 For nauty, go to the extracted source folder and run `./configure`.
@@ -101,7 +101,8 @@ Run `./CoffeeCode`, then specify as input an adjacency matrix as a list of `0`s 
 ### Symmetric Case
 
 The symmetric solver is run. For optimal performance, the code has to be compiled _once per problem instance_; due to the way nauty has to be linked we need to set `K_SYS` and `K_ENV` both as command line arguments for make (as `make K_SYS=3 K_ENV=1`) as well as *matching* within the file `cc-instance-custom.h`, which has been added to the build directory.
-Note: this file is included from within `cc-instance.h`, which contains a struct with four variables:
+Note: this file is included from within `cc-instance.h`.
+For the `reference-transversal` release, this is a struct with four variables:
 
 ```
 struct graphstate_instance {
@@ -123,4 +124,4 @@ struct graphstate_instance {
 
 Each permutation is given in list form and must contain each number from `0...K_SYS-1` exactly once (this is checked at compile time). For reasons of C++'s syntax, the lists here are each enclosed in angular brackets. Whitespace is ignored.
 
-For ease of use, create the `cc-instance-custom.h` file with Mathematica, which does all the annoying redundant specifications automatically.
+For ease of use, create the `cc-instance-custom.h` file with Mathematica (this also works in newer versions than the `reference-transversal` release using the nauty color iterator).

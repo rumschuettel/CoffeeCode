@@ -1,6 +1,43 @@
 // nauty-color-generator-vcolg.cpp
 // adapted from
 /* vcolg.c version 2.0; B D McKay, May 11, 2017 */
+/*
+ * This file was originally licensed under the Apache license.
+ * As required, a copy of the license is attached below;
+ * this license applies to this file only.
+
+This is the license for the software package Nauty and
+Traces, package versions 2.6r3 and later.
+
+Five categories of software are included in the package:
+A. All files not listed as B-E below, copyright Brendan McKay (1984-)
+B. Files traces.h, traces.c and dretodot.c, copyright Adolfo Piperno (2008-)
+C. File watercluster2.c, copyright Gunnar Brinkmann (2009-)
+D. Files planarity.h and planarity.c, copyright Magma project.
+E. Files nautycliquer.h and nautycliquer.c, copyright to Sampo
+   Niskanen and Patric Östergård.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this software except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Brendan McKay: Australian National University; Brendan.McKay@anu.edu.au
+Adolfo Piperno: University of Rome "Sapienza"; piperno@di.uniroma1.it
+Gunnar Brinkmann: University of Ghent; Gunnar.Brinkmann@UGent.be
+Magma Administration: University of Sydney; admin@maths.usyd.edu.au
+Patric Ostergard: Aalto Univerity; patric.ostergard@aalto.fi
+
+---END-OF-FORMAL-COPYRIGHT-NOTICE--
+ *
+ */
 
 #include "nauty-color-generator-vcolg.h"
 

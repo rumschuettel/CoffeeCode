@@ -250,6 +250,7 @@ if __name__ == "__main__":
                 KTOT = math.sqrt(len(adjm_matches[0]))
                 assert KTOT.is_integer(), "adjacency matrix not square"
                 KTOT = int(KTOT)
+
             else:
                 a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)\.gz", file_meta.name)
                 assert (
@@ -295,7 +296,7 @@ if __name__ == "__main__":
                 return (S_a - S) * (1. / np.log2(mult_a)) - 1e-10
 
             res = find_zero_passing_bisect(
-                f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs
+                f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs.clone()
             )
 
             # update best ci and best graph
@@ -304,6 +305,8 @@ if __name__ == "__main__":
             best_graph[mask] = adjm_ctr
             best_ci[mask] = res["val"][mask]
             best_qs[mask] = res["qs"][mask]
+
+            print("updated", mask.sum(dtype=torch.int64))
 
     # output best graph and best ci
     OUTFILE = (

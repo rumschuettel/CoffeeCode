@@ -292,7 +292,7 @@ if __name__ == "__main__":
                 mult_a = multiplicity_from_lambda(content["lambda_a"])
 
                 # the subtracted offset is to prevent numerical errors
-                return (S_a - S) * (1. / np.log2(mult_a)) - 1e-50
+                return (S_a - S) * (1. / np.log2(mult_a)) - 1e-10
 
             res = find_zero_passing_bisect(
                 f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs

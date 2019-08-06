@@ -3,21 +3,27 @@
 import numpy as np
 import tarfile, gzip, json
 import re, math
-import os, multiprocessing
+import os
 
-import torch
+from scipy.special import xlogy
 
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+LOG2E = math.log2(math.e)
+def xlog2x(term):
+    return xlogy(term, term) * LOG2E
 
-print("running on device", DEVICE)
 
-FLOAT_TYPE = torch.float64
-FLOAT_TYPE_NP = np.float64
+import mpmath as mp
+tompf = np.frompyfunc(mp.mpf, 1, 1)
 
-torch.set_default_tensor_type(torch.DoubleTensor)
+def fsum(iterable):
+    acc = None
+    for a in iterable:
+        if acc is None:
+            acc = a
+            continue
+        acc += a
+    return acc.astype(np.float64)
+
 
 # get total multiplicity from lambda vectors
 def multiplicity_from_lambda(lambda_list):
@@ -33,62 +39,11 @@ def multiplicity_from_lambda(lambda_list):
     return global_mult
 
 
-# kahan summation to prevent floating point error buildup
-def kahan_sum(numbers, zero_ref):
-    acc = torch.zeros_like(zero_ref)
-    comp = torch.zeros_like(zero_ref)
-
-    for num in numbers:
-        y = num - comp
-        t = acc + y
-        comp = (t - acc) - y
-        acc = t
-
-    return acc
-
-
-# even better: neumaier sums, independent of size ordering
-def neumaier_sum(numbers, zero_ref):
-    acc = torch.zeros_like(zero_ref)
-    comp = torch.zeros_like(zero_ref)
-
-    for num in numbers:
-        t = acc + num
-        mask = (acc >= num).to(FLOAT_TYPE)
-        comp += mask * ((acc - t) + num) + (1 - mask) * ((num - t) + acc)
-        acc = t
-
-    return acc + comp
-
-
-# jo's sum, because people suck at this
-def jos_sum(numbers, zero_ref):
-    queue = []
-    queue_ct = []
-
-    for num in numbers:
-        queue.append(num)
-        queue_ct.append(1)
-
-        if len(queue) == 1:
-            continue
-
-        for i in range(len(queue)-1):
-            if queue_ct[-1] == queue_ct[-2]:
-                queue[-2] += queue[-1]
-                queue_ct[-2] += queue_ct[-1]
-
-                queue.pop()
-                queue_ct.pop()
-
-    return sum(queue)
-
-
 # calculate shannon entropy from a lambda vector
 # fac can be used to rescale the terms for lambda_a
 # qs is a np array with last dimension 4
-def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs, stable_summer=False):
-    entropy = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
+def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
+    entropy = np.zeros(qs.shape[:-1])
 
     def lambda_iterator():
         for mult, poly in lambda_list:
@@ -100,30 +55,16 @@ def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs, stable_summer=False)
                     yield (
                         fac
                         * coeff
-                        * torch.prod(
-                            qs
-                            ** torch.tensor(
-                                [e1, e2, e3], dtype=FLOAT_TYPE, device=DEVICE
-                            ),
-                            -1,
-                        )
-                        * (1 - torch.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
+                        * np.prod(qs ** (e1, e2, e3), -1)
+                        * (1 - np.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
                     )
 
-            term = (
-                jos_sum(poly_iterator(), entropy)
-                if stable_summer
-                else sum(poly_iterator())
-            )
+            term = fsum(poly_iterator())
 
             # filter out zeros for x log x
-            yield -mult * torch.where(term != 0, term * torch.log2(term), term)
+            yield -mult * xlog2x(term)
 
-    entropy = (
-        jos_sum(lambda_iterator(), entropy)
-        if stable_summer
-        else sum(lambda_iterator())
-    )
+    entropy = fsum(lambda_iterator())
 
     return entropy
 
@@ -149,17 +90,16 @@ def find_zero_passing_bisect(f, depth, qs_a, qs_b, val_a=None, val_b=None):
         # either return upper, lower, or midpoint qs and val
         ret_a_gt0 = val_a > 0
         ret_b_lt0 = val_b < 0
-        ret_a_gt0_w = ret_a_gt0.repeat(3).reshape(3, -1).transpose(0, 1)
-        ret_b_lt0_w = ret_b_lt0.repeat(3).reshape(3, -1).transpose(0, 1)
+        ret_a_gt0_w = ret_a_gt0.repeat(3).reshape(-1, 3)
+        ret_b_lt0_w = ret_b_lt0.repeat(3).reshape(-1, 3)
         return {
-            "qs": torch.where(
-                ret_a_gt0_w, torch.where(ret_b_lt0_w, (qs_a + qs_b) / 2, qs_b), qs_a
+            "qs": np.where(
+                ret_a_gt0_w, np.where(ret_b_lt0_w, (qs_a + qs_b) / 2, qs_b), qs_a
             ),
-            "val": torch.where(
-                ret_a_gt0, torch.where(ret_b_lt0, (val_a + val_b) / 2, val_b), val_a
+            "val": np.where(
+                ret_a_gt0, np.where(ret_b_lt0, (val_a + val_b) / 2, val_b), val_a
             ),
         }
-
 
 if __name__ == "__main__":
     import argparse
@@ -168,19 +108,16 @@ if __name__ == "__main__":
         description="CoffeeCode Postprocess: MapReduce CI over grid with max reductor"
     )
     parser.add_argument(
-        "--threads", metavar="THREADS", type=int, default=multiprocessing.cpu_count()
-    )
-    parser.add_argument(
         "--outfile",
         metavar="OUTFILE",
         type=str,
         default="",
         help="outfile prefix (default: INFILE-best.npz)",
     )
+    parser.add_argument("--precision", metavar="PRECISION", type=int, default=mp.mp.dps)
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=.50)
     parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=100)
     parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=20)
-    parser.add_argument("--stable_sum", metavar="STABLE_SUM", type=bool, default=False)
     parser.add_argument(
         "infile",
         metavar="INFILE",
@@ -191,13 +128,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    THREADS = args.threads
-    assert THREADS > 0, "invalid thread count"
-    torch.set_num_threads(THREADS)
-
     PATH_THISFILE = os.path.dirname(os.path.realpath(__file__))
     INFILE = os.path.join(PATH_THISFILE, args.infile)
     assert os.path.exists(INFILE), "INFILE does not exist"
+
+    PRECISION = args.precision
+    assert PRECISION > 1, "wrong precision given"
+    mp.mp.dps = PRECISION
 
     RADIUS = args.radius
     RESOLUTION = args.resolution
@@ -210,8 +147,6 @@ if __name__ == "__main__":
 
     KTOTMAX = args.kTotMax
     assert KTOTMAX > 0, "kTotMax needs to be a postive number"
-
-    STABLE_SUM = args.stable_sum
 
     # extract kSys from filename
     kSys_matches = re.findall(r"-kSys(\d+)-", args.infile)
@@ -226,15 +161,11 @@ if __name__ == "__main__":
         KSYS = None
         print("archive with catcodes detected. KSYS unset")
 
-    # print some info
-    if STABLE_SUM:
-        print("using Neumaier summation for floating point precision loss")
-
     # build q table on a spherical surface
     # todo: find a better spaced method
     def qs_radial():
-        φ = np.arange(0, math.pi / 2, math.pi / 2 / RESOLUTION, dtype=FLOAT_TYPE_NP)
-        θ = np.arange(0, math.pi / 2, math.pi / 2 / RESOLUTION, dtype=FLOAT_TYPE_NP)
+        φ = np.arange(0, math.pi / 2, math.pi / 2 / RESOLUTION)
+        θ = np.arange(0, math.pi / 2, math.pi / 2 / RESOLUTION)
 
         cos_φ = np.cos(φ)
         sin_φ = np.sin(φ)
@@ -247,15 +178,15 @@ if __name__ == "__main__":
 
         return np.stack((q1, q2, q3)).transpose()
 
-    qs = torch.from_numpy(qs_radial()).contiguous().to(device=DEVICE)
+    qs = qs_radial()
 
     # best CI
-    best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
+    best_ci = np.zeros(qs.shape[:-1])
     best_ci -= 10 ** 2
     # best qs
-    best_qs = torch.zeros_like(qs)
+    best_qs = np.zeros_like(qs)
     # best graph, we store the adjacency matrix
-    best_graph = torch.zeros(best_ci.shape, dtype=torch.int32, device=DEVICE)
+    best_graph = np.zeros(best_ci.shape, dtype=np.int64)
 
     # iterate over files in INFILE
     adjm_ctr = 0
@@ -294,39 +225,29 @@ if __name__ == "__main__":
             with archive.extractfile(file_meta) as file:
                 content = json.load(gzip.GzipFile(fileobj=file))
 
-                # sort to avoid numerical errors
-                if STABLE_SUM:
-                    content["lambda"].sort()
-                    content["lambda_a"].sort()
-
-                    for _, poly in content["lambda"]:
-                        poly.sort(key=lambda a: (-sum(a[1]), a[0]))
-                    for _, poly in content["lambda_a"]:
-                        poly.sort(key=lambda a: (-sum(a[1]), a[0]))
-
             def ci_fun(qqs):
                 S = shannon_entropy_from_lambda(
-                    content["lambda"], KSYS, 1.0, qqs, STABLE_SUM
+                    content["lambda"], KSYS, 1.0, qqs
                 )
                 S_a = shannon_entropy_from_lambda(
-                    content["lambda_a"], KSYS, 2.0 ** -KENV, qqs, STABLE_SUM
+                    content["lambda_a"], KSYS, 2.0 ** -KENV, qqs
                 )
                 mult_a = multiplicity_from_lambda(content["lambda_a"])
 
-                return (S_a - S) * (1. / np.log2(mult_a))
+                return (S_a - S) * (1. / math.log2(mult_a))
 
             res = find_zero_passing_bisect(
-                f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs.clone()
+                f=ci_fun, depth=BISECTIONS, qs_a=np.zeros_like(qs), qs_b=qs.copy()
             )
 
             # update best ci and best graph
             adjm_ctr += 1
-            mask = torch.sum(res["qs"], -1) > torch.sum(best_qs, -1)
+            mask = np.sum(res["qs"], -1) > np.sum(best_qs, -1)
             best_graph[mask] = adjm_ctr
             best_ci[mask] = res["val"][mask]
             best_qs[mask] = res["qs"][mask]
 
-            print("updated", mask.sum(dtype=torch.int64))
+            print("updated", mask.sum(dtype=np.int64))
 
     # output best graph and best ci
     OUTFILE = (
@@ -338,9 +259,10 @@ if __name__ == "__main__":
     np.savez_compressed(
         OUTFILE,
         params=[RADIUS, RESOLUTION],
-        ci=best_ci.cpu().numpy(),
-        qs=best_qs.cpu().numpy(),
-        graph=best_graph.cpu().numpy(),
+        ci=best_ci.astype(np.float64),
+        qs=best_qs.astype(np.float64),
+        graph=best_graph.astype(np.float64),
     )
 
     print("done")
+

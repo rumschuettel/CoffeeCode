@@ -7,15 +7,12 @@ import os, multiprocessing
 
 import torch
 
-
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")
 
-
 print("running on device", DEVICE)
-
 
 FLOAT_TYPE = torch.float64
 FLOAT_TYPE_NP = np.float64
@@ -292,8 +289,7 @@ if __name__ == "__main__":
                 )
                 mult_a = multiplicity_from_lambda(content["lambda_a"])
 
-                # the subtracted offset is to prevent numerical errors
-                return (S_a - S) * (1. / np.log2(mult_a)) - 1e-10
+                return (S_a - S) * (1. / np.log2(mult_a))
 
             res = find_zero_passing_bisect(
                 f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs.clone()

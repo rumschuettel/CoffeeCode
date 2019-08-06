@@ -8,9 +8,9 @@ import os
 from scipy.special import xlogy
 
 LOG2E = math.log2(math.e)
+
 def xlog2x(term):
     return xlogy(term, term) * LOG2E
-
 
 import mpmath as mp
 tompf = np.frompyfunc(mp.mpf, 1, 1)
@@ -19,9 +19,9 @@ def fsum(iterable):
     acc = None
     for a in iterable:
         if acc is None:
-            acc = a
+            acc = tompf(a)
             continue
-        acc += a
+        acc += tompf(a)
     return acc.astype(np.float64)
 
 

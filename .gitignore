@@ -335,3 +335,5 @@ ASALocalRun/
 *.vcxproj*
 .vscode
 build/
+*.npz
+

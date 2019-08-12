@@ -223,7 +223,7 @@ if __name__ == "__main__":
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=.50)
     parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=512)
     parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=10)
-    parser.add_argument("--stable_sum", metavar="STABLE_SUM", type=bool, default=True)
+    parser.add_argument("--stable_sum", metavar="STABLE_SUM", type=bool, default=False)
     parser.add_argument(
         "infile",
         metavar="INFILE",

@@ -91,7 +91,6 @@ def shewchuck_sum(numbers, zero_ref):
                 partials[mask, i[mask]] = lo[mask]
                 i[mask] += 1
                 if torch.any(i > PARTIAL_COUNT):
-                    print("partials overflow")
                     return (False, None)
     
                 x = hi
@@ -110,7 +109,6 @@ def shewchuck_sum(numbers, zero_ref):
     # start with small partial count, successively increase
     for i in range(2,10):
         PARTIAL_COUNT = i**4
-        print(f"partial count set to {PARTIAL_COUNT}")
         stat, res = _shewchuck_sum(PARTIAL_COUNT)
         if stat:
             return res

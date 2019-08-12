@@ -64,45 +64,60 @@ def neumaier_sum(numbers, zero_ref):
 def shewchuck_sum(numbers, zero_ref):
     # adapted to torch from https://code.activestate.com/recipes/393090/
     # www-2.cs.cmu.edu/afs/cs/project/quake/public/papers/robust-arithmetic.ps
-#
+
     # fixed size partials array, we assert if we're out of bounds
     # the last index is then the [i] index
-    PARTIAL_COUNT = 10
-    UNIT_VECS = torch.eye(PARTIAL_COUNT, dtype=torch.uint8)
-    partials = torch.stack((torch.zeros_like(zero_ref),) * PARTIAL_COUNT).transpose(0, 1)
-#
-    for x in numbers:
-        x = x.clone()
-        i = torch.zeros_like(zero_ref, dtype=torch.long)
-#
-        for y in partials.transpose(0, 1):
-            mask = torch.abs(x) < torch.abs(y)
-            x[mask], y[mask] = y[mask], x[mask]
-#            
-            hi = x + y
-            lo = y - (hi - x)
-#
-            mask = lo != 0
-#
-            #if lo:
-            #    partials[i] = lo
-            #    i += 1
-            partials[mask, i[mask]] = lo[mask]
-            i[mask] += 1
-            assert torch.all(i < PARTIAL_COUNT), "partial sum overflow"
-#
-            x = hi
-#        
-        #partials[i:] = [x]
-        # assignment of x
-        i_mask = UNIT_VECS[i]
-        partials[i_mask] = x
-        i_mask *= 0
-        for ii in range(1, PARTIAL_COUNT):
-            i_mask += UNIT_VECS[ torch.clamp(i+ii, 0, PARTIAL_COUNT-1) ]
-        partials[ i_mask.clamp(0,1) ] *= 0.
-#
-    return torch.sum(partials, -1)
+
+    def _shewchuck_sum(PARTIAL_COUNT):
+        UNIT_VECS = torch.eye(PARTIAL_COUNT, dtype=torch.uint8)
+        partials = torch.stack((torch.zeros_like(zero_ref),) * PARTIAL_COUNT).transpose(0, 1)
+
+        for x in numbers:
+            x = x.clone()
+            i = torch.zeros_like(zero_ref, dtype=torch.long)
+    
+            for y in partials.transpose(0, 1):
+                mask = torch.abs(x) < torch.abs(y)
+                x[mask], y[mask] = y[mask], x[mask]
+                
+                hi = x + y
+                lo = y - (hi - x)
+    
+                mask = lo != 0
+    
+                #if lo:
+                #    partials[i] = lo
+                #    i += 1
+                partials[mask, i[mask]] = lo[mask]
+                i[mask] += 1
+                if torch.any(i > PARTIAL_COUNT):
+                    print("partials overflow")
+                    return (False, None)
+    
+                x = hi
+            
+            #partials[i:] = [x]
+            # assignment of x
+            i_mask = UNIT_VECS[i]
+            partials[i_mask] = x
+            i_mask *= 0
+            for ii in range(1, PARTIAL_COUNT):
+                i_mask += UNIT_VECS[ torch.clamp(i+ii, 0, PARTIAL_COUNT-1) ]
+            partials[ i_mask.clamp(0,1) ] *= 0.
+
+        return (True, torch.sum(partials, -1))
+
+    # start with small partial count, successively increase
+    for i in range(2,10):
+        PARTIAL_COUNT = i**4
+        print(f"partial count set to {PARTIAL_COUNT}")
+        stat, res = _shewchuck_sum(PARTIAL_COUNT)
+        if stat:
+            return res
+
+    raise "partial count"
+
+
 
 # jo's binary sum, because people suck at this
 def jos_sum(numbers, zero_ref):

@@ -54,14 +54,57 @@ def neumaier_sum(numbers, zero_ref):
 
     for num in numbers:
         t = acc + num
-        mask = (acc >= num).to(FLOAT_TYPE)
+        mask = (torch.abs(acc) >= torch.abs(num)).to(FLOAT_TYPE)
         comp += mask * ((acc - t) + num) + (1 - mask) * ((num - t) + acc)
         acc = t
 
     return acc + comp
 
 
-# jo's sum, because people suck at this
+def shewchuck_sum(numbers, zero_ref):
+    # adapted to torch from https://code.activestate.com/recipes/393090/
+    # www-2.cs.cmu.edu/afs/cs/project/quake/public/papers/robust-arithmetic.ps
+#
+    # fixed size partials array, we assert if we're out of bounds
+    # the last index is then the [i] index
+    PARTIAL_COUNT = 10
+    UNIT_VECS = torch.eye(PARTIAL_COUNT, dtype=torch.uint8)
+    partials = torch.stack((torch.zeros_like(zero_ref),) * PARTIAL_COUNT).transpose(0, 1)
+#
+    for x in numbers:
+        x = x.clone()
+        i = torch.zeros_like(zero_ref, dtype=torch.long)
+#
+        for y in partials.transpose(0, 1):
+            mask = torch.abs(x) < torch.abs(y)
+            x[mask], y[mask] = y[mask], x[mask]
+#            
+            hi = x + y
+            lo = y - (hi - x)
+#
+            mask = lo != 0
+#
+            #if lo:
+            #    partials[i] = lo
+            #    i += 1
+            partials[mask, i[mask]] = lo[mask]
+            i[mask] += 1
+            assert torch.all(i < PARTIAL_COUNT), "partial sum overflow"
+#
+            x = hi
+#        
+        #partials[i:] = [x]
+        # assignment of x
+        i_mask = UNIT_VECS[i]
+        partials[i_mask] = x
+        i_mask *= 0
+        for ii in range(1, PARTIAL_COUNT):
+            i_mask += UNIT_VECS[ torch.clamp(i+ii, 0, PARTIAL_COUNT-1) ]
+        partials[ i_mask.clamp(0,1) ] *= 0.
+#
+    return torch.sum(partials, -1)
+
+# jo's binary sum, because people suck at this
 def jos_sum(numbers, zero_ref):
     queue = []
     queue_ct = []
@@ -111,7 +154,7 @@ def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs, stable_summer=False)
                     )
 
             term = (
-                jos_sum(poly_iterator(), entropy)
+                shewchuck_sum(poly_iterator(), entropy)
                 if stable_summer
                 else sum(poly_iterator())
             )
@@ -120,7 +163,7 @@ def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs, stable_summer=False)
             yield -mult * torch.where(term != 0, term * torch.log2(term), term)
 
     entropy = (
-        jos_sum(lambda_iterator(), entropy)
+        shewchuck_sum(lambda_iterator(), entropy)
         if stable_summer
         else sum(lambda_iterator())
     )
@@ -178,9 +221,9 @@ if __name__ == "__main__":
         help="outfile prefix (default: INFILE-best.npz)",
     )
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=.50)
-    parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=100)
-    parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=20)
-    parser.add_argument("--stable_sum", metavar="STABLE_SUM", type=bool, default=False)
+    parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=512)
+    parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=10)
+    parser.add_argument("--stable_sum", metavar="STABLE_SUM", type=bool, default=True)
     parser.add_argument(
         "infile",
         metavar="INFILE",
@@ -249,6 +292,8 @@ if __name__ == "__main__":
 
     qs = torch.from_numpy(qs_radial()).contiguous().to(device=DEVICE)
 
+    print(len(qs))
+
     # best CI
     best_ci = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
     best_ci -= 10 ** 2
@@ -304,6 +349,8 @@ if __name__ == "__main__":
                     for _, poly in content["lambda_a"]:
                         poly.sort(key=lambda a: (-sum(a[1]), a[0]))
 
+            inv_log_mult_a = 1. / np.log2(multiplicity_from_lambda(content["lambda_a"]))
+
             def ci_fun(qqs):
                 S = shannon_entropy_from_lambda(
                     content["lambda"], KSYS, 1.0, qqs, STABLE_SUM
@@ -311,9 +358,8 @@ if __name__ == "__main__":
                 S_a = shannon_entropy_from_lambda(
                     content["lambda_a"], KSYS, 2.0 ** -KENV, qqs, STABLE_SUM
                 )
-                mult_a = multiplicity_from_lambda(content["lambda_a"])
 
-                return (S_a - S) * (1. / np.log2(mult_a))
+                return (S_a - S) * inv_log_mult_a
 
             res = find_zero_passing_bisect(
                 f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs.clone()

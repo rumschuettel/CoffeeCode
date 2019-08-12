@@ -5,24 +5,16 @@ import tarfile, gzip, json
 import re, math
 import os
 
-from scipy.special import xlogy
+import mpmath as mp
 
 LOG2E = math.log2(math.e)
-
-def xlog2x(term):
-    return xlogy(term, term) * LOG2E
-
-import mpmath as mp
+mplog2 = np.frompyfunc(lambda x: mp.log(x, b=2), 1, 1)
+mpcos = np.frompyfunc(mp.cos, 1, 1)
+mpsin = np.frompyfunc(mp.sin, 1, 1)
 tompf = np.frompyfunc(mp.mpf, 1, 1)
 
-def fsum(iterable):
-    acc = None
-    for a in iterable:
-        if acc is None:
-            acc = tompf(a)
-            continue
-        acc += tompf(a)
-    return acc.astype(np.float64)
+def xlog2x(term):
+    return term * np.where(term != 0, mplog2(term), np.zeros_like(term))
 
 
 # get total multiplicity from lambda vectors
@@ -43,10 +35,15 @@ def multiplicity_from_lambda(lambda_list):
 # fac can be used to rescale the terms for lambda_a
 # qs is a np array with last dimension 4
 def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
-    entropy = np.zeros(qs.shape[:-1])
+    entropy = tompf(np.zeros(qs.shape[:-1]))
+
 
     def lambda_iterator():
+        ctr = len(lambda_list)
         for mult, poly in lambda_list:
+            ctr -= 1
+            print(ctr)
+
             if len(poly) == 0:
                 continue
 
@@ -59,12 +56,12 @@ def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs):
                         * (1 - np.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
                     )
 
-            term = fsum(poly_iterator())
+            term = sum(poly_iterator())
 
             # filter out zeros for x log x
             yield -mult * xlog2x(term)
 
-    entropy = fsum(lambda_iterator())
+    entropy = sum(lambda_iterator())
 
     return entropy
 
@@ -108,15 +105,17 @@ if __name__ == "__main__":
         description="CoffeeCode Postprocess: MapReduce CI over grid with max reductor"
     )
     parser.add_argument(
+        "--precision", metavar="PRECISION", type=int, default=mp.mp.dps
+    )
+    parser.add_argument(
         "--outfile",
         metavar="OUTFILE",
         type=str,
         default="",
         help="outfile prefix (default: INFILE-best.npz)",
     )
-    parser.add_argument("--precision", metavar="PRECISION", type=int, default=mp.mp.dps)
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=.50)
-    parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=100)
+    parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=512)
     parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=20)
     parser.add_argument(
         "infile",
@@ -128,13 +127,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    PRECISION = args.precision
+    assert PRECISION > 0, "invalid precision"
+    mp.mp.dps = PRECISION
+
     PATH_THISFILE = os.path.dirname(os.path.realpath(__file__))
     INFILE = os.path.join(PATH_THISFILE, args.infile)
     assert os.path.exists(INFILE), "INFILE does not exist"
-
-    PRECISION = args.precision
-    assert PRECISION > 1, "wrong precision given"
-    mp.mp.dps = PRECISION
 
     RADIUS = args.radius
     RESOLUTION = args.resolution
@@ -164,13 +163,13 @@ if __name__ == "__main__":
     # build q table on a spherical surface
     # todo: find a better spaced method
     def qs_radial():
-        φ = np.arange(0, math.pi / 2, math.pi / 2 / RESOLUTION)
-        θ = np.arange(0, math.pi / 2, math.pi / 2 / RESOLUTION)
+        φ = np.array(mp.arange(0, mp.pi / 2, mp.pi / 2 / RESOLUTION))
+        θ = np.array(mp.arange(0, mp.pi / 2, mp.pi / 2 / RESOLUTION))
 
-        cos_φ = np.cos(φ)
-        sin_φ = np.sin(φ)
-        cos_θ = np.cos(θ)
-        sin_θ = np.sin(θ)
+        cos_φ = mpcos(φ)
+        sin_φ = mpsin(φ)
+        cos_θ = mpcos(θ)
+        sin_θ = mpsin(θ)
 
         q1 = RADIUS * np.outer(sin_θ, cos_φ).flatten()
         q2 = RADIUS * np.outer(sin_θ, sin_φ).flatten()
@@ -180,11 +179,13 @@ if __name__ == "__main__":
 
     qs = qs_radial()
 
+    print(len(qs))
+
     # best CI
-    best_ci = np.zeros(qs.shape[:-1])
+    best_ci = tompf(np.zeros(qs.shape[:-1]))
     best_ci -= 10 ** 2
     # best qs
-    best_qs = np.zeros_like(qs)
+    best_qs = tompf(np.zeros_like(qs))
     # best graph, we store the adjacency matrix
     best_graph = np.zeros(best_ci.shape, dtype=np.int64)
 
@@ -225,6 +226,8 @@ if __name__ == "__main__":
             with archive.extractfile(file_meta) as file:
                 content = json.load(gzip.GzipFile(fileobj=file))
 
+            inv_log_mult_a = 1. / mp.log(multiplicity_from_lambda(content["lambda_a"]), b=2)
+
             def ci_fun(qqs):
                 S = shannon_entropy_from_lambda(
                     content["lambda"], KSYS, 1.0, qqs
@@ -234,10 +237,10 @@ if __name__ == "__main__":
                 )
                 mult_a = multiplicity_from_lambda(content["lambda_a"])
 
-                return (S_a - S) * (1. / math.log2(mult_a))
+                return (S_a - S) * inv_log_mult_a
 
             res = find_zero_passing_bisect(
-                f=ci_fun, depth=BISECTIONS, qs_a=np.zeros_like(qs), qs_b=qs.copy()
+                f=ci_fun, depth=BISECTIONS, qs_a=tompf(np.zeros_like(qs)), qs_b=qs.copy()
             )
 
             # update best ci and best graph

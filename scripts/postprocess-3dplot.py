@@ -90,7 +90,7 @@ def shewchuck_sum(numbers, zero_ref):
                 #    i += 1
                 partials[mask, i[mask]] = lo[mask]
                 i[mask] += 1
-                if torch.any(i > PARTIAL_COUNT):
+                if torch.any(i >= PARTIAL_COUNT):
                     return (False, None)
     
                 x = hi

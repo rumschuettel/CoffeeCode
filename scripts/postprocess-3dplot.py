@@ -33,119 +33,10 @@ def multiplicity_from_lambda(lambda_list):
     return global_mult
 
 
-# kahan summation to prevent floating point error buildup
-def kahan_sum(numbers, zero_ref):
-    acc = torch.zeros_like(zero_ref)
-    comp = torch.zeros_like(zero_ref)
-
-    for num in numbers:
-        y = num - comp
-        t = acc + y
-        comp = (t - acc) - y
-        acc = t
-
-    return acc
-
-
-# even better: neumaier sums, independent of size ordering
-def neumaier_sum(numbers, zero_ref):
-    acc = torch.zeros_like(zero_ref)
-    comp = torch.zeros_like(zero_ref)
-
-    for num in numbers:
-        t = acc + num
-        mask = (torch.abs(acc) >= torch.abs(num)).to(FLOAT_TYPE)
-        comp += mask * ((acc - t) + num) + (1 - mask) * ((num - t) + acc)
-        acc = t
-
-    return acc + comp
-
-
-def shewchuck_sum(numbers, zero_ref):
-    # adapted to torch from https://code.activestate.com/recipes/393090/
-    # www-2.cs.cmu.edu/afs/cs/project/quake/public/papers/robust-arithmetic.ps
-
-    # fixed size partials array, we assert if we're out of bounds
-    # the last index is then the [i] index
-
-    def _shewchuck_sum(PARTIAL_COUNT):
-        UNIT_VECS = torch.eye(PARTIAL_COUNT, dtype=torch.uint8)
-        partials = torch.stack((torch.zeros_like(zero_ref),) * PARTIAL_COUNT).transpose(0, 1)
-
-        for x in numbers:
-            x = x.clone()
-            i = torch.zeros_like(zero_ref, dtype=torch.long)
-    
-            for y in partials.transpose(0, 1):
-                mask = torch.abs(x) < torch.abs(y)
-                x[mask], y[mask] = y[mask], x[mask]
-                
-                hi = x + y
-                lo = y - (hi - x)
-    
-                mask = lo != 0
-    
-                #if lo:
-                #    partials[i] = lo
-                #    i += 1
-                partials[mask, i[mask]] = lo[mask]
-                i[mask] += 1
-                if torch.any(i >= PARTIAL_COUNT):
-                    return (False, None)
-    
-                x = hi
-            
-            #partials[i:] = [x]
-            # assignment of x
-            i_mask = UNIT_VECS[i]
-            partials[i_mask] = x
-            i_mask *= 0
-            for ii in range(1, PARTIAL_COUNT):
-                i_mask += UNIT_VECS[ torch.clamp(i+ii, 0, PARTIAL_COUNT-1) ]
-            partials[ i_mask.clamp(0,1) ] *= 0.
-
-        return (True, torch.sum(partials, -1))
-
-    # start with small partial count, successively increase
-    for i in range(2,10):
-        PARTIAL_COUNT = i**4
-        stat, res = _shewchuck_sum(PARTIAL_COUNT)
-        if stat:
-            return res
-
-    raise "partial count"
-
-
-
-# jo's binary sum, because people suck at this
-def jos_sum(numbers, zero_ref):
-    queue = []
-    queue_ct = []
-
-    for num in numbers:
-        queue.append(num)
-        queue_ct.append(1)
-
-        if len(queue) == 1:
-            continue
-
-        for i in range(len(queue)-1):
-            if queue_ct[-1] == queue_ct[-2]:
-                queue[-2] += queue[-1]
-                queue_ct[-2] += queue_ct[-1]
-
-                queue.pop()
-                queue_ct.pop()
-
-    return sum(queue)
-
-
 # calculate shannon entropy from a lambda vector
 # fac can be used to rescale the terms for lambda_a
 # qs is a np array with last dimension 4
 def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs, stable_summer=False):
-    entropy = torch.zeros(qs.shape[:-1], dtype=FLOAT_TYPE, device=DEVICE)
-
     def lambda_iterator():
         for mult, poly in lambda_list:
             if len(poly) == 0:
@@ -166,21 +57,11 @@ def shannon_entropy_from_lambda(lambda_list, kSys, fac, qs, stable_summer=False)
                         * (1 - torch.sum(qs, -1)) ** (kSys - e1 - e2 - e3)
                     )
 
-            term = (
-                shewchuck_sum(poly_iterator(), entropy)
-                if stable_summer
-                else sum(poly_iterator())
-            )
-
+            term = sum(poly_iterator())
             # filter out zeros for x log x
             yield -mult * torch.where(term != 0, term * torch.log2(term), term)
 
-    entropy = (
-        shewchuck_sum(lambda_iterator(), entropy)
-        if stable_summer
-        else sum(lambda_iterator())
-    )
-
+    entropy = sum(lambda_iterator())
     return entropy
 
 
@@ -219,6 +100,7 @@ def find_zero_passing_bisect(f, depth, qs_a, qs_b, val_a=None, val_b=None):
 
 if __name__ == "__main__":
     import argparse
+    import subprocess
 
     parser = argparse.ArgumentParser(
         description="CoffeeCode Postprocess: MapReduce CI over grid with max reductor"
@@ -233,10 +115,10 @@ if __name__ == "__main__":
         default="",
         help="outfile prefix (default: INFILE-best.npz)",
     )
-    parser.add_argument("--radius", metavar="RADIUS", type=float, default=.50)
+    parser.add_argument("--radius", metavar="RADIUS", type=float, default=0.50)
     parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=512)
     parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=10)
-    parser.add_argument("--stable_sum", metavar="STABLE_SUM", type=bool, default=False)
+    parser.add_argument("--external", metavar="EXTERNAL", type=bool, default=False)
     parser.add_argument(
         "infile",
         metavar="INFILE",
@@ -267,7 +149,7 @@ if __name__ == "__main__":
     KTOTMAX = args.kTotMax
     assert KTOTMAX > 0, "kTotMax needs to be a postive number"
 
-    STABLE_SUM = args.stable_sum
+    EXTERNAL = args.external
 
     # extract kSys from filename
     kSys_matches = re.findall(r"-kSys(\d+)-", args.infile)
@@ -283,8 +165,8 @@ if __name__ == "__main__":
         print("archive with catcodes detected. KSYS unset")
 
     # print some info
-    if STABLE_SUM:
-        print("using Neumaier summation for floating point precision loss")
+    if EXTERNAL:
+        print("calling pp3d/pp3d as external program")
 
     # build q table on a spherical surface
     # todo: find a better spaced method
@@ -352,30 +234,44 @@ if __name__ == "__main__":
             with archive.extractfile(file_meta) as file:
                 content = json.load(gzip.GzipFile(fileobj=file))
 
-                # sort to avoid numerical errors
-                if STABLE_SUM:
-                    content["lambda"].sort()
-                    content["lambda_a"].sort()
+            multiplicity = multiplicity_from_lambda(content["lambda_a"])
 
-                    for _, poly in content["lambda"]:
-                        poly.sort(key=lambda a: (-sum(a[1]), a[0]))
-                    for _, poly in content["lambda_a"]:
-                        poly.sort(key=lambda a: (-sum(a[1]), a[0]))
-
-            inv_log_mult_a = 1. / np.log2(multiplicity_from_lambda(content["lambda_a"]))
-
+            # internal ci_fun
             def ci_fun(qqs):
                 S = shannon_entropy_from_lambda(
-                    content["lambda"], KSYS, 1.0, qqs, STABLE_SUM
+                    content["lambda"], KSYS, 1.0, qqs
                 )
                 S_a = shannon_entropy_from_lambda(
-                    content["lambda_a"], KSYS, 2.0 ** -KENV, qqs, STABLE_SUM
+                    content["lambda_a"], KSYS, 2.0 ** -KENV, qqs
                 )
 
-                return (S_a - S) * inv_log_mult_a
+                return (S_a - S) / np.log2(multiplicity)
+
+            # external ci_fun
+            def ci_fun_ext(qqs):
+                json_in = {
+                    "lambda": content["lambda"],
+                    "lambda_a": content["lambda_a"],
+                    "qs": qqs.cpu().tolist()
+                }
+
+                process = subprocess.Popen(
+                    ["pp3d/pp3d", str(KSYS), str(KENV)],
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    encoding="ascii"
+                )
+                (output, err) = process.communicate(input=json.dumps(json_in))
+                assert err == None, "external command failure"
+
+                json_out = json.loads(output)["S_a-S"]
+                return torch.tensor(json_out, dtype=FLOAT_TYPE) / np.log2(multiplicity)
 
             res = find_zero_passing_bisect(
-                f=ci_fun, depth=BISECTIONS, qs_a=torch.zeros_like(qs), qs_b=qs.clone()
+                f=ci_fun if not EXTERNAL else ci_fun_ext,
+                depth=BISECTIONS,
+                qs_a=torch.zeros_like(qs),
+                qs_b=qs.clone(),
             )
 
             # update best ci and best graph

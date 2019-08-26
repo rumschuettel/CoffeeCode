@@ -117,8 +117,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=0.50)
     parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=512)
-    parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=10)
-    parser.add_argument("--external", metavar="EXTERNAL", type=bool, default=False)
+    parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=20)
+    parser.add_argument("--external", metavar="EXTERNAL", type=str, default="pp3d/pp3d")
     parser.add_argument(
         "infile",
         metavar="INFILE",
@@ -152,21 +152,31 @@ if __name__ == "__main__":
     EXTERNAL = args.external
 
     # extract kSys from filename
+    ARCHIVE_FORMAT = None
+    kTot_matches = re.findall(r"-kTot(\d+)", args.infile)
     kSys_matches = re.findall(r"-kSys(\d+)-", args.infile)
-    if len(kSys_matches) == 1:
+    if len(kSys_matches) == 1 and len(kTot_matches) == 0:
         KSYS = int(kSys_matches[0])
         print("archive with adjacency matrices detected. KSYS", KSYS)
+        ARCHIVE_FORMAT = "adjm"
+
+    elif len(kSys_matches) == 1 and len(kTot_matches) == 1:
+        KSYS = int(kSys_matches[0])
+        KTOT = int(kTot_matches[0])
+        print("archive with KSYS", KSYS, "KTOT", KTOT)
+        ARCHIVE_FORMAT = "full"
+
     else:
         a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)\.", args.infile)
         assert (
             len(a_in_b_matches) == 1
         ), "invalid filename, must encode kSys in the form -kSys3- or .a-in-b."
-        KSYS = None
         print("archive with catcodes detected. KSYS unset")
+        ARCHIVE_FORMAT = "cat"
 
     # print some info
     if EXTERNAL:
-        print("calling pp3d/pp3d as external program")
+        print(f"calling external program pp3d or pp3dw")
 
     # build q table on a spherical surface
     # todo: find a better spaced method
@@ -205,20 +215,24 @@ if __name__ == "__main__":
                 continue
 
             # extract kEnv
-            adjm_matches = re.findall(r"([0-1]+)\.json\.gz", file_meta.name)
-            if len(adjm_matches) == 1:
+            if ARCHIVE_FORMAT == "adjm":
+                adjm_matches = re.findall(r"([0-1]+)\.json\.gz", file_meta.name)
+                assert len(adjm_matches) == 1, "cannot find adjacency matrix in filename as in 0110.json.gz"
                 KTOT = math.sqrt(len(adjm_matches[0]))
                 assert KTOT.is_integer(), "adjacency matrix not square"
                 KTOT = int(KTOT)
 
-            else:
-                a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)\.gz", file_meta.name)
+            elif ARCHIVE_FORMAT == "cat":
+                a_in_b_matches = re.findall(r"\.(\d+)-in-(\d+)\.json\.gz", file_meta.name)
                 assert (
                     len(a_in_b_matches) == 1
-                ), "invalid archived name, must encode adjm in 01 format as in 0110.json.gz or a catcode with filename ending in .a-in-b"
+                ), "cannot find catcode signature with filename ending in .a-in-b.json"
                 # for catcodes we generally assume that KENV=1
                 KSYS = int(a_in_b_matches[0][0]) * int(a_in_b_matches[0][1])
                 KTOT = KSYS + 1
+            
+            else: # ARCHIVE_FORMAT == "full"
+                pass
 
             KENV = KTOT - KSYS
             assert KENV > 0 and KENV <= KSYS, "0 < kEnv <= kSys not satisfied"
@@ -256,7 +270,7 @@ if __name__ == "__main__":
                 }
 
                 process = subprocess.Popen(
-                    ["pp3d/pp3d", str(KSYS), str(KENV)],
+                    ["pp3d/pp3d" if KTOT < 40 else "pp3d/pp3dw", str(KSYS), str(KENV)],
                     stdout=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                     encoding="ascii"
@@ -264,7 +278,12 @@ if __name__ == "__main__":
                 (output, err) = process.communicate(input=json.dumps(json_in))
                 assert err == None, "external command failure"
 
-                json_out = json.loads(output)["S_a-S"]
+                try:
+                    json_out = json.loads(output)["S_a-S"]
+                except:
+                    print(output)
+                    return
+
                 return torch.tensor(json_out, dtype=FLOAT_TYPE) / np.log2(multiplicity)
 
             res = find_zero_passing_bisect(

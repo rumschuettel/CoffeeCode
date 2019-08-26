@@ -8,9 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable( pp3d ./pp3d.cpp )
+add_executable( pp3dw ./pp3d.cpp )
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
 target_link_libraries(pp3d PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(pp3dw PRIVATE nlohmann_json::nlohmann_json)
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -20,4 +22,7 @@ if (OPENMP_FOUND)
 endif()
 
 include_directories( ~/opt/anaconda5/envs/gcc8/include )
+
+# quadmath vs fp256
 target_link_libraries(pp3d PRIVATE quadmath)
+target_compile_definitions(pp3dw PRIVATE F256)

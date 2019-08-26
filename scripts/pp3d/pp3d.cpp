@@ -5,7 +5,19 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#ifdef F256
+#include <boost/multiprecision/cpp_bin_float.hpp> 
+using scalar = boost::multiprecision::number<
+    boost::multiprecision::backends::cpp_bin_float<
+        256,
+        boost::multiprecision::backends::digit_base_2
+    >
+>;
+#else
 #include <boost/multiprecision/float128.hpp>
+using scalar = boost::multiprecision::float128;
+#endif
+using integer = int64_t;
 
 #include <iostream>
 #include <assert.h>
@@ -16,21 +28,18 @@ using std::pow;
 using std::log2;
 using std::abs;
 
-using scalar = boost::multiprecision::float128;
-using integer = int64_t;
-
-template<typename T>
-T mypow(T a, integer b)
-{
-    if (b == 0) return 1;
-    if (a == 0) return 0;
-    return pow(a, b);
-}
-
 template<typename T>
 scalar shannon_entropy_from_lambda(const T& lambda_list, const integer KSYS, const scalar fac, const scalar q1, const scalar q2, const scalar q3)
 {
     scalar entropy = 0.;
+
+    std::vector<scalar> pow_q1_lu(KSYS+1), pow_q2_lu(KSYS+1), pow_q3_lu(KSYS+1), pow_1_q1q2q3_lu(KSYS+1);
+    for (size_t i = 0; i <= KSYS; i ++) {
+        pow_q1_lu[i] = pow(q1, i);
+        pow_q2_lu[i] = pow(q2, i);
+        pow_q3_lu[i] = pow(q3, i);
+        pow_1_q1q2q3_lu[i] = pow(static_cast<scalar>(1.) - q1 - q2 - q3, i);
+    }
 
     for (const auto& _mult_poly : lambda_list) {
         const integer mult = _mult_poly[0];
@@ -47,11 +56,11 @@ scalar shannon_entropy_from_lambda(const T& lambda_list, const integer KSYS, con
             const integer e2 = _coeff_e1e2e3[1][1];
             const integer e3 = _coeff_e1e2e3[1][2];
 
-            term += fac * coeff * mypow(q1, e1) * mypow(q2, e2) * mypow(q3, e3) * mypow(1. - q1 - q2 - q3, KSYS - e1 - e2 - e3);
+            term += fac * coeff * pow_q1_lu[e1] * pow_q2_lu[e2] * pow_q3_lu[e3] * pow_1_q1q2q3_lu[KSYS - e1 - e2 - e3];
         }
 
         if (term != 0.)
-            entropy -= mult * abs(term) * log2(abs(term));
+            entropy -= mult * term * log2(term);
     }
 
     return entropy;
@@ -92,10 +101,10 @@ int main(int argc, char *argv[])
         S_a_minus_S[i] = static_cast<double>(S_a - S);
     }
 
-    auto time = std::chrono::duration_cast<std::chrono::minutes>(
+    auto time = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::high_resolution_clock::now() - start
     ).count();
-    std::cerr << "done; T=" << time << " minutes\n";
+    std::cerr << "done; T=" << time << " sec\n";
 
     // serialize to standard output
     json out;

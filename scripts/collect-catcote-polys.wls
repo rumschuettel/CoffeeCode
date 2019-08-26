@@ -38,7 +38,7 @@ Export[filename,jsonString,"RawJSON","Compact"->True]
 
 Clear[collectDataGraph]
 collectDataGraph[G_Graph,kSys_Integer,writeToFile_:True]:=Module[{FILEPREFIX="graphcodes.",filename,jsonString},
-filename=RESULTSPATH<>"/graph_codes/"<>FILEPREFIX<>GraphHash[G,kSys]<>"."<>ToString[kSys];
+filename=RESULTSPATH<>"/special_felix/"<>FILEPREFIX<>GraphHash[G,kSys]<>"-kSys"<>ToString[kSys]<>"-kTot"<>ToString[kSys+1];
 Print["Computing "<>ToString[kSys]<>"-graph code..."];
 jsonString=If[VertexCount@G<15,
 RunCC[G,kSys,"Multi","Full"],
@@ -50,9 +50,9 @@ Export[filename,jsonString,"RawJSON","Compact"->True]
 ];
 
 
-singleReps=Table[{1,i},{i,1,60}];
+(*singleReps=Table[{1,i},{i,1,60}];
 concatPairs=Flatten[Table[{i,j},{i,2,7},{j,2,7}],1];
-Join[singleReps,concatPairs]//Map[collectDataRep];
+Join[singleReps,concatPairs]//Map[collectDataRep];*)
 
 
 G13=Graph[{1\[UndirectedEdge]2,2\[UndirectedEdge]3,2\[UndirectedEdge]4,1\[UndirectedEdge]5,5\[UndirectedEdge]6,5\[UndirectedEdge]7,1\[UndirectedEdge]8,8\[UndirectedEdge]9,8\[UndirectedEdge]10,1\[UndirectedEdge]11,1\[UndirectedEdge]12,1\[UndirectedEdge]13,1\[UndirectedEdge]14}];
@@ -64,4 +64,6 @@ G18b=Graph[{1\[UndirectedEdge]2,2\[UndirectedEdge]3,2\[UndirectedEdge]4,2\[Undir
 G19=Graph[{1\[UndirectedEdge]2,2\[UndirectedEdge]3,2\[UndirectedEdge]4,1\[UndirectedEdge]5,5\[UndirectedEdge]6,5\[UndirectedEdge]7,1\[UndirectedEdge]8,8\[UndirectedEdge]9,8\[UndirectedEdge]10,1\[UndirectedEdge]11,11\[UndirectedEdge]12,11\[UndirectedEdge]13,1\[UndirectedEdge]14,14\[UndirectedEdge]15,14\[UndirectedEdge]16,1\[UndirectedEdge]17,1\[UndirectedEdge]18,1\[UndirectedEdge]19,1\[UndirectedEdge]20}];
 G19b=Graph[{1\[UndirectedEdge]2,2\[UndirectedEdge]3,2\[UndirectedEdge]4,2\[UndirectedEdge]5,2\[UndirectedEdge]6,1\[UndirectedEdge]7,7\[UndirectedEdge]8,7\[UndirectedEdge]9,1\[UndirectedEdge]10,10\[UndirectedEdge]11,10\[UndirectedEdge]12,1\[UndirectedEdge]13,13\[UndirectedEdge]14,13\[UndirectedEdge]15,1\[UndirectedEdge]16,1\[UndirectedEdge]17,1\[UndirectedEdge]18,1\[UndirectedEdge]19,1\[UndirectedEdge]20}];
 G21=HairGraph[RootedGraphProduct[StarGraph[7],StarGraph[3],Range@7,1],{1}];
+
+
 {G13,G15,G16,G17,G18,G18b,G19,G19b,G21}//Map[Function[graph,collectDataGraph[graph,VertexCount[graph]-1];]];

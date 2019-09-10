@@ -10,8 +10,6 @@ function ctrl_c() {
 OUTDIR="./volumes/special_felix"
 HOSTNAME=`hostname`
 
-sleep $[ ( $RANDOM % 50 )+1 ]s
-
 for f in `ls -Sr results/special_felix/*.json.gz.tar`; do
 	bf=`basename "$f"`
 	of="$OUTDIR/$bf-best.npz"
@@ -28,6 +26,6 @@ for f in `ls -Sr results/special_felix/*.json.gz.tar`; do
 	CURRENT="$lf"
 
 	echo "running $bf"
-	nice -19 ./postprocess-3dplot.py --external=True --outfile "$of" "$f"
+	nice -19 ./postprocess-3dplot.py --outfile "$of" "$f"
 	rm "$lf"
 done

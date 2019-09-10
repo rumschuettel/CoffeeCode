@@ -12,7 +12,7 @@ HOSTNAME=`hostname`
 
 #sleep $[ ( $RANDOM % 50 )+1 ]s
 
-for f in `ls -Sr results/concat_codes/*.json.gz.tar`; do
+for f in `ls -Sr results/concat_codes/*-in-*.json.gz.tar`; do
 	bf=`basename "$f"`
 	of="$OUTDIR/$bf-best.npz"
 	if [ -f "$of" ]; then

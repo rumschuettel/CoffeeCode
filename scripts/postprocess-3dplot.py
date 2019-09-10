@@ -3,7 +3,8 @@
 import numpy as np
 import tarfile, gzip, json
 import re, math
-import os, multiprocessing
+import sys, os, multiprocessing
+import time
 
 import torch
 
@@ -75,9 +76,9 @@ def find_zero_passing_bisect(f, depth, qs_a, qs_b, val_a=None, val_b=None):
     val_midpoint = f(qs_midpoint)
 
     mask = val_midpoint < 0
-    qs_a[1 - mask] = qs_midpoint[1 - mask]
+    qs_a[~mask] = qs_midpoint[~mask]
     qs_b[mask] = qs_midpoint[mask]
-    val_a[1 - mask] = val_midpoint[1 - mask]
+    val_a[~mask] = val_midpoint[~mask]
     val_b[mask] = val_midpoint[mask]
 
     if depth > 0:
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=0.50)
     parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=512)
     parser.add_argument("--bisections", metavar="BISECTIONS", type=int, default=20)
-    parser.add_argument("--external", metavar="EXTERNAL", type=str, default="pp3d/pp3d")
+    parser.add_argument("--external", metavar="EXTERNAL", type=bool, default=False)
     parser.add_argument(
         "infile",
         metavar="INFILE",
@@ -176,7 +177,7 @@ if __name__ == "__main__":
 
     # print some info
     if EXTERNAL:
-        print(f"calling external program pp3d or pp3dw")
+        print("calling external program pp3d or pp3dw")
 
     # build q table on a spherical surface
     # todo: find a better spaced method
@@ -252,12 +253,16 @@ if __name__ == "__main__":
 
             # internal ci_fun
             def ci_fun(qqs):
+                print("ci_fun running... ", end="")
+                sys.stdout.flush()
+                start = time.time()
                 S = shannon_entropy_from_lambda(
                     content["lambda"], KSYS, 1.0, qqs
                 )
                 S_a = shannon_entropy_from_lambda(
                     content["lambda_a"], KSYS, 2.0 ** -KENV, qqs
                 )
+                print(f"done; T={round(time.time() - start)} sec")
 
                 return (S_a - S) / np.log2(multiplicity)
 
@@ -270,7 +275,7 @@ if __name__ == "__main__":
                 }
 
                 process = subprocess.Popen(
-                    ["pp3d/pp3d" if KTOT < 40 else "pp3d/pp3dw", str(KSYS), str(KENV)],
+                    ["pp3d/pp3d" if KTOT <= 32 else "pp3d/pp3dw", str(KSYS), str(KENV)],
                     stdout=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                     encoding="ascii"

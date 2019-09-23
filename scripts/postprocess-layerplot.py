@@ -157,12 +157,12 @@ if __name__ == "__main__":
         plane_facs = [ math.sqrt(r**2 + 1) for r in PLANE_RATIOS ]
 
         # shape from PLANE x nx x ny to nx x ny x PLANE
-        q1 = np.array([plane1] * LAYERS).transpose((1, 2, 0))
-        q2 = np.array([ plane2 / f for f in plane_facs ]).transpose((1, 2, 0))
-        q3 = np.array([ r * plane2 / f for f, r in zip(plane_facs, PLANE_RATIOS) ]).transpose((1, 2, 0))
+        q1 = np.array([ plane1 / f for f in plane_facs ]).transpose((1, 2, 0))
+        q2 = np.array([ plane2 ] * LAYERS).transpose((1, 2, 0))
+        q3 = np.array([ r * plane1 / f for f, r in zip(plane_facs, PLANE_RATIOS) ]).transpose((1, 2, 0))
 
-        # from coord x nx x ny x LAYER
-        # to   LAYER x nx x ny x coord
+        # from coord x nx x ny x PLANE
+        # to   PLANE x nx x ny x coord
         qs = np.stack((q1, q2, q3)).transpose((3, 1, 2, 0)).reshape(-1, 3)
 
         # of the 3d layers, we mask out everything that is antidegrabable

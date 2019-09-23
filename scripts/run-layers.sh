@@ -28,6 +28,6 @@ for f in `ls -Sr results/concat_codes/*-in-*.json.gz.tar`; do
 	CURRENT="$lf"
 
 	echo "running $bf"
-	nice -19 ./postprocess-layerplot.py --outfile "$of" "$f"
+	nice -19 ./postprocess-layerplot.py --external=True --outfile "$of" "$f"
 	rm "$lf"
 done

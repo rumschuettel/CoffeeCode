@@ -141,7 +141,7 @@ if __name__ == "__main__":
         print("calling external program pp3d or pp3dw")
 
 
-    PLANE_RATIOS = [1/2, 1, 2]
+    PLANE_RATIOS = [1/8, 1/4, 1/2, 1, 2, 4, 8]
     LAYERS = len(PLANE_RATIOS)
 
 
@@ -298,7 +298,7 @@ if __name__ == "__main__":
 
     np.savez_compressed(
         OUTFILE,
-        params=[RADIUS, RESOLUTION, LAYERS],
+        params=[RADIUS, RESOLUTION, LAYERS, PLANE_RATIOS],
         qs=qs_full.reshape(LAYERS, RESOLUTION, RESOLUTION, -1),
         ci=best_ci_full.reshape(LAYERS, RESOLUTION, RESOLUTION).cpu().numpy(),
         graph=best_graph_full.reshape(LAYERS, RESOLUTION, RESOLUTION).cpu().numpy(),

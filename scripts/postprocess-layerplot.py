@@ -85,7 +85,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--radius", metavar="RADIUS", type=float, default=0.50)
     parser.add_argument("--resolution", metavar="RESOLUTION", type=int, default=512)
-    parser.add_argument("--layers", metavar="LAYERS", type=int, default=16)
     parser.add_argument("--external", metavar="EXTERNAL", type=bool, default=False)
     parser.add_argument(
         "infile",
@@ -107,8 +106,7 @@ if __name__ == "__main__":
 
     RADIUS = args.radius
     RESOLUTION = args.resolution
-    LAYERS = args.layers
-    assert RADIUS > 0 and RESOLUTION > 0 and LAYERS > 0, "radius, resolution and layers need to be positive"
+    assert RADIUS > 0 and RESOLUTION > 0, "radius, resolution need to be positive"
 
     KTOTMAX = args.kTotMax
     assert KTOTMAX > 0, "kTotMax needs to be a postive number"
@@ -142,14 +140,26 @@ if __name__ == "__main__":
     if EXTERNAL:
         print("calling external program pp3d or pp3dw")
 
+
+    PLANE_RATIOS = [1/2, 1, 2]
+    LAYERS = len(PLANE_RATIOS)
+
+
     # build q table for layers
     # we build 
     def qs_layers():
         nx = np.linspace(0, RADIUS, RESOLUTION)
         ny = np.linspace(0, RADIUS, RESOLUTION)
-        nz = np.linspace(0, RADIUS, LAYERS)
         
-        q1, q2, q3 = np.meshgrid(nx, ny, nz)       
+        plane1, plane2 = np.meshgrid(nx, ny)
+
+        # duplicate planes
+        plane_facs = [ math.sqrt(r**2 + 1) for r in PLANE_RATIOS ]
+
+        # shape from PLANE x nx x ny to nx x ny x PLANE
+        q1 = np.array([plane1] * LAYERS).transpose((1, 2, 0))
+        q2 = np.array([ plane2 / f for f in plane_facs ]).transpose((1, 2, 0))
+        q3 = np.array([ r * plane2 / f for f, r in zip(plane_facs, PLANE_RATIOS) ]).transpose((1, 2, 0))
 
         # from coord x nx x ny x LAYER
         # to   LAYER x nx x ny x coord
@@ -161,6 +171,8 @@ if __name__ == "__main__":
         qs_mask = np.array([ True if (x+y+z < .5) else False for (x, y, z) in qs ])
 
         return qs, qs_mask
+
+    
 
     # from the origin
     qs_full, qs_mask = qs_layers()
